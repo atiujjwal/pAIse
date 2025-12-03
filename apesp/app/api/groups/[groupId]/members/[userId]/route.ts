@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
+import { Decimal } from "decimal.js";
+
+Decimal.set({ precision: 12 });
 
 import { checkGroupAdmin } from "@/src/services/groupService";
 
@@ -64,14 +67,40 @@ const deleteHandler = async (
         return forbidden("Cannot remove the last admin from the group.");
     }
 
-    // 404: Group or User not found (handled by delete operation)
-    await prisma.groupMember.delete({
+    // Financial Integrity Check
+    const userBalances = await prisma.balance.findMany({
       where: {
-        group_id_user_id: {
-          group_id: groupId,
-          user_id: userToRemoveId,
-        },
+        group_id: groupId,
+        OR: [{ user_A_id: userToRemoveId }, { user_B_id: userToRemoveId }],
       },
+    });
+
+    // Check if any balance is non-zero
+    if (userBalances.some((b) => !new Decimal(b.amount).isZero())) {
+      return forbidden(
+        "Cannot remove this member. They have outstanding debts/credits."
+      );
+    }
+
+    // Delete membership AND cleanup zero-balance rows atomically
+    await prisma.$transaction(async (tx) => {
+      // Clean up the 0.00 balance rows
+      await tx.balance.deleteMany({
+        where: {
+          group_id: groupId,
+          OR: [{ user_A_id: userToRemoveId }, { user_B_id: userToRemoveId }],
+        },
+      });
+
+      // Delete the membership
+      await tx.groupMember.delete({
+        where: {
+          group_id_user_id: {
+            group_id: groupId,
+            user_id: userToRemoveId,
+          },
+        },
+      });
     });
 
     return noContent();

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { GroupRole } from "@prisma/client";
 import { prisma } from "@/src/lib/db";
+import { Decimal } from "decimal.js";
 import {
   errorResponse,
   forbidden,
@@ -61,14 +62,40 @@ const postHandler = async (
       }
     }
 
-    // Delete the membership
-    await prisma.groupMember.delete({
+    // Financial Integrity Check
+    const userBalances = await prisma.balance.findMany({
       where: {
-        group_id_user_id: {
-          group_id: groupId,
-          user_id: authUserId,
-        },
+        group_id: groupId,
+        OR: [{ user_A_id: authUserId }, { user_B_id: authUserId }],
       },
+    });
+
+    // Check if any balance is non-zero
+    if (userBalances.some((b) => !new Decimal(b.amount).isZero())) {
+      return forbidden(
+        "Cannot leave group while you have outstanding debts. Please settle up first."
+      );
+    }
+
+    // Delete membership AND cleanup zero-balance rows atomically
+    await prisma.$transaction(async (tx) => {
+      // 1. Clean up the 0.00 balance rows
+      await tx.balance.deleteMany({
+        where: {
+          group_id: groupId,
+          OR: [{ user_A_id: authUserId }, { user_B_id: authUserId }],
+        },
+      });
+
+      // Delete the membership
+      await tx.groupMember.delete({
+        where: {
+          group_id_user_id: {
+            group_id: groupId,
+            user_id: authUserId,
+          },
+        },
+      });
     });
 
     return noContent();
