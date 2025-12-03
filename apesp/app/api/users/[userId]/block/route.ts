@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
-
 import { FriendshipStatus } from "@prisma/client";
+import { Decimal } from "decimal.js";
 import {
   badRequest,
   errorResponse,
+  forbidden,
   notFound,
   successResponse,
   unauthorized,
@@ -14,6 +15,7 @@ import { withAuth } from "@/src/middleware/auth";
 /**
  * POST /users/{userId}/block
  * Blocks a user, preventing all interaction.
+ * RESTRICTION: Cannot block if there are outstanding financial debts.
  */
 const postHandler = async (
   request: NextRequest,
@@ -36,7 +38,25 @@ const postHandler = async (
     // Determine alphabetical order for user_A_id and user_B_id
     const [user_A_id, user_B_id] = [myId, userToBlockId].sort();
 
-    // Action: Creates or updates a Friendship record, setting status: BLOCKED
+    // Check if there are any non-zero balances between these two users
+    // (This covers both direct balances AND balances inside groups)
+    const existingBalances = await prisma.balance.findMany({
+      where: {
+        user_A_id: user_A_id,
+        user_B_id: user_B_id,
+      },
+    });
+
+    const hasOutstandingDebt = existingBalances.some(
+      (b) => !new Decimal(b.amount).isZero()
+    );
+
+    if (hasOutstandingDebt) {
+      return forbidden(
+        "Cannot block this user. You have outstanding debts/credits with them (direct or in groups). Please settle up first."
+      );
+    }
+
     const [_, blockedFriendship] = await prisma.$transaction([
       // Delete any and all existing relationships between these two users
       prisma.friendship.deleteMany({
@@ -62,7 +82,6 @@ const postHandler = async (
         where: {
           user_A_id: user_A_id,
           user_B_id: user_B_id,
-          // This deletes both non-group and all group balances
         },
       }),
     ]);
