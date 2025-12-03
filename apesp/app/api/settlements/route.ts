@@ -18,6 +18,7 @@ import { jobQueue } from "@/src/lib/queue";
 import { createSettlementSchema } from "@/src/services/settlementServices";
 import { checkGroupMembership } from "@/src/services/groupService";
 import { formatPublicUser } from "@/src/lib/formatter";
+import { balanceService } from "@/src/services/balanceService";
 
 /**
  * POST /settlements
@@ -37,13 +38,12 @@ const postHandler = async (
     if (payerId === receiver_id)
       return badRequest("Cannot settle with yourself");
 
-    // 404: Receiver not found
     const receiver = await prisma.user.findUnique({
       where: { id: receiver_id, is_deleted: false },
     });
+
     if (!receiver) return notFound("Receiver not found");
 
-    // If group_id is provided, validate membership
     if (group_id) {
       const group = await prisma.group.findUnique({
         where: { id: group_id },
@@ -66,10 +66,7 @@ const postHandler = async (
       },
     });
 
-    //TODO: Enqueue an asynchronous job to update the Balance table
-    await jobQueue.add("recalculate-balance-settlement", {
-      settlementId: settlement.id,
-    });
+    await balanceService.processSettlement(settlement.id);
 
     return created("Settlement recorded successfully", settlement);
   } catch (error: any) {
