@@ -23,6 +23,7 @@ import {
   UpdateExpenseSchema,
   validateAndProcessExpense,
 } from "@/src/services/expenseService";
+import { balanceService } from "@/src/services/balanceService";
 
 /**
  * GET /expenses/{expenseId}
@@ -100,7 +101,6 @@ const putHandler = async (
 
     const parsedBody = UpdateExpenseSchema.parse(body);
 
-    // Fetch existing expense
     const existing = await prisma.expense.findUnique({
       where: { id: expenseId },
       include: {
@@ -124,7 +124,11 @@ const putHandler = async (
     )
       return badRequest("Group ID cannot be changed");
 
-    if (existing.friend_id && parsedBody.friend_id && parsedBody.friend_id !== existing.friend_id)
+    if (
+      existing.friend_id &&
+      parsedBody.friend_id &&
+      parsedBody.friend_id !== existing.friend_id
+    )
       return badRequest("Friend ID cannot be changed");
 
     let memberIds: Set<string> | undefined;
@@ -147,7 +151,9 @@ const putHandler = async (
       }
 
       // Determine who the other person is for the memberIds set
-      const otherPersonId = isCreator ? existing.friend_id : existing.created_by_id;
+      const otherPersonId = isCreator
+        ? existing.friend_id
+        : existing.created_by_id;
 
       const friendship = await prisma.friendship.findFirst({
         where: {
@@ -163,7 +169,9 @@ const putHandler = async (
 
       memberIds = new Set([userId, otherPersonId]);
     } else {
-       return errorResponse("Invalid expense state: No group or friend associated");
+      return errorResponse(
+        "Invalid expense state: No group or friend associated"
+      );
     }
 
     if (!memberIds) {
@@ -248,10 +256,8 @@ const putHandler = async (
       return expense;
     });
 
-    // TODO:  Trigger async balance update
-    await jobQueue.add("recalculate-balance", { expenseId });
+    if (existing) await balanceService.editExpenseImpact(existing, existing.id);
 
-    // Return updated record
     const completeExpense = await prisma.expense.findUnique({
       where: { id: expenseId },
       include: {
@@ -299,6 +305,15 @@ const deleteHandler = async (
 
     const expense = await prisma.expense.findUnique({
       where: { id: expenseId },
+      include: {
+        payers: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
+        splits: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
+        group: { select: { id: true, name: true } },
+      },
     });
 
     if (!expense) return notFound("Expense");
@@ -325,10 +340,21 @@ const deleteHandler = async (
       where: { id: expenseId },
     });
 
-    // TODO: recalculate-balance-delete
-    await jobQueue.add("recalculate-balance-delete", {
-      deletedExpense: expense,
-    });
+    if (expense) {
+      balanceService.revertExpenseImpact({
+        id: expense.id,
+        group_id: expense.group_id || null,
+        friend_id: expense.friend_id || null,
+        payers: expense.payers.map((payer) => ({
+          user_id: payer.user_id,
+          amount: payer.amount,
+        })),
+        splits: expense.splits.map((split) => ({
+          user_id: split.user_id,
+          amount_owed: split.amount_owed,
+        })),
+      });
+    }
 
     return noContent();
   } catch (error: any) {

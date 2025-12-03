@@ -18,6 +18,7 @@ import {
   ExpenseBodySchema,
   validateAndProcessExpense,
 } from "@/src/services/expenseService";
+import { balanceService } from "@/src/services/balanceService";
 
 Decimal.set({ precision: 12 });
 
@@ -123,10 +124,8 @@ const postHandler = async (
       return expense;
     });
 
-    // TODO: Enqueue the asynchronous balance update job
-    await jobQueue.add("recalculate-balance", { expenseId: newExpense.id });
+    await balanceService.updateBalanceFromExpense(newExpense.id);
 
-    // Fetch and return the complete record
     const completeExpense = await prisma.expense.findUnique({
       where: { id: newExpense.id },
       include: {
