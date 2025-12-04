@@ -62,6 +62,25 @@ export const UpdateExpenseSchema = ExpenseBodyBaseSchema.partial().refine(
   }
 );
 
+export const GetExpensesQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  search: z.string().optional(),
+
+  // Filters
+  group_id: z.string().optional(),
+  friend_id: z.string().optional(),
+  category: z.string().optional(),
+  from_date: z.string().datetime().optional(),
+  to_date: z.string().datetime().optional(),
+  min_amount: z.coerce.number().optional(),
+  max_amount: z.coerce.number().optional(),
+
+  // Sorting
+  sort_by: z.enum(["date", "amount", "created_at"]).default("date"),
+  sort_order: z.enum(["asc", "desc"]).default("desc"),
+});
+
 // Type for the data ready to be inserted into Prisma
 export type ProcessedPayer = { user_id: string; amount: Decimal };
 export type ProcessedSplit = {

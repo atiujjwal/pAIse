@@ -117,10 +117,20 @@ export async function createGroupApi(group: Partial<any>) {
 }
 
 // Expenses
-export async function getExpensesApi(groupId?: string) {
+export async function getExpensesApi(filters?: Record<string, any>) {
   const url = new URL(API_ENDPOINTS.EXPENSES, window.location.origin);
-  if (groupId) url.searchParams.append("groupId", groupId);
-  return await authorizedFetch(url.toString());
+
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.append(key, String(value));
+      }
+    });
+  }
+
+  const result = await authorizedFetch(url.toString());
+  console.log("124: ", result);
+  return result;
 }
 
 export async function createExpenseApi(expenseData: any) {

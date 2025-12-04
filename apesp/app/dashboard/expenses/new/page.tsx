@@ -14,8 +14,7 @@ import { formatAmount } from "../../../../src/lib/utils";
 import Button from "../../../../src/components/ui/Button";
 
 const schema = z.object({
-  merchant: z.string().min(2, "Enter merchant"),
-  description: z.string().optional(),
+  description: z.string().min(2, "Enter a description"),
   date: z.string().min(1, "Enter date"),
   category: z.string().min(1, "Select category"),
   amount: z.coerce.number().positive("Amount must be > 0"),
@@ -85,12 +84,6 @@ export default function NewExpensePage() {
           className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6"
         >
           <Input
-            label="Merchant"
-            placeholder="Starbucks"
-            error={errors.merchant?.message}
-            {...register("merchant")}
-          />
-          <Input
             label="Date"
             type="date"
             error={errors.date?.message}
@@ -147,8 +140,9 @@ export default function NewExpensePage() {
           </div>
           <Input
             label="Description"
-            placeholder="Optional"
+            placeholder="e.g., Coffee at Starbucks"
             {...register("description")}
+            error={errors.description?.message}
           />
           <div className="md:col-span-2">
             <p className="text-sm text-mono-600">

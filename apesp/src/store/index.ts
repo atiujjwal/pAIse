@@ -40,7 +40,7 @@ type GroupsSlice = {
 
 type ExpensesSlice = {
   expenses: Expense[];
-  fetchExpenses: (groupId?: string) => Promise<void>;
+  fetchExpenses: (filters?: Record<string, any>) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<string>;
   deleteExpense: (id: string) => Promise<void>;
 };
@@ -103,18 +103,19 @@ export const useStore = create<
 
   // Expenses (mock)
   expenses: [],
-  fetchExpenses: async (groupId) => {
+  fetchExpenses: async (filters) => {
     try {
-      const expenses = await getExpensesApi(groupId);
-      set({ expenses });
+      const response = await getExpensesApi(filters);
+      set({ expenses: response.data?.data || [] }); // Handle paginated response
     } catch (err) {
       console.error("Failed to fetch expenses:", err);
     }
   },
   addExpense: async (e) => {
     try {
-      const created = await createExpenseApi(e);
-      set((state) => ({ expenses: [created, ...state.expenses] }));
+      const response = await createExpenseApi(e);
+      const created = response.data;
+      set((state) => ({ expenses: [created, ...state.expenses] as Expense[] }));
       return created.id;
     } catch (err) {
       console.error("Failed to add expense:", err);
@@ -137,8 +138,8 @@ export const useStore = create<
   summary: null,
   fetchSummary: async () => {
     try {
-      const summary = await getDashboardSummaryApi();
-      set({ summary });
+      const response = await getDashboardSummaryApi();
+      set({ summary: response.data });
     } catch (err) {
       console.error("Failed to fetch dashboard summary:", err);
     }

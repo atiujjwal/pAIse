@@ -17,23 +17,26 @@ export type Group = {
 
 export type Expense = {
   id: string;
-  groupId: string;
-  date: string; // ISO
-  merchant: string;
-  description?: string;
-  category: string;
+  description: string;
   amount: number;
-  paidBy: string; // userId
-  split: "equal" | "exact" | "percentage" | "custom";
-  attachments?: string[]; // receipt urls
-  reactions?: Array<{ userId: string; emoji: string }>;
-  comments?: Array<{
-    id: string;
-    userId: string;
-    message: string;
-    createdAt: string;
-  }>;
   currency: string;
+  date: string;
+  category: string;
+  receipt_url: string | null;
+  split_type: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARE";
+  group: {
+    id: string;
+    name: string;
+  } | null;
+  created_by: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+  payers: Array<{
+    user: { id: string; name: string; avatar_url: string | null };
+    amount: number;
+  }>;
 };
 
 export type Balance = {
@@ -55,17 +58,38 @@ export type Settlement = {
 };
 
 export type AnalyticsSummary = {
-  totalSpent: number;
-  totalBudget: number;
-  remaining: number;
-  percentageUsed: number;
-  categories: Array<{
+  success: boolean;
+  message: string;
+
+  total_balance: number;
+
+  monthly_metrics: {
+    total_spent: number;
+    budget_limit: number;
+    remaining: number;
+    budget_used_percent: number;
+  };
+
+  spending_by_category: Array<{
     category: string;
     amount: number;
-    percentage: string;
-    color: string;
+    percentage: number;
+    color?: string; // optional since backend doesn’t provide it yet
   }>;
-  recentExpenses: Array<
-    Pick<Expense, "id" | "date" | "merchant" | "category" | "amount">
-  >;
+
+  upcoming_subscriptions: Array<{
+    id: string;
+    name: string;
+    amount: number;
+    next_billing_date: string;
+  }>;
+
+  recent_expenses: Array<{
+    id: string;
+    description: string;
+    amount: number;
+    date: string;
+    group: string | null;
+    created_by: string;
+  }>;
 };

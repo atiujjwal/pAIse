@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Search as SearchIcon,
@@ -20,20 +20,17 @@ import Badge from "../../../src/components/ui/Badge";
 import { formatAmount } from "../../../src/lib/utils";
 
 export default function ExpensesPage() {
-  const { expenses, loading, deleteExpense } = useExpenses();
-  const [query, setQuery] = useState("");
+  const { expenses, loading, deleteExpense, setFilters } = useExpenses();
+
+  const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("All");
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return expenses.filter((e) => {
-      const matchesQ =
-        e.merchant.toLowerCase().includes(q) ||
-        (e.description ?? "").toLowerCase().includes(q);
-      const matchesC = category === "All" || e.category === category;
-      return matchesQ && matchesC;
-    });
-  }, [expenses, query, category]);
+  useEffect(() => {
+    const newFilters: Record<string, any> = {};
+    if (search) newFilters.search = search;
+    if (category !== "All") newFilters.category = category;
+    setFilters(newFilters);
+  }, [search, category, setFilters]);
 
   if (loading) return <Loading fullScreen />;
 
@@ -55,9 +52,9 @@ export default function ExpensesPage() {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <Input
-              placeholder="Search by merchant or description..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by description..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               leftIcon={<SearchIcon className="w-4 h-4" />}
             />
           </div>
@@ -84,7 +81,7 @@ export default function ExpensesPage() {
       </Card>
 
       <Card className="p-0 overflow-hidden">
-        {filtered.length === 0 ? (
+        {expenses.length === 0 ? (
           <EmptyState
             icon={<Receipt className="w-16 h-16" />}
             title="No expenses found"
@@ -101,7 +98,7 @@ export default function ExpensesPage() {
                 <tr>
                   {[
                     "Date",
-                    "Merchant",
+                    "Description",
                     "Category",
                     "Amount",
                     "Paid By",
@@ -117,7 +114,7 @@ export default function ExpensesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-mono-200">
-                {filtered.map((exp) => (
+                {expenses.map((exp) => (
                   <tr
                     key={exp.id}
                     className="hover:bg-mono-50 transition-colors"
@@ -130,14 +127,9 @@ export default function ExpensesPage() {
                       })}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-mono-900">
-                        {exp.merchant}
+                      <div className="text-sm font-medium text-mono-900 truncate max-w-xs">
+                        {exp.description}
                       </div>
-                      {exp.description && (
-                        <div className="text-sm text-mono-500">
-                          {exp.description}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge>{exp.category}</Badge>
@@ -146,7 +138,7 @@ export default function ExpensesPage() {
                       {formatAmount(exp.amount, exp.currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-mono-600">
-                      {exp.paidBy}
+                      {exp.payers?.[0]?.user?.name || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">

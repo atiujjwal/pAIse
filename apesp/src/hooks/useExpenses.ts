@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../store";
 
-export default function useExpenses(groupId?: string) {
+export default function useExpenses(initialFilters: Record<string, any> = {}) {
   const expenses = useStore((s) => s.expenses);
   const fetchExpenses = useStore((s) => s.fetchExpenses);
   const addExpense = useStore((s) => s.addExpense);
   const deleteExpense = useStore((s) => s.deleteExpense);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState(initialFilters);
 
   useEffect(() => {
-    if (!loaded) {
-      fetchExpenses(groupId).then(() => setLoaded(true));
-    }
-  }, [loaded, fetchExpenses, groupId]);
+    const load = async () => {
+      setLoading(true);
+      await fetchExpenses(filters);
+      setLoading(false);
+    };
+    load();
+  }, [fetchExpenses, filters]);
 
-  return { expenses, loading: !loaded, addExpense, deleteExpense };
+  return { expenses, loading, addExpense, deleteExpense, filters, setFilters };
 }
