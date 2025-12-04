@@ -12,13 +12,17 @@ import {
   errorResponse,
   forbidden,
   notFound,
+  successResponse,
 } from "@/src/lib/response";
 import { jobQueue } from "@/src/lib/queue";
 import {
   ExpenseBodySchema,
+  GetExpensesQuerySchema,
   validateAndProcessExpense,
 } from "@/src/services/expenseService";
 import { balanceService } from "@/src/services/balanceService";
+import { formatPublicUser } from "@/src/lib/formatter";
+import { Prisma } from "@prisma/client";
 
 Decimal.set({ precision: 12 });
 
@@ -169,5 +173,190 @@ const postHandler = async (
     return errorResponse("Internal server error");
   }
 };
+
+/**
+ * GET /expenses
+ * Retrieves expenses with pagination, filtering, and search.
+ * Context-aware:
+ * - If group_id provided: Returns expenses for that group (verifies membership).
+ * - If friend_id provided: Returns expenses between user and friend.
+ * - Global: Returns all expenses involving the user.
+ */
+const getHandler = async (
+  request: NextRequest,
+  payload: { userId: string }
+) => {
+  try {
+    const { userId } = payload;
+
+    // Parse Query Parameters
+    const { searchParams } = new URL(request.url);
+    const rawQuery = Object.fromEntries(searchParams.entries());
+
+    const query = GetExpensesQuerySchema.safeParse(rawQuery);
+
+    if (!query.success) {
+      return badRequest("Invalid query parameters", query.error.issues);
+    }
+
+    const {
+      page,
+      limit,
+      search,
+      group_id,
+      friend_id,
+      category,
+      from_date,
+      to_date,
+      min_amount,
+      max_amount,
+      sort_by,
+      sort_order,
+    } = query.data;
+
+    // Build the 'Where' Clause
+    const whereClause: Prisma.ExpenseWhereInput = {
+      status: "ACTIVE",
+    };
+
+    if (group_id) {
+      const membership = await prisma.groupMember.findUnique({
+        where: {
+          group_id_user_id: { group_id, user_id: userId },
+        },
+      });
+
+      if (!membership) {
+        return errorResponse(
+          "You are not a member of this group",
+          403,
+          "FORBIDDEN"
+        );
+      }
+
+      whereClause.group_id = group_id;
+    } else if (friend_id) {
+      whereClause.group_id = null;
+      whereClause.OR = [
+        { created_by_id: userId, friend_id: friend_id },
+        { created_by_id: friend_id, friend_id: userId },
+      ];
+    } else {
+      whereClause.OR = [
+        { created_by_id: userId },
+        { payers: { some: { user_id: userId } } },
+        { splits: { some: { user_id: userId } } },
+      ];
+    }
+
+    // --- Filter Logic ---
+
+    if (category) {
+      whereClause.category = category;
+    }
+
+    if (from_date || to_date) {
+      whereClause.date = {};
+      if (from_date) whereClause.date.gte = from_date;
+      if (to_date) whereClause.date.lte = to_date;
+    }
+
+    if (min_amount || max_amount) {
+      whereClause.amount = {};
+      if (min_amount) whereClause.amount.gte = min_amount;
+      if (max_amount) whereClause.amount.lte = max_amount;
+    }
+
+    if (search) {
+      whereClause.description = {
+        contains: search,
+        mode: "insensitive", // Case insensitive search
+      };
+    }
+
+    // Execute Queries (Data + Count)
+    const skip = (page - 1) * limit;
+
+    const [total, expenses] = await Promise.all([
+      prisma.expense.count({ where: whereClause }),
+      prisma.expense.findMany({
+        where: whereClause,
+        take: limit,
+        skip: skip,
+        orderBy: {
+          [sort_by]: sort_order,
+        },
+        include: {
+          group: {
+            select: { id: true, name: true },
+          },
+          created_by: {
+            select: { id: true, name: true, avatar: true },
+          },
+          payers: {
+            include: {
+              user: { select: { id: true, name: true, avatar: true } },
+            },
+          },
+          splits: {
+            include: {
+              user: { select: { id: true, name: true, avatar: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    // 4. Format Response
+    const formattedExpenses = expenses.map((exp) => ({
+      id: exp.id,
+      description: exp.description,
+      amount: exp.amount,
+      currency: exp.currency,
+      date: exp.date,
+      category: exp.category,
+      receipt_url: exp.receipt_url,
+      split_type: exp.split_type,
+
+      // Context Info
+      group: exp.group ? { id: exp.group.id, name: exp.group.name } : null,
+      created_by: formatPublicUser(exp.created_by!),
+
+      // Details
+      payers: exp.payers.map((p) => ({
+        user: formatPublicUser(p.user),
+        amount: p.amount,
+      })),
+      splits: exp.splits.map((s) => ({
+        user: formatPublicUser(s.user),
+        amount_owed: s.amount_owed,
+      })),
+    }));
+
+    // Pagination Metadata
+    const totalPages = Math.ceil(total / limit);
+    const meta = {
+      total_items: total,
+      total_pages: totalPages,
+      current_page: page,
+      limit: limit,
+    };
+
+    return successResponse("Expenses fetched successfully", {
+      data: formattedExpenses,
+      meta,
+    });
+  } catch (error: any) {
+    console.error("Error fetching expenses:", error);
+
+    if (error.message.includes("token")) {
+      return errorResponse("Unauthorized", 401);
+    }
+
+    return errorResponse("Internal server error");
+  }
+};
+
+export const GET = withAuth(getHandler);
 
 export const POST = withAuth(postHandler);
