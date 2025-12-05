@@ -17,7 +17,7 @@ export const API_ENDPOINTS = {
   ME: `${API_BASE_URL}/api/users/me`,
   
   // Groups
-  GROUPS: `${API_BASE_URL}/api/groups`, // GET list, POST create
+  GROUPS: `${API_BASE_URL}/api/users/me/groups`,
   GROUP_DETAILS: (id: string) => `${API_BASE_URL}/api/groups/${id}`,
   GROUP_EXPENSES: (id: string) => `${API_BASE_URL}/api/groups/${id}/expenses`,
   

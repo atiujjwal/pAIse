@@ -5,7 +5,6 @@ import { z } from "zod";
 Decimal.set({ precision: 12 });
 
 import { GroupRole, SplitType } from "@prisma/client";
-import { jobQueue } from "@/src/lib/queue";
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
 import { checkGroupMembership } from "@/src/services/groupService";

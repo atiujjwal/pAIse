@@ -108,6 +108,7 @@ export async function meApi() {
 }
 
 // Groups
+// Get User Groups
 export async function getGroupsApi() {
   return await authorizedFetch(API_ENDPOINTS.GROUPS);
 }
@@ -129,12 +130,22 @@ export async function getExpensesApi(filters?: Record<string, any>) {
   }
 
   const result = await authorizedFetch(url.toString());
-  console.log("124: ", result);
   return result;
 }
 
 export async function createExpenseApi(expenseData: any) {
   return await authorizedFetch(API_ENDPOINTS.EXPENSES, { method: "POST", body: JSON.stringify(expenseData) });
+}
+
+export async function getExpenseDetailsApi(expenseId: string) {
+  return await authorizedFetch(API_ENDPOINTS.EXPENSE_DETAILS(expenseId));
+}
+
+export async function updateExpenseApi(expenseId: string, expenseData: any) {
+  return await authorizedFetch(API_ENDPOINTS.EXPENSE_DETAILS(expenseId), {
+    method: "PUT",
+    body: JSON.stringify(expenseData),
+  });
 }
 
 export async function deleteExpenseApi(expenseId: string) {

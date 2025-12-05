@@ -12,6 +12,7 @@ import {
   createExpenseApi,
   deleteExpenseApi,
   getDashboardSummaryApi,
+  updateExpenseApi,
 } from "../services/apiClient";
 
 const getInitialUser = () => {
@@ -23,7 +24,6 @@ const getInitialUser = () => {
     return null;
   }
 };
-
 
 type AuthSlice = {
   user: User | null;
@@ -42,6 +42,7 @@ type ExpensesSlice = {
   expenses: Expense[];
   fetchExpenses: (filters?: Record<string, any>) => Promise<void>;
   addExpense: (e: Omit<Expense, "id">) => Promise<string>;
+  updateExpense: (id: string, data: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
 };
 
@@ -65,6 +66,7 @@ export const useStore = create<
       throw err;
     }
   },
+
   register: async (email, password, name) => {
     try {
       const data = await registerApi(email, password, name);
@@ -75,6 +77,7 @@ export const useStore = create<
       throw err;
     }
   },
+
   logout: () => {
     logoutApi().catch((e) => console.warn("logout failed", e));
     set({ user: null });
@@ -84,12 +87,14 @@ export const useStore = create<
   groups: [],
   fetchGroups: async () => {
     try {
-      const groups = await getGroupsApi();
-      set({ groups });
+      const response = await getGroupsApi();
+      // The API returns { success, message, data: { data: [...] } }
+      set({ groups: response?.data?.data || [] });
     } catch (err) {
       console.error("Failed to fetch groups:", err);
     }
   },
+
   addGroup: async (g) => {
     try {
       const created = await createGroupApi(g);
@@ -111,6 +116,7 @@ export const useStore = create<
       console.error("Failed to fetch expenses:", err);
     }
   },
+
   addExpense: async (e) => {
     try {
       const response = await createExpenseApi(e);
@@ -122,6 +128,20 @@ export const useStore = create<
       throw err;
     }
   },
+
+  updateExpense: async (id, data) => {
+    try {
+      const response = await updateExpenseApi(id, data);
+      const updated = response.data;
+      set((state) => ({
+        expenses: state.expenses.map((e) => (e.id === id ? updated : e)),
+      }));
+    } catch (err) {
+      console.error("Failed to update expense:", err);
+      throw err;
+    }
+  },
+
   deleteExpense: async (id) => {
     try {
       const prev = get().expenses;
