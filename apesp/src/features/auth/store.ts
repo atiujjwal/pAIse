@@ -1,17 +1,19 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { User } from "@/src/types/api"; // Adjust path if needed
+import { User } from "@/src/types/api";
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
 
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   updateAccessToken: (token: string) => void;
-  logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  logout: () => void;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -21,11 +23,17 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      _hasHydrated: false,
 
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken, isAuthenticated: true }),
 
       updateAccessToken: (accessToken) => set({ accessToken }),
+
+      updateUser: (updates) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        })),
 
       logout: () =>
         set({
@@ -35,21 +43,20 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         }),
 
-      updateUser: (updates) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updates } : null,
-        })),
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      // FIXED: Added 'accessToken' and 'isAuthenticated' to the persistence list
       partialize: (state) => ({
+        accessToken: state.accessToken,
         refreshToken: state.refreshToken,
-        accessToken: state.accessToken, // Vital for surviving refresh
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

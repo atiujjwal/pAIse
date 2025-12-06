@@ -11,7 +11,8 @@ import {
   LogOut,
   Wallet,
 } from "lucide-react";
-import { useAuthStore } from "@/src/features/auth/store";
+
+import { useLogout } from "@/src/features/auth/api/auth-queries";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/Button";
 
@@ -26,7 +27,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const logout = useAuthStore((state) => state.logout);
+  const { mutate: logoutUser, isPending } = useLogout();
 
   return (
     <div className="flex h-full flex-col bg-white/50 backdrop-blur-md border-r border-white/20">
@@ -45,7 +46,12 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 space-y-2 px-4">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          // Ensure strict matching for dashboard root to avoid highlighting it on sub-pages
+          const isActive =
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(item.href);
+
           return (
             <Link
               key={item.href}
@@ -75,14 +81,12 @@ export function Sidebar() {
       <div className="p-6">
         <Button
           variant="ghost"
+          disabled={isPending} // Disable button while API is calling
           className="w-full justify-start gap-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-          onClick={() => {
-            logout();
-            window.location.href = "/auth/login";
-          }}
+          onClick={() => logoutUser()} // Call the mutation
         >
           <LogOut className="h-5 w-5" />
-          Log Out
+          {isPending ? "Logging out..." : "Log Out"}
         </Button>
       </div>
     </div>
