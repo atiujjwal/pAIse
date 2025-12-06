@@ -1,15 +1,13 @@
 import "./globals.css";
-import type { Metadata } from "next";
-import AuthProvider from "../src/providers/AuthProvider";
+import { Inter } from "next/font/google";
+import { Providers } from "./providers";
 
-export const metadata: Metadata = {
-  title: "pAIse",
-  description: "AI-powered expense sharing and insights",
-  icons: {
-    icon: "/favicons/apple-touch-icon.png",
-  },
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+  title: "pAIse - AI Expense Manager",
+  description: "Smart splitting and expense tracking",
 };
-
 
 export default function RootLayout({
   children,
@@ -17,9 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="custom-scrollbar">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        {/* The Providers component MUST wrap the children here */}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
