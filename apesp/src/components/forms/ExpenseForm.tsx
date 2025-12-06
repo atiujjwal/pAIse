@@ -1,257 +1,213 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useForm } from "react-hook-form";
+import { Loader2 } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createExpenseSchema, CreateExpenseInput } from "@/src/lib/schemas";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/src/lib/api";
 import { useRouter } from "next/navigation";
-import { useStore } from "../../store";
-import Card from "../ui/Card";
-import { EXPENSE_CATEGORIES } from "../../lib/constants";
-import { toast } from "react-hot-toast";
-import { Input } from "../ui/Input";
-import { Button } from "../ui/Button";
+import { useToastStore } from "@/src/hooks/use-toast";
+import { Button } from "@/src/components/ui/Button";
+import { Input } from "@/src/components/ui/Input";
+import { Label } from "@/src/components/ui/label";
+import { useGroupsList } from "@/src/features/groups/api/group-list-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
 
-interface ExpenseFormProps {
-  initialData?: any;
-  isEditing?: boolean;
-}
-
-const SPLIT_TYPES = [
-  { id: "EQUAL", label: "Equal Split (=)" },
-  { id: "EXACT", label: "Exact Amount (₹)" },
-  { id: "PERCENTAGE", label: "Percentage (%)" },
-  { id: "SHARE", label: "Shares (Units)" },
-];
-
-export default function ExpenseForm({
-  initialData,
-  isEditing,
-}: ExpenseFormProps) {
+export default function ExpenseForm() {
   const router = useRouter();
-  const { user, addExpense, updateExpense, groups, fetchGroups } = useStore();
-  const [loading, setLoading] = useState(false);
+  const { addToast } = useToastStore();
+  const queryClient = useQueryClient();
 
-  // Form State
-  const [formData, setFormData] = useState({
-    description: "",
-    amount: "",
-    category: "OTHER",
-    date: new Date().toISOString().split("T")[0],
-    group_id: "",
-    split_type: "EQUAL",
+  // 1. Fetch Groups Data
+  const { data: groups, isLoading: loadingGroups } = useGroupsList();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateExpenseInput>({
+    resolver: zodResolver(createExpenseSchema),
+    defaultValues: {
+      amount: "",
+      description: "",
+      date: new Date().toISOString().split("T")[0],
+      split_type: "EQUAL",
+      currency: "INR",
+      group_id: null, // Default to Personal
+    },
   });
 
-  useEffect(() => {
-    fetchGroups();
-    if (initialData) {
-      setFormData({
-        description: initialData.description || "",
-        amount: initialData.amount || "",
-        category: initialData.category || "OTHER",
-        date: new Date(initialData.date).toISOString().split("T")[0],
-        group_id: initialData.group?.id || "",
-        split_type: initialData.split_type || "EQUAL",
-      });
-    }
-  }, [initialData, fetchGroups]);
+  // Watch group_id to update UI state if needed
+  const selectedGroupId = watch("group_id");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setLoading(true);
-
-    try {
-      if (isEditing && initialData?.id) {
-        // Edit Mode: Send only changed fields or necessary structure
-        const payload: any = {};
-
-        // Check for changes
-        if (formData.description !== initialData.description)
-          payload.description = formData.description;
-        if (formData.amount !== initialData.amount)
-          payload.amount = formData.amount;
-        if (new Date(formData.date).toISOString() !== initialData.date)
-          payload.date = new Date(formData.date).toISOString();
-        if (formData.category !== initialData.category)
-          payload.category = formData.category;
-        if (formData.split_type !== initialData.split_type)
-          payload.split_type = formData.split_type;
-
-        // Note: Group ID cannot be changed in Edit mode per API rules, so we skip sending it.
-
-        await updateExpense(initialData.id, payload);
-        toast.success("Expense updated");
-      } else {
-        // Create Mode
-        const payload: any = {
-          description: formData.description,
-          amount: formData.amount,
-          category: formData.category,
-          date: new Date(formData.date).toISOString(),
-          split_type: formData.split_type,
-          // Default: Current user pays full amount
-          payers: [{ user_id: user.id, amount: formData.amount }],
-          // Default: Split based on split_type (Simplified to EQUAL/Self for MVP)
-          splits: [{ user_id: user.id, amount_owed: formData.amount }],
-        };
-
-        if (formData.group_id) {
-          payload.group_id = formData.group_id;
-        }
-
-        await addExpense(payload);
-        toast.success("Expense created");
-      }
+  const mutation = useMutation({
+    mutationFn: async (data: CreateExpenseInput) => {
+      // Ensure group_id is null if "Personal" is selected (string "null" handling)
+      const payload = {
+        ...data,
+        group_id: data.group_id === "personal" ? null : data.group_id,
+        // For MVP, if no payers defined, assume current user paid full amount
+        // This logic handles the basic form submission
+        payers: [{ user_id: "me", amount: data.amount }],
+        splits: [], // Backend or Wizard logic calculates splits
+      };
+      await api.post("/expenses", payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      addToast("Expense created successfully", "success");
       router.push("/dashboard/expenses");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save expense");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Helper to determine what to show for the "Group/Context" field
-  const renderContextField = () => {
-    if (isEditing) {
-      // In Edit mode, Group/Friend is uneditable. Show a readonly input.
-      let contextValue = "Personal Expense";
-      if (initialData?.group) {
-        contextValue = `Group: ${initialData.group.name}`;
-      } else if (initialData?.friend_id) {
-        // If friend name isn't directly in initialData root, we might need to find it in splits
-        // For now, assuming friend_id implies a friend context
-        contextValue = "Friend Expense";
-      }
-
-      return (
-        <div>
-          <label className="block text-sm font-medium text-mono-700 mb-1.5">
-            Context (Uneditable)
-          </label>
-          <input
-            disabled
-            value={contextValue}
-            className="w-full h-10 px-3 rounded-lg border border-mono-200 bg-mono-50 text-mono-500 cursor-not-allowed"
-          />
-        </div>
-      );
-    }
-
-    // In Create mode, show Group Selector
-    return (
-      <div>
-        <label className="block text-sm font-medium text-mono-700 mb-1.5">
-          Group (Optional)
-        </label>
-        <select
-          className="w-full h-10 px-3 rounded-lg border border-mono-300 bg-white text-mono-900 focus:outline-none focus:ring-2 focus:ring-mono-200"
-          value={formData.group_id}
-          onChange={(e) =>
-            setFormData({ ...formData, group_id: e.target.value })
-          }
-        >
-          <option value="">Personal (No Group)</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-mono-500 mt-1">
-          *Select a group to split with members.
-        </p>
-      </div>
-    );
-  };
+    },
+    onError: (error: any) => {
+      addToast(error?.message || "Failed to create expense", "error");
+    },
+  });
 
   return (
-    <Card className="max-w-2xl mx-auto p-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Row 1: Description & Amount */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form
+      onSubmit={handleSubmit((data) => mutation.mutate(data))}
+      className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
+    >
+      {/* Description & Amount Row */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Description</Label>
           <Input
-            label="Description"
+            {...register("description")}
             placeholder="e.g. Dinner at Taj"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            required
+            disabled={isSubmitting}
           />
+          {errors.description && (
+            <p className="text-xs text-destructive">
+              {errors.description.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Amount (INR)</Label>
           <Input
-            label="Amount (₹)"
+            {...register("amount")}
             type="number"
             step="0.01"
             placeholder="0.00"
-            value={formData.amount}
-            onChange={(e) =>
-              setFormData({ ...formData, amount: e.target.value })
+            disabled={isSubmitting}
+          />
+          {errors.amount && (
+            <p className="text-xs text-destructive">{errors.amount.message}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Category & Date Row */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select
+            onValueChange={(val) => setValue("category", val)}
+            defaultValue="General"
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Food">Food & Drink</SelectItem>
+              <SelectItem value="Travel">Travel</SelectItem>
+              <SelectItem value="Entertainment">Entertainment</SelectItem>
+              <SelectItem value="Utilities">Utilities</SelectItem>
+              <SelectItem value="General">General</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.category && (
+            <p className="text-xs text-destructive">
+              {errors.category.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Date</Label>
+          <Input {...register("date")} type="date" disabled={isSubmitting} />
+        </div>
+      </div>
+
+      {/* Split Type & Group Row */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Split Type</Label>
+          <Select
+            onValueChange={(val: any) => setValue("split_type", val)}
+            defaultValue="EQUAL"
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select Split" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EQUAL">Equal Split (=)</SelectItem>
+              <SelectItem value="EXACT">Exact Amounts</SelectItem>
+              <SelectItem value="PERCENTAGE">Percentage (%)</SelectItem>
+              <SelectItem value="SHARE">Shares</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Group (Optional)</Label>
+
+          {/* GROUP SELECTION DROPDOWN */}
+          <Select
+            onValueChange={(val) =>
+              setValue("group_id", val === "personal" ? null : val)
             }
-            required
-          />
-        </div>
+            defaultValue="personal"
+            disabled={loadingGroups}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a group" />
+            </SelectTrigger>
+            <SelectContent>
+              {/* Default Option */}
+              <SelectItem value="personal">Personal (No Group)</SelectItem>
 
-        {/* Row 2: Category & Date */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-mono-700 mb-1.5">
-              Category
-            </label>
-            <select
-              className="w-full h-10 px-3 rounded-lg border border-mono-300 bg-white text-mono-900 focus:outline-none focus:ring-2 focus:ring-mono-200"
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-            >
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.label}
-                </option>
+              {/* Dynamic Options from API */}
+              {groups?.map((group) => (
+                <SelectItem key={group.id} value={group.id}>
+                  {group.name}
+                </SelectItem>
               ))}
-            </select>
-          </div>
-          <Input
-            label="Date"
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            required
-          />
-        </div>
+            </SelectContent>
+          </Select>
 
-        {/* Row 3: Split Type & Context */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-mono-700 mb-1.5">
-              Split Type
-            </label>
-            <select
-              className="w-full h-10 px-3 rounded-lg border border-mono-300 bg-white text-mono-900 focus:outline-none focus:ring-2 focus:ring-mono-200"
-              value={formData.split_type}
-              onChange={(e) =>
-                setFormData({ ...formData, split_type: e.target.value })
-              }
-            >
-              {SPLIT_TYPES.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Dynamic Context Field (Group/Friend) */}
-          {renderContextField()}
+          <p className="text-[10px] text-muted-foreground">
+            *Select a group to split with members.
+          </p>
         </div>
+      </div>
 
-        {/* Submit Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-mono-100">
-          <Button type="button" variant="ghost" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={loading}>
-            {isEditing ? "Save Changes" : "Create Expense"}
-          </Button>
-        </div>
-      </form>
-    </Card>
+      <div className="flex justify-end gap-4 pt-4">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => router.back()}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting ? "Saving..." : "Create Expense"}
+        </Button>
+      </div>
+    </form>
   );
 }

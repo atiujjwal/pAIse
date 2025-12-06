@@ -9,11 +9,11 @@ import {
   PieChart,
   Settings,
   LogOut,
+  Wallet,
 } from "lucide-react";
 import { useAuthStore } from "@/src/features/auth/store";
 import { cn } from "@/src/lib/utils";
-import { Button } from "../ui/Button";
-
+import { Button } from "@/src/components/ui/Button";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -29,38 +29,56 @@ export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
 
   return (
-    <div className="flex h-full flex-col gap-2 p-4">
-      <div className="flex h-12 items-center px-2">
-        <span className="text-xl font-bold tracking-tight text-primary">
-          pAIse
-        </span>
+    <div className="flex h-full flex-col bg-card border-r">
+      {/* Brand Header */}
+      <div className="flex h-20 items-center px-6 border-b">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            pAIse
+          </span>
+        </div>
       </div>
 
-      <nav className="flex-1 space-y-1 py-4">
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 p-4">
+        <p className="px-4 text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+          Menu
+        </p>
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon
+                className={cn(
+                  "h-5 w-5 transition-colors",
+                  isActive
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground group-hover:text-foreground"
+                )}
+              />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t pt-4">
+      {/* Footer Actions */}
+      <div className="p-4 border-t bg-muted/20">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           onClick={() => {
             logout();
             window.location.href = "/auth/login";
