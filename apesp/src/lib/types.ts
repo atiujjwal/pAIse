@@ -4,6 +4,7 @@ export type User = {
   email: string;
   avatarUrl?: string;
   currency: string;
+  timezone?: string;
 };
 
 export type Group = {
