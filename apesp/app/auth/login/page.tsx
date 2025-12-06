@@ -3,22 +3,27 @@ import Link from "next/link";
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-      <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">
-          Enter your email to sign in to your account
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          Welcome back
+        </h1>
+        <p className="text-muted-foreground">
+          Sign in to access your dashboard
         </p>
       </div>
+
       <LoginForm />
-      <p className="px-8 text-center text-sm text-muted-foreground">
+
+      <div className="text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{" "}
         <Link
           href="/auth/register"
-          className="hover:text-brand underline underline-offset-4"
+          className="font-semibold text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
         >
-          Don&apos;t have an account? Sign Up
+          Sign up
         </Link>
-      </p>
+      </div>
     </div>
   );
 }
