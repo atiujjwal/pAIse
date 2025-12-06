@@ -17,11 +17,11 @@ import { Button } from "../ui/Button";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Expenses", href: "/expenses", icon: Receipt },
-  { label: "Groups", href: "/groups", icon: Users },
-  { label: "Friends", href: "/friends", icon: Users },
-  { label: "Analytics", href: "/analytics", icon: PieChart },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Expenses", href: "/dashboard/expenses", icon: Receipt },
+  { label: "Groups", href: "/dashboard/groups", icon: Users },
+  { label: "Friends", href: "/dashboard/friends", icon: Users },
+  { label: "Analytics", href: "/dashboard/analytics", icon: PieChart },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar() {

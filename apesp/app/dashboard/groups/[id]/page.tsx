@@ -55,7 +55,7 @@ export default function GroupDetailsPage() {
             </Button>
           )}
           <Button asChild>
-            <Link href={`/expenses/create?groupId=${groupId}`}>
+            <Link href={`dashboard/expenses/new?groupId=${groupId}`}>
               Add Expense
             </Link>
           </Button>

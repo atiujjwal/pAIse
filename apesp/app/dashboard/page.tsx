@@ -23,7 +23,7 @@ export default function DashboardPage() {
             Create Group
           </Button>
           <Button asChild>
-            <Link href="/expenses/create">
+            <Link href="dashboard/expenses/new">
               <Plus className="mr-2 h-4 w-4" />
               Add Expense
             </Link>
@@ -31,7 +31,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Summary Stats */}
+      {/* Summary Stats */} 
       <StatsCards />
 
       {/* Main Content Split */}
@@ -48,7 +48,7 @@ export default function DashboardPage() {
           <div className="rounded-xl border bg-card p-6 text-center text-muted-foreground">
             <p>Check the "Friends" tab for detailed debt breakdowns.</p>
             <Button variant="link" asChild className="mt-2">
-              <Link href="/friends">View Friends</Link>
+              <Link href="dashboard/friends">View Friends</Link>
             </Button>
           </div>
         </div>

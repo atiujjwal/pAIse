@@ -19,17 +19,18 @@ export default function ExpensesPage() {
     queryKey: ["expenses", "all", search],
     queryFn: async () => {
       // Integration: GET /expenses with search/filter
-      const { data } = await api.get<ApiResponse<{ items: any[] }>>(
+      // Updated Type: ApiResponse<{ data: any[], meta: any }>
+      const { data } = await api.get<ApiResponse<{ data: any[] }>>(
         "api/expenses",
         {
           params: {
             limit: 20,
-            // Assuming backend supports simple text search on description
             search: search || undefined,
           },
         }
       );
-      return data.data!.items;
+      // Updated: Access .data.data instead of .data.items
+      return data.data!.data;
     },
     keepPreviousData: true,
   });
@@ -39,7 +40,7 @@ export default function ExpensesPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
         <Button asChild>
-          <Link href="/expenses/create">
+          <Link href="dashboard/expenses/new">
             <Plus className="mr-2 h-4 w-4" /> Add Expense
           </Link>
         </Button>
@@ -78,7 +79,7 @@ export default function ExpensesPage() {
             {data?.map((expense) => (
               <Link
                 key={expense.id}
-                href={`/expenses/${expense.id}`}
+                href={`dashboard/expenses/${expense.id}`}
                 className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
               >
                 <div className="flex flex-col gap-1">

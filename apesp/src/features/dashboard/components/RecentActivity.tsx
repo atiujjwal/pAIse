@@ -1,13 +1,13 @@
 "use client";
 
-
-import { useRecentExpenses } from "@/src/components/dashboard/api/dashboard-queries";
 import { Receipt, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "../../auth/store";
+import { useRecentExpenses } from "@/src/components/dashboard/api/dashboard-queries";
+import { Skeleton } from "@/src/components/ui/Skeleton";
 import { formatCurrency } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/Button";
-import { Skeleton } from "@/src/components/ui/Skeleton";
+
 
 export function RecentActivity() {
   const { data: expenses, isLoading } = useRecentExpenses();
@@ -35,18 +35,17 @@ export function RecentActivity() {
   return (
     <div className="space-y-3">
       {expenses.map((expense) => {
-        // Logic to determine context: "Did I pay?" vs "Am I involved?"
+        // FIXED: Accessing nested user.id instead of user_id
         const myPayerRecord = expense.payers.find(
-          (p: any) => p.user_id === user?.id
+          (p: any) => p.user.id === user?.id
         );
         const mySplitRecord = expense.splits.find(
-          (s: any) => s.user_id === user?.id
+          (s: any) => s.user.id === user?.id
         );
 
         const didIPay = !!myPayerRecord;
         const amISplit = !!mySplitRecord;
 
-        // Simple heuristic for display text
         let actionText = "involved in";
         let amountDisplay = expense.amount;
         let colorClass = "text-muted-foreground";
@@ -54,16 +53,16 @@ export function RecentActivity() {
 
         if (didIPay && !amISplit) {
           actionText = "you lent";
-          amountDisplay = expense.amount; // You paid full
+          amountDisplay = expense.amount;
           colorClass = "text-green-600";
           Icon = ArrowUpRight;
         } else if (!didIPay && amISplit) {
           actionText = "you borrowed";
+          // FIXED: Accessing nested amount_owed
           amountDisplay = mySplitRecord.amount_owed;
           colorClass = "text-red-600";
           Icon = ArrowDownLeft;
         } else if (didIPay && amISplit) {
-          // You paid for everyone, including yourself
           const lentAmount = (
             parseFloat(expense.amount) - parseFloat(mySplitRecord.amount_owed)
           ).toFixed(2);
@@ -106,7 +105,10 @@ export function RecentActivity() {
                   : colorClass === "text-red-600"
                   ? "-"
                   : ""}
-                {formatCurrency(String(amountDisplay), expense.currency)}
+                {formatCurrency(
+                  String(amountDisplay),
+                  expense.currency || "INR"
+                )}
               </p>
               <p className="text-xs text-muted-foreground">{actionText}</p>
             </div>
@@ -119,9 +121,8 @@ export function RecentActivity() {
         variant="ghost"
         className="w-full text-xs text-muted-foreground"
       >
-        <Link href="/expenses">View All History</Link>
+        <Link href="dashboard/expenses">View All History</Link>
       </Button>
     </div>
   );
 }
-

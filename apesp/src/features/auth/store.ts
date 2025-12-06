@@ -1,15 +1,13 @@
-import { User } from "@/src/lib/types";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-
+import { User } from "@/src/types/api"; // Adjust path if needed
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null; // Stored in LS as per blueprint Section 3.2
+  refreshToken: string | null;
   isAuthenticated: boolean;
 
-  // Actions
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   updateAccessToken: (token: string) => void;
   logout: () => void;
@@ -43,14 +41,14 @@ export const useAuthStore = create<AuthState>()(
         })),
     }),
     {
-      name: "auth-storage", // key in localStorage
+      name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      // Only persist refresh token and user. Access token is ephemeral but
-      // for simplicity in this architecture we persist all to recover session on refresh.
-      // Ideally access token is memory-only, but Next.js SSR hydration makes that tricky without cookies.
+      // FIXED: Added 'accessToken' and 'isAuthenticated' to the persistence list
       partialize: (state) => ({
         refreshToken: state.refreshToken,
+        accessToken: state.accessToken, // Vital for surviving refresh
         user: state.user,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

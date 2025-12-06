@@ -34,7 +34,7 @@ export function UserSearch({
       const res = await api.get<ApiResponse<{ users: User[] }>>(
         "api/users/search",
         {
-          params: { q: debouncedQuery },
+          params: { query: debouncedQuery },
         }
       );
       return res.data.data?.users || [];

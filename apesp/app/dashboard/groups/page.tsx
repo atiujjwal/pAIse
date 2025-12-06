@@ -60,7 +60,7 @@ export default function GroupsListPage() {
           {groups?.map((group) => (
             <Link
               key={group.id}
-              href={`/groups/${group.id}`}
+              href={`groups/${group.id}`}
               className="group relative flex flex-col justify-between rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
             >
               <div>

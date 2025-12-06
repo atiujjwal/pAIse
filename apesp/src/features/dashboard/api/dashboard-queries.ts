@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/lib/api";
 import { ApiResponse } from "@/src/types/api";
+import { useQuery } from "@tanstack/react-query";
 
-// FIXED: Matches your specific API JSON response
+// Matches the JSON you provided
 interface DashboardSummary {
   total_balance: number;
   monthly_metrics: {
@@ -13,13 +13,15 @@ interface DashboardSummary {
   };
   spending_by_category: any[];
   upcoming_subscriptions: any[];
+  // The summary endpoint returns a simplified list, but we use the /expenses endpoint for the detailed feed
   recent_expenses: any[];
 }
 
 export const useDashboardSummary = () => {
-  const result = useQuery({
+  const result =  useQuery({
     queryKey: ["dashboard", "summary"],
     queryFn: async () => {
+    //   [cite_start]; // Integration: GET /api/dashboard/summary [cite: 196]
       const { data } = await api.get<ApiResponse<DashboardSummary>>(
         "api/dashboard/summary"
       );
@@ -27,7 +29,8 @@ export const useDashboardSummary = () => {
     },
     staleTime: 1000 * 60 * 5,
   });
-
+  console.log("32: ", result);
+  
   return result;
 };
 
@@ -35,7 +38,8 @@ export const useRecentExpenses = () => {
   return useQuery({
     queryKey: ["expenses", "recent"],
     queryFn: async () => {
-      // Matches the nested { data: { data: [...] } } structure
+    //   [cite_start]; // Integration: GET /api/expenses?limit=5 [cite: 319]
+      // FIXED: Accessing data.data.data based on your JSON response
       const { data } = await api.get<ApiResponse<{ data: any[] }>>(
         "api/expenses",
         {
