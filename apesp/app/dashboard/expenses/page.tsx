@@ -1,168 +1,115 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
-import {
-  Plus,
-  Search as SearchIcon,
-  Filter,
-  MoreVertical,
-  Pencil,
-  Trash2,
-  Receipt,
-} from "lucide-react";
+
+import { Button } from "@/src/components/ui/Button";
+import { Input } from "@/src/components/ui/Input";
+import { Skeleton } from "@/src/components/ui/Skeleton";
+import { api } from "@/src/lib/api";
+import { formatCurrency } from "@/src/lib/utils";
+import { ApiResponse } from "@/src/types/api";
+import { useQuery } from "@tanstack/react-query";
+
+import { Plus, Search, Filter } from "lucide-react";
 import Link from "next/link";
-import useExpenses from "../../../src/hooks/useExpenses";
-import Loading from "../../../src/components/ui/Loading";
-import Button from "../../../src/components/ui/Button";
-import Card from "../../../src/components/ui/Card";
-import Input from "../../../src/components/ui/Input";
-import EmptyState from "../../../src/components/ui/EmptyState";
-import Badge from "../../../src/components/ui/Badge";
-import { formatAmount } from "../../../src/lib/utils";
+import { useState } from "react";
 
 export default function ExpensesPage() {
-  const { expenses, loading, deleteExpense, setFilters } = useExpenses();
-
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("All");
 
-  useEffect(() => {
-    const newFilters: Record<string, any> = {};
-    if (search) newFilters.search = search;
-    if (category !== "All") newFilters.category = category;
-    setFilters(newFilters);
-  }, [search, category, setFilters]);
-
-  if (loading) return <Loading fullScreen />;
+  const { data, isLoading } = useQuery({
+    queryKey: ["expenses", "all", search],
+    queryFn: async () => {
+      // Integration: GET /expenses with search/filter
+      const { data } = await api.get<ApiResponse<{ items: any[] }>>(
+        "api/expenses",
+        {
+          params: {
+            limit: 20,
+            // Assuming backend supports simple text search on description
+            search: search || undefined,
+          },
+        }
+      );
+      return data.data!.items;
+    },
+    keepPreviousData: true,
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-mono-900">Expenses</h1>
-          <p className="text-mono-600 mt-1">
-            Track and manage all your expenses
-          </p>
-        </div>
-        <Link href="/dashboard/expenses/new">
-          <Button leftIcon={<Plus className="w-4 h-4" />}>Add Expense</Button>
-        </Link>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
+        <Button asChild>
+          <Link href="/expenses/create">
+            <Plus className="mr-2 h-4 w-4" /> Add Expense
+          </Link>
+        </Button>
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search by description..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              leftIcon={<SearchIcon className="w-4 h-4" />}
-            />
-          </div>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="h-10 px-4 rounded-lg border border-mono-300 bg-white text-mono-900 focus:outline-none focus:ring-2 focus:ring-mono-400"
-          >
-            {[
-              "All",
-              "DINING",
-              "TRAVEL",
-              "SHOPPING",
-              "GROCERIES",
-              "UTILITIES",
-              "OTHER",
-            ].map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </div>
-      </Card>
-
-      <Card className="p-0 overflow-hidden">
-        {expenses.length === 0 ? (
-          <EmptyState
-            icon={<Receipt className="w-16 h-16" />}
-            title="No expenses found"
-            description="Start tracking your expenses by adding your first entry."
-            action={{
-              label: "Add Expense",
-              onClick: () => (window.location.href = "/dashboard/expenses/new"),
-            }}
+      {/* Filters Toolbar */}
+      <div className="flex gap-2">
+        <div className="relative flex-1 md:max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search expenses..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+        <Button variant="outline" size="icon">
+          <Filter className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Expenses List */}
+      <div className="rounded-md border bg-card">
+        {isLoading ? (
+          <div className="p-4 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : data?.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground">
+            No expenses found matching your criteria.
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-mono-50 border-b border-mono-200">
-                <tr>
-                  {[
-                    "Date",
-                    "Description",
-                    "Category",
-                    "Amount",
-                    "Paid By",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-6 py-3 text-left text-xs font-medium text-mono-600 uppercase tracking-wider"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-mono-200">
-                {expenses.map((exp) => (
-                  <tr
-                    key={exp.id}
-                    className="hover:bg-mono-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-mono-900">
-                      {new Date(exp.date).toLocaleDateString("en-IN", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-mono-900 truncate max-w-xs">
-                        {exp.description}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge>{exp.category}</Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-mono-900">
-                      {formatAmount(exp.amount, exp.currency)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-mono-600">
-                      {exp.payers?.[0]?.user?.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`/dashboard/expenses/${exp.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteExpense(exp.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="divide-y">
+            {data?.map((expense) => (
+              <Link
+                key={expense.id}
+                href={`/expenses/${expense.id}`}
+                className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{expense.description}</span>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                      {expense.category}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(expense.date).toLocaleDateString()}
+                    {expense.group_id && " • Group Expense"}
+                  </span>
+                </div>
+
+                <div className="text-right">
+                  <div className="font-bold">
+                    {formatCurrency(expense.amount, expense.currency)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {/* Simplified status for list view */}
+                    {expense.payers.length > 1
+                      ? `${expense.payers.length} payers`
+                      : `paid by ${expense.payers[0]?.user?.name || "someone"}`}
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
