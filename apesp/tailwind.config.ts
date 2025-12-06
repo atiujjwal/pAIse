@@ -18,59 +18,50 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        // Ensuring numbers align perfectly in tables/lists
+        mono: ["var(--font-geist-mono)", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        // The "Soft Vivid Violet" Primary
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "hsl(250, 95%, 65%)",
+          foreground: "#ffffff",
+          soft: "hsl(250, 95%, 96%)",
         },
+        // The "Emerald" Secondary (Money/Success)
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "hsl(160, 84%, 39%)",
+          foreground: "#ffffff",
+          soft: "hsl(160, 84%, 96%)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "hsl(0, 84%, 60%)",
+          foreground: "#ffffff",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "hsl(210, 40%, 96.1%)",
+          foreground: "hsl(215.4, 16.3%, 46.9%)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "hsl(0, 0%, 100%)",
+          foreground: "hsl(222.2, 84%, 4.9%)",
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "16px", // Softer curves (Squircle-ish)
+        md: "12px",
+        sm: "8px",
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+      boxShadow: {
+        // The "Soft" shadow defined in your philosophy
+        soft: "0 10px 40px -10px rgba(0,0,0,0.08)",
+        glow: "0 0 20px -5px hsl(250, 95%, 65%, 0.3)",
       },
     },
   },
