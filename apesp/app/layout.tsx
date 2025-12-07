@@ -1,8 +1,9 @@
 import "./globals.css";
-import { Inter } from "next/font/google";
+// REMOVED: import { Inter } from 'next/font/google';
 import { Providers } from "./providers";
+import { cn } from "@/src/lib/utils";
 
-const inter = Inter({ subsets: ["latin"] });
+// REMOVED: const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: "pAIse - AI Expense Manager",
@@ -16,8 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        {/* The Providers component MUST wrap the children here */}
+      {/* FIXED: Replaced inter.className with standard Tailwind classes */}
+      {/* "font-sans" uses the native system font stack (San Francisco, Segoe UI, etc.) */}
+      <body className={cn("min-h-screen bg-background font-sans antialiased")}>
         <Providers>{children}</Providers>
       </body>
     </html>

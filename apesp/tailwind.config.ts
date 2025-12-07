@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { fontFamily } from "tailwindcss/defaultTheme";
 
 const config = {
   darkMode: ["class"],
@@ -19,8 +20,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // Ensuring numbers align perfectly in tables/lists
-        mono: ["var(--font-geist-mono)", "monospace"],
+        // FIXED: Ensure sans stack falls back to standard system fonts
+        sans: ["var(--font-sans)", ...fontFamily.sans],
+        mono: ["var(--font-mono)", ...fontFamily.mono],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -28,13 +30,11 @@ const config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        // The "Soft Vivid Violet" Primary
         primary: {
           DEFAULT: "hsl(250, 95%, 65%)",
           foreground: "#ffffff",
           soft: "hsl(250, 95%, 96%)",
         },
-        // The "Emerald" Secondary (Money/Success)
         secondary: {
           DEFAULT: "hsl(160, 84%, 39%)",
           foreground: "#ffffff",
@@ -52,14 +52,14 @@ const config = {
           DEFAULT: "hsl(0, 0%, 100%)",
           foreground: "hsl(222.2, 84%, 4.9%)",
         },
+        // ... any other custom colors you added
       },
       borderRadius: {
-        lg: "16px", // Softer curves (Squircle-ish)
+        lg: "16px",
         md: "12px",
         sm: "8px",
       },
       boxShadow: {
-        // The "Soft" shadow defined in your philosophy
         soft: "0 10px 40px -10px rgba(0,0,0,0.08)",
         glow: "0 0 20px -5px hsl(250, 95%, 65%, 0.3)",
       },
