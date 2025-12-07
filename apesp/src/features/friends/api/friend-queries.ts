@@ -1,11 +1,9 @@
-import { useToastStore } from "@/src/hooks/use-toast";
-import { api } from "@/src/lib/api";
-import { User } from "@/src/lib/types";
-import { ApiResponse } from "@/src/types/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/src/lib/api";
+import { ApiResponse, User } from "@/src/types/api";
+import { useToastStore } from "@/src/hooks/use-toast";
 
-
-interface FriendshipRequest {
+export interface FriendshipRequest {
   id: string;
   requester: User;
   status: "PENDING";
@@ -17,7 +15,7 @@ export const useFriends = () => {
   return useQuery({
     queryKey: ["friends", "list"],
     queryFn: async () => {
-      // Integration: GET /api/friends [cite: 127]
+      // Integration: GET /api/friends
       const { data } = await api.get<ApiResponse<{ friends: User[] }>>(
         "api/friends"
       );
@@ -31,7 +29,7 @@ export const useFriendRequests = () => {
   return useQuery({
     queryKey: ["friends", "requests"],
     queryFn: async () => {
-      // Integration: GET /api/friends/requests [cite: 122]
+      // Integration: GET /api/friends/requests
       const { data } = await api.get<
         ApiResponse<{ requests: FriendshipRequest[] }>
       >("api/friends/requests");
@@ -46,21 +44,16 @@ export const useFriendActions = () => {
   const { addToast } = useToastStore();
 
   const handleSuccess = (msg: string) => {
+    // Invalidate both lists so UI updates immediately
     queryClient.invalidateQueries({ queryKey: ["friends"] });
     addToast(msg, "success");
   };
 
   const sendRequest = useMutation({
-    mutationFn: async (email: string) => {
-      // Search first to get ID (Simplified flow)
-      const searchRes = await api.get("api/users/search", {
-        params: { q: email },
-      });
-      const user = searchRes.data.data.users[0];
-      if (!user) throw new Error("User not found");
-
-      // Integration: POST /api/friends/requests [cite: 121]
-      await api.post("api/friends/requests", { addressee_id: user.id });
+    mutationFn: async (userId: string) => {
+      // Integration: POST /api/friends/requests
+      // Payload: { addressee_id: "userId" }
+      await api.post("api/friends/requests", { addressee_id: userId });
     },
     onSuccess: () => handleSuccess("Friend request sent!"),
     onError: (err: any) =>
@@ -69,7 +62,7 @@ export const useFriendActions = () => {
 
   const acceptRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      // Integration: POST /api/friends/requests/:id/accept [cite: 123]
+      // Integration: POST /api/friends/requests/:id/accept
       await api.post(`api/friends/requests/${requestId}/accept`);
     },
     onSuccess: () => handleSuccess("Friend request accepted!"),
@@ -77,7 +70,7 @@ export const useFriendActions = () => {
 
   const rejectRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      // Integration: DELETE /api/friends/requests/:id/reject [cite: 124]
+      // Integration: DELETE /api/friends/requests/:id/reject
       await api.delete(`api/friends/requests/${requestId}/reject`);
     },
     onSuccess: () => handleSuccess("Friend request ignored"),

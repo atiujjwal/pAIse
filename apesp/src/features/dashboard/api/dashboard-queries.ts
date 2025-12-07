@@ -28,9 +28,7 @@ export const useDashboardSummary = () => {
       return data.data!;
     },
     staleTime: 1000 * 60 * 5,
-  });
-  console.log("32: ", result);
-  
+  }); 
   return result;
 };
 
