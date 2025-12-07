@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
 import {
   Users,
   User,
@@ -42,14 +42,17 @@ import { SmartInputs } from "./SmartInputs";
 import { PayerSelector } from "./PayerSelector";
 import { SplitDistribution } from "./SplitDistribution";
 
-
 export default function ExpenseForm() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Read URL params
   const { addToast } = useToastStore();
   const currentUser = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+
+  // --- Read Query Params (Pre-fill) ---
+  const preSelectedGroupId = searchParams.get("groupId");
 
   // --- Data Fetching ---
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
@@ -67,7 +70,8 @@ export default function ExpenseForm() {
       category: "General",
       payers: [],
       splits: [],
-      group_id: null,
+      // Initialize with URL param if valid, otherwise null
+      group_id: preSelectedGroupId || null,
       friend_id: null,
     },
   });
@@ -80,22 +84,26 @@ export default function ExpenseForm() {
   const splitType = useWatch({ control, name: "split_type" });
   const amount = useWatch({ control, name: "amount" });
 
+  // --- State: Context Switching ---
   const [activeTab, setActiveTab] = useState<"group" | "friend">("group");
 
   const isContextSelected =
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
+  // Effect: Handle Context Switching & Cleanup
   useEffect(() => {
-    if (activeTab === "group") setValue("friend_id", null);
-    else setValue("group_id", null);
+    // Only reset if the tab doesn't match the current selection mode
+    // This prevents clearing the pre-filled ID on initial mount
+    if (activeTab === "group") {
+      setValue("friend_id", null);
+    } else {
+      setValue("group_id", null);
+    }
   }, [activeTab, setValue]);
 
-  // --- Logic: Fetch & Memoize Members (FIX FOR LOOP) ---
+  // --- Logic: Fetch & Memoize Members ---
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
-
-  console.log("97: ", groupMembers);
-  
 
   const activeMembers = useMemo(() => {
     if (selectedGroupId) return groupMembers || [];
@@ -123,19 +131,36 @@ export default function ExpenseForm() {
 
   const mutation = useMutation({
     mutationFn: async (data: CreateExpenseInput) => {
-      await api.post("api/expenses", data);
+      await api.post("/expenses", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      // Invalidate group details specifically if we added to a group
+      if (selectedGroupId) {
+        queryClient.invalidateQueries({
+          queryKey: ["groups", selectedGroupId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["balances", selectedGroupId],
+        });
+      }
+
       addToast("Expense created successfully", "success");
-      router.push("/dashboard/expenses");
+
+      // Redirect back to the group page if we came from there, otherwise dashboard
+      if (preSelectedGroupId) {
+        router.push(`/dashboard/groups/${preSelectedGroupId}`);
+      } else {
+        router.push("/dashboard/expenses");
+      }
     },
     onError: (err: any) => addToast(err?.message || "Failed", "error"),
   });
 
   return (
     <div className="max-w-2xl mx-auto pb-20">
+      {/* SECTION 1: MANDATORY CONTEXT SELECTOR */}
       <div className="mb-8">
         <Label className="mb-3 block text-base font-semibold text-slate-700">
           Who is this expense with?
@@ -148,13 +173,13 @@ export default function ExpenseForm() {
           <TabsList className="grid w-full grid-cols-2 h-12 bg-slate-100 rounded-xl">
             <TabsTrigger
               value="group"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
             >
               <Users className="w-4 h-4 mr-2" /> Group
             </TabsTrigger>
             <TabsTrigger
               value="friend"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
             >
               <User className="w-4 h-4 mr-2" /> Friend
             </TabsTrigger>
@@ -167,8 +192,9 @@ export default function ExpenseForm() {
               <Select
                 onValueChange={(val) => setValue("group_id", val)}
                 value={selectedGroupId || ""}
+                // If coming from group page, we can disable this to "lock" it, or keep it open. Keeping it open for flexibility.
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200">
+                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
                   <SelectValue
                     placeholder={
                       loadingGroups ? "Loading..." : "Select a Group"
@@ -183,6 +209,7 @@ export default function ExpenseForm() {
                   ))}
                 </SelectContent>
               </Select>
+
               {groups?.length === 0 && !loadingGroups && (
                 <div className="p-4 border border-dashed rounded-xl flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
                   <p className="text-sm text-slate-500">No groups found.</p>
@@ -202,7 +229,7 @@ export default function ExpenseForm() {
                 onValueChange={(val) => setValue("friend_id", val)}
                 value={selectedFriendId || ""}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200">
+                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
                   <SelectValue
                     placeholder={
                       loadingFriends ? "Loading..." : "Select a Friend"
@@ -330,7 +357,6 @@ export default function ExpenseForm() {
               <Label className="text-base font-semibold">Who paid?</Label>
             </div>
 
-            {/* FIXED: Passed memoized members and stable callback */}
             <PayerSelector
               members={activeMembers}
               totalAmount={amount}
@@ -371,7 +397,6 @@ export default function ExpenseForm() {
               </Select>
             </div>
 
-            {/* FIXED: Passed memoized members */}
             <SplitDistribution
               splitType={splitType}
               amount={amount}

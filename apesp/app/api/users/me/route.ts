@@ -67,8 +67,10 @@ const patchHandler = async (
 
     // Validate input
     const parseResult = updateProfileSchema.safeParse(body);
-    if (!parseResult.success) return errorResponse("Invalid input");
-
+    if (!parseResult.success) {
+      console.log("Invalid input: ", parseResult);
+      return errorResponse("Invalid input");
+    }
     if (!Object.keys(parseResult.data).length)
       return badRequest("Invalid input");
 

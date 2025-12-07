@@ -3,28 +3,45 @@ import { api } from "@/src/lib/api";
 import { ApiResponse, User } from "@/src/types/api";
 import { useToastStore } from "@/src/hooks/use-toast";
 
-// FIXED: Interface matches your specific API JSON
 export interface GroupDetails {
   id: string;
   name: string;
   description?: string;
   avatar_url?: string | null;
-  // API returns an object, not just an ID string
   owner: {
     id: string;
     name: string;
     avatar_url?: string;
   };
   members: {
-    // "id" is missing in your API response for the member relation
     role: "ADMIN" | "MEMBER";
     joined_at: string;
     user: User;
   }[];
 }
 
+interface BalanceUser {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  amount: string;
+}
+
+export interface GroupBalances {
+  net_balance: string;
+  currency: string;
+  you_are_owed: BalanceUser[];
+  you_owe: BalanceUser[];
+}
+
+export interface OptimizedPayment {
+  from: { id: string; name: string; avatar_url?: string };
+  to: { id: string; name: string; avatar_url?: string };
+  amount: string;
+}
+
 export const useGroupDetails = (groupId: string | undefined) => {
-  const result = useQuery({
+  return useQuery({
     queryKey: ["groups", groupId],
     queryFn: async () => {
       if (!groupId) throw new Error("Group ID is required");
@@ -35,7 +52,6 @@ export const useGroupDetails = (groupId: string | undefined) => {
     },
     enabled: !!groupId,
   });
-  return result;
 };
 
 export const useGroupBalances = (groupId: string | undefined) => {
@@ -43,25 +59,26 @@ export const useGroupBalances = (groupId: string | undefined) => {
     queryKey: ["balances", groupId],
     queryFn: async () => {
       if (!groupId) throw new Error("Group ID is required");
-      const { data } = await api.get<ApiResponse<{ balances: any[] }>>(
+      const { data } = await api.get<ApiResponse<GroupBalances>>(
         `api/balances/groups/${groupId}`
       );
-      return data.data!.balances;
+      return data.data!;
     },
     enabled: !!groupId,
   });
 };
 
-export const useGroupActions = (groupId: string | undefined) => {
-  const { addToast } = useToastStore();
+// --- Mutations ---
 
-  const simplifyDebts = useMutation({
+export const useSimplifyDebts = (groupId: string | undefined) => {
+  return useMutation({
     mutationFn: async () => {
-      if (!groupId) return;
-      await api.get(`api/groups/${groupId}/simplify`);
+      if (!groupId) throw new Error("Group ID is required");
+      // Matches your API: POST /api/groups/{groupId}/simplify
+      const { data } = await api.get<
+        ApiResponse<{ optimized_payments: OptimizedPayment[] }>
+      >(`api/groups/${groupId}/simplify`);
+      return data.data!.optimized_payments;
     },
-    onSuccess: () => addToast("Debts simplified calculation ready", "success"),
   });
-
-  return { simplifyDebts };
 };
