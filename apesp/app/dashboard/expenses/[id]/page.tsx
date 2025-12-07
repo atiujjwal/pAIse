@@ -19,7 +19,7 @@ const calculatePercent = (part: string, total: string) => {
 };
 
 export default function ExpenseDetailsPage() {
-  const { expenseId } = useParams();
+  const { id: expenseId} = useParams();
   const router = useRouter();
   const { addToast } = useToastStore();
   const queryClient = useQueryClient();
