@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Mic, ScanLine, Loader2, StopCircle, Sparkles } from "lucide-react";
+import { Mic, ScanLine, Loader2, StopCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { api } from "@/src/lib/api";
@@ -9,7 +9,6 @@ import { cn } from "@/src/lib/utils";
 
 interface SmartInputsProps {
   onDraftReceived: (draft: any) => void;
-  // Context helps the AI understand "Rahul" or "Trip Group"
   contextData: { type: "group" | "friend"; id: string | null; name: string };
 }
 
@@ -54,16 +53,23 @@ export function SmartInputs({
   const processVoice = async (audioBlob: Blob) => {
     setIsProcessing(true);
     const formData = new FormData();
+    // Filename "voice_note.webm" helps backend detect type
     formData.append("audio", audioBlob, "voice_note.webm");
     formData.append("context", JSON.stringify(contextData));
 
     try {
-      const { data } = await api.post("/ai/voice-expense", formData);
+      const { data } = await api.post("api/ai/voice-expense", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       if (data.success) {
         onDraftReceived(data.data);
         addToast("Expense details extracted!", "success");
       }
     } catch (error) {
+      console.error(error);
       addToast("Could not process voice note", "error");
     } finally {
       setIsProcessing(false);
@@ -80,15 +86,23 @@ export function SmartInputs({
     formData.append("receipt", file);
 
     try {
-      const { data } = await api.post("api/ai/scan-receipt", formData);
+      // FIXED: Path corrected to start with "/" and added multipart header
+      const { data } = await api.post("api/ai/scan-receipt", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       if (data.success) {
         onDraftReceived(data.data);
         addToast("Receipt scanned!", "success");
       }
     } catch (error) {
-      addToast("Scanning failed", "error");
+      console.error(error);
+      addToast("Scanning failed. Please try a clearer image.", "error");
     } finally {
       setIsProcessing(false);
+      // Reset input to allow selecting same file again
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };

@@ -210,8 +210,8 @@ const getHandler = async (
       to_date,
       min_amount,
       max_amount,
-      sort_by,
-      sort_order,
+      sort_by = "created_at",
+      sort_order = "desc",
     } = query.data;
 
     // Build the 'Where' Clause

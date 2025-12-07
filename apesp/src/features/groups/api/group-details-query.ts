@@ -44,7 +44,7 @@ export interface OptimizedPayment {
 // --- Queries ---
 
 export const useGroupDetails = (groupId: string | undefined) => {
-  const result =  useQuery({
+  const result = useQuery({
     queryKey: ["groups", groupId],
     queryFn: async () => {
       if (!groupId) throw new Error("Group ID is required");
@@ -52,13 +52,13 @@ export const useGroupDetails = (groupId: string | undefined) => {
         `api/groups/${groupId}`
       );
       console.log("54: ", data);
-      
+
       return data.data!;
     },
     enabled: !!groupId,
   });
   console.log("58: ", result);
-  
+
   return result;
 };
 
@@ -169,3 +169,65 @@ export const useSimplifyDebts = (groupId: string | undefined) => {
   });
 };
 
+// --- MEMBER MANAGEMENT MUTATIONS ---
+
+export const useRemoveMember = (groupId: string) => {
+  const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Integration: DELETE /api/groups/:groupId/members/:userId
+      await api.delete(`api/groups/${groupId}/members/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups", groupId] });
+      addToast("Member removed successfully", "success");
+    },
+    onError: (err: any) =>
+      addToast(err?.message || "Failed to remove member", "error"),
+  });
+};
+
+export const useUpdateMemberRole = (groupId: string) => {
+  const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      role,
+    }: {
+      userId: string;
+      role: "ADMIN" | "MEMBER";
+    }) => {
+      // Integration: PATCH /api/groups/:groupId/members/:userId
+      await api.patch(`api/groups/${groupId}/members/${userId}`, { role });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups", groupId] });
+      addToast("Role updated successfully", "success");
+    },
+    onError: (err: any) =>
+      addToast(err?.message || "Failed to update role", "error"),
+  });
+};
+
+export const useUpdateGroupDetails = (groupId: string) => {
+  const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
+
+  return useMutation({
+    mutationFn: async (data: { name: string; description?: string }) => {
+      // Integration: PUT /api/groups/:groupId
+      const { data: res } = await api.put(`api/groups/${groupId}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups", groupId] });
+      addToast("Group details updated", "success");
+    },
+    onError: (err: any) =>
+      addToast(err?.message || "Failed to update group", "error"),
+  });
+};

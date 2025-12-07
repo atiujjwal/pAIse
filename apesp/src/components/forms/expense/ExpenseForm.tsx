@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
+import { useRouter } from "next/navigation";
 import {
   Users,
   User,
@@ -23,7 +23,6 @@ import { useGroupsList } from "@/src/features/groups/api/group-list-query";
 import { useGroupMembers } from "@/src/features/groups/api/group-members-query";
 import { useFriends } from "@/src/features/friends/api/friend-queries";
 
-// Components
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Label } from "@/src/components/ui/label";
@@ -42,17 +41,14 @@ import { SmartInputs } from "./SmartInputs";
 import { PayerSelector } from "./PayerSelector";
 import { SplitDistribution } from "./SplitDistribution";
 
+
 export default function ExpenseForm() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // Read URL params
   const { addToast } = useToastStore();
   const currentUser = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
-
-  // --- Read Query Params (Pre-fill) ---
-  const preSelectedGroupId = searchParams.get("groupId");
 
   // --- Data Fetching ---
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
@@ -70,8 +66,7 @@ export default function ExpenseForm() {
       category: "General",
       payers: [],
       splits: [],
-      // Initialize with URL param if valid, otherwise null
-      group_id: preSelectedGroupId || null,
+      group_id: null,
       friend_id: null,
     },
   });
@@ -84,22 +79,15 @@ export default function ExpenseForm() {
   const splitType = useWatch({ control, name: "split_type" });
   const amount = useWatch({ control, name: "amount" });
 
-  // --- State: Context Switching ---
   const [activeTab, setActiveTab] = useState<"group" | "friend">("group");
 
   const isContextSelected =
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
-  // Effect: Handle Context Switching & Cleanup
   useEffect(() => {
-    // Only reset if the tab doesn't match the current selection mode
-    // This prevents clearing the pre-filled ID on initial mount
-    if (activeTab === "group") {
-      setValue("friend_id", null);
-    } else {
-      setValue("group_id", null);
-    }
+    if (activeTab === "group") setValue("friend_id", null);
+    else setValue("group_id", null);
   }, [activeTab, setValue]);
 
   // --- Logic: Fetch & Memoize Members ---
@@ -114,7 +102,7 @@ export default function ExpenseForm() {
     return [];
   }, [selectedGroupId, groupMembers, selectedFriendId, friends, currentUser]);
 
-  // --- Stable Handlers ---
+  // --- Handlers ---
   const handlePayerChange = useCallback(
     (payers: any[]) => {
       setValue("payers", payers, { shouldValidate: true });
@@ -122,11 +110,52 @@ export default function ExpenseForm() {
     [setValue]
   );
 
+  // FIXED: Enhanced logic to handle Receipt and Voice data structures
   const handleSmartDraft = (draft: any) => {
-    if (draft.amount) setValue("amount", String(draft.amount));
-    if (draft.description) setValue("description", draft.description);
-    if (draft.date) setValue("date", draft.date.split("T")[0]);
-    if (draft.category) setValue("category", draft.category);
+    console.log("Draft Received:", draft);
+
+    // 1. Amount (Handle 'total_amount' from OCR or 'amount' from Voice)
+    const detectedAmount = draft.total_amount || draft.amount;
+    if (detectedAmount) {
+      setValue("amount", String(detectedAmount).replace(/[^0-9.]/g, "")); // Clean currency symbols
+    }
+
+    // 2. Description (Handle 'merchant' from OCR or 'description' from Voice)
+    if (draft.merchant) {
+      setValue("description", `Payment to ${draft.merchant}`);
+    } else if (draft.description) {
+      setValue("description", draft.description);
+    }
+
+    // 3. Date
+    if (draft.date) {
+      // Ensure date is YYYY-MM-DD
+      setValue("date", new Date(draft.date).toISOString().split("T")[0]);
+    }
+
+    // 4. Category
+    const detectedCategory = draft.category_suggestion || draft.category;
+    if (detectedCategory) {
+      // Map AI category to our fixed list if possible, or fallback to General
+      // Our list: General, Food, Travel, Entertainment, Utilities
+      const validCategories = [
+        "General",
+        "Food",
+        "Travel",
+        "Entertainment",
+        "Utilities",
+      ];
+      // Simple capitalization fix (e.g. "food" -> "Food")
+      const formattedCat =
+        detectedCategory.charAt(0).toUpperCase() +
+        detectedCategory.slice(1).toLowerCase();
+
+      if (validCategories.includes(formattedCat)) {
+        setValue("category", formattedCat);
+      } else {
+        setValue("category", "General");
+      }
+    }
   };
 
   const mutation = useMutation({
@@ -136,31 +165,14 @@ export default function ExpenseForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      // Invalidate group details specifically if we added to a group
-      if (selectedGroupId) {
-        queryClient.invalidateQueries({
-          queryKey: ["groups", selectedGroupId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["balances", selectedGroupId],
-        });
-      }
-
       addToast("Expense created successfully", "success");
-
-      // Redirect back to the group page if we came from there, otherwise dashboard
-      if (preSelectedGroupId) {
-        router.push(`/dashboard/groups/${preSelectedGroupId}`);
-      } else {
-        router.push("/dashboard/expenses");
-      }
+      router.push("/dashboard/expenses");
     },
     onError: (err: any) => addToast(err?.message || "Failed", "error"),
   });
 
   return (
     <div className="max-w-2xl mx-auto pb-20">
-      {/* SECTION 1: MANDATORY CONTEXT SELECTOR */}
       <div className="mb-8">
         <Label className="mb-3 block text-base font-semibold text-slate-700">
           Who is this expense with?
@@ -173,13 +185,13 @@ export default function ExpenseForm() {
           <TabsList className="grid w-full grid-cols-2 h-12 bg-slate-100 rounded-xl">
             <TabsTrigger
               value="group"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
               <Users className="w-4 h-4 mr-2" /> Group
             </TabsTrigger>
             <TabsTrigger
               value="friend"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
               <User className="w-4 h-4 mr-2" /> Friend
             </TabsTrigger>
@@ -192,9 +204,8 @@ export default function ExpenseForm() {
               <Select
                 onValueChange={(val) => setValue("group_id", val)}
                 value={selectedGroupId || ""}
-                // If coming from group page, we can disable this to "lock" it, or keep it open. Keeping it open for flexibility.
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
+                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200">
                   <SelectValue
                     placeholder={
                       loadingGroups ? "Loading..." : "Select a Group"
@@ -209,7 +220,6 @@ export default function ExpenseForm() {
                   ))}
                 </SelectContent>
               </Select>
-
               {groups?.length === 0 && !loadingGroups && (
                 <div className="p-4 border border-dashed rounded-xl flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
                   <p className="text-sm text-slate-500">No groups found.</p>
@@ -229,7 +239,7 @@ export default function ExpenseForm() {
                 onValueChange={(val) => setValue("friend_id", val)}
                 value={selectedFriendId || ""}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
+                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200">
                   <SelectValue
                     placeholder={
                       loadingFriends ? "Loading..." : "Select a Friend"
@@ -258,12 +268,15 @@ export default function ExpenseForm() {
             <Label className="mb-3 block text-base font-semibold text-slate-700">
               Quick Entry (Optional)
             </Label>
+            {/* Pass context so AI knows "Group Name" */}
             <SmartInputs
               onDraftReceived={handleSmartDraft}
               contextData={{
                 type: activeTab,
                 id: selectedGroupId || selectedFriendId || null,
-                name: "",
+                name: selectedGroupId
+                  ? groups?.find((g) => g.id === selectedGroupId)?.name || ""
+                  : friends?.find((f) => f.id === selectedFriendId)?.name || "",
               }}
             />
           </div>
@@ -312,7 +325,7 @@ export default function ExpenseForm() {
                 <Label>Category</Label>
                 <Select
                   onValueChange={(v) => setValue("category", v)}
-                  defaultValue="General"
+                  value={form.watch("category")}
                 >
                   <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue />
@@ -356,7 +369,6 @@ export default function ExpenseForm() {
               <Wallet className="h-5 w-5 text-primary" />
               <Label className="text-base font-semibold">Who paid?</Label>
             </div>
-
             <PayerSelector
               members={activeMembers}
               totalAmount={amount}
@@ -438,7 +450,9 @@ export default function ExpenseForm() {
       )}
 
       {showCreateGroup && (
-        <CreateGroupDialog onClose={() => setShowCreateGroup(false)} />
+        <CreateGroupDialog
+          isOpen={showCreateGroup}
+          onClose={() => setShowCreateGroup(false)} />
       )}
     </div>
   );
