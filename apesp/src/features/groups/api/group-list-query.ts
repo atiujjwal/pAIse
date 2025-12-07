@@ -2,17 +2,23 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/lib/api";
 import { ApiResponse } from "@/src/types/api";
 
-interface GroupSummary {
+export interface GroupSummary {
   id: string;
   name: string;
+  description?: string;
+  avatar_url?: string;
+  created_at: string;
+  _count?: {
+    members: number;
+  };
 }
 
 export const useGroupsList = () => {
   return useQuery({
     queryKey: ["groups", "list"],
     queryFn: async () => {
-      // Integration: GET /api/users/me/groups (or /groups depending on your backend route)
-      // Matches the JSON in your screenshot: { success: true, data: { groups: [...] } }
+      // Integration: GET /api/users/me/groups
+      // Ensure your backend includes `_count: { members: true }` in the Prisma query
       const { data } = await api.get<ApiResponse<{ groups: GroupSummary[] }>>(
         "api/users/me/groups"
       );

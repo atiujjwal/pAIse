@@ -1,91 +1,123 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Users } from "lucide-react";
 import Link from "next/link";
-import { api } from "@/src/lib/api";
-import { ApiResponse } from "@/src/types/api";
+import { Plus, Users, ArrowRight, Layers } from "lucide-react";
+
+import { useGroupsList } from "@/src/features/groups/api/group-list-query";
+import { CreateGroupDialog } from "@/src/features/groups/components/CreateGroupDialog";
 import { Button } from "@/src/components/ui/Button";
 import { Skeleton } from "@/src/components/ui/Skeleton";
-import { CreateGroupDialog } from "@/src/features/groups/components/CreateGroupDialog";
+import { cn } from "@/src/lib/utils";
 
-interface GroupSummary {
-  id: string;
-  name: string;
-  description?: string;
-  avatar_url?: string;
-  members_count: number; // Often computed or part of metadata
-}
-
-export default function GroupsListPage() {
-  const [showCreate, setShowCreate] = useState(false);
-
-  const { data: groups, isLoading } = useQuery({
-    queryKey: ["groups"],
-    queryFn: async () => {
-      // [cite_start]; // Integration: GET /api/users/me/groups [cite: 33, 209]
-      const { data } = await api.get<ApiResponse<{ groups: GroupSummary[] }>>(
-        "api/users/me/groups"
-      );
-      return data.data!.groups;
-    },
-  });
+export default function GroupsPage() {
+  const { data: groups, isLoading } = useGroupsList();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">My Groups</h1>
-        <Button onClick={() => setShowCreate(true)}>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* --- HEADER --- */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            My Groups
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Manage your shared expenses and settlements.
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowCreateDialog(true)}
+          className="shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+        >
           <Plus className="mr-2 h-4 w-4" /> Create Group
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
-          ))}
-        </div>
-      ) : groups?.length === 0 ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
-          <Users className="mb-4 h-12 w-12 opacity-20" />
-          <p className="text-lg font-medium">No groups yet</p>
-          <p className="text-sm">
-            Create a group to split expenses with friends.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {groups?.map((group) => (
-            <Link
-              key={group.id}
-              href={`groups/${group.id}`}
-              className="group relative flex flex-col justify-between rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
-            >
-              <div>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-xl font-bold text-primary">
-                  {group.avatar_url ? (
-                    <img src={group.avatar_url} alt={group.name} />
-                  ) : (
-                    group.name[0]
-                  )}
+      {/* --- CONTENT GRID --- */}
+      <div className="min-h-[400px]">
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-slate-100 p-6 space-y-4"
+              >
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-xl" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
                 </div>
-                <h3 className="font-semibold">{group.name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {group.description || "No description"}
-                </p>
+                <Skeleton className="h-16 w-full" />
               </div>
-              <div className="mt-4 flex items-center text-xs text-muted-foreground">
-                <Users className="mr-1 h-3 w-3" />
-                View Details
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : groups && groups.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {groups.map((group) => (
+              <Link
+                key={group.id}
+                href={`/dashboard/groups/${group.id}`}
+                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
+              >
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-bold text-lg">
+                      {group.name[0].toUpperCase()}
+                    </div>
+                    {/* Badge for member count */}
+                    <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
+                      <Users className="h-3 w-3" />
+                      {group._count?.members || 1}
+                    </div>
+                  </div>
 
-      {showCreate && <CreateGroupDialog onClose={() => setShowCreate(false)} />}
+                  <h3 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
+                    {group.name}
+                  </h3>
+
+                  <p className="mt-2 text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                    {group.description || "No description provided."}
+                  </p>
+                </div>
+
+                <div className="mt-6 flex items-center text-sm font-medium text-primary opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0">
+                  View Details <ArrowRight className="ml-1 h-4 w-4" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          /* EMPTY STATE */
+          <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50">
+            <div className="h-20 w-20 rounded-full bg-white shadow-sm flex items-center justify-center mb-6">
+              <Layers className="h-10 w-10 text-slate-300" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">No groups yet</h3>
+            <p className="text-slate-500 max-w-sm mt-2 mb-8">
+              Create a group to split expenses for trips, house rent, or daily
+              lunches with friends.
+            </p>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              variant="outline"
+              className="border-slate-300"
+            >
+              Create your first group
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* --- CREATE MODAL --- */}
+      {showCreateDialog && (
+        <CreateGroupDialog
+          isOpen={showCreateDialog}
+          onClose={() => setShowCreateDialog(false)}
+        />
+      )}
     </div>
   );
 }
