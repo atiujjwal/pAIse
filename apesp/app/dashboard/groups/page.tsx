@@ -1,18 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation"; // Import hooks
 import { Plus, Users, ArrowRight, Layers } from "lucide-react";
 
 import { useGroupsList } from "@/src/features/groups/api/group-list-query";
 import { CreateGroupDialog } from "@/src/features/groups/components/CreateGroupDialog";
 import { Button } from "@/src/components/ui/Button";
 import { Skeleton } from "@/src/components/ui/Skeleton";
-import { cn } from "@/src/lib/utils";
 
 export default function GroupsPage() {
   const { data: groups, isLoading } = useGroupsList();
+
+  // --- Deep Link Logic ---
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  useEffect(() => {
+    // Check if the URL has ?action=create
+    if (searchParams.get("action") === "create") {
+      setShowCreateDialog(true);
+
+      // Clean the URL so the dialog doesn't reopen on refresh
+      router.replace("/dashboard/groups", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -38,7 +52,7 @@ export default function GroupsPage() {
       <div className="min-h-[400px]">
         {isLoading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 className="rounded-2xl border border-slate-100 p-6 space-y-4"
@@ -67,7 +81,6 @@ export default function GroupsPage() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-bold text-lg">
                       {group.name[0].toUpperCase()}
                     </div>
-                    {/* Badge for member count */}
                     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
                       <Users className="h-3 w-3" />
                       {group._count?.members || 1}

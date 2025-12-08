@@ -15,7 +15,7 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <div className="flex gap-2">
-          {/* NEW FEATURE: Redirects to Groups Tab with ?action=create */}
+          {/* Links to Groups Page with ?action=create query param */}
           <Button
             asChild
             variant="outline"
@@ -36,12 +36,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* --- STATS (Restored original component) --- */}
+      {/* --- STATS --- */}
       <StatsCards />
 
       {/* --- MAIN CONTENT SPLIT --- */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        {/* Recent Activity (Restored original component) */}
+        {/* Recent Activity */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-800">
             Recent Activity
