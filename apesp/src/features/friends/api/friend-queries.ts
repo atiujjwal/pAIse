@@ -17,7 +17,7 @@ export const useFriends = () => {
     queryFn: async () => {
       // Integration: GET /api/friends
       const { data } = await api.get<ApiResponse<{ friends: User[] }>>(
-        "api/friends"
+        "/friends"
       );
       return data.data!.friends;
     },
@@ -32,7 +32,7 @@ export const useFriendRequests = () => {
       // Integration: GET /api/friends/requests
       const { data } = await api.get<
         ApiResponse<{ requests: FriendshipRequest[] }>
-      >("api/friends/requests");
+      >("/friends/requests");
       return data.data!.requests;
     },
   });
@@ -53,7 +53,7 @@ export const useFriendActions = () => {
     mutationFn: async (userId: string) => {
       // Integration: POST /api/friends/requests
       // Payload: { addressee_id: "userId" }
-      await api.post("api/friends/requests", { addressee_id: userId });
+      await api.post("/friends/requests", { addressee_id: userId });
     },
     onSuccess: () => handleSuccess("Friend request sent!"),
     onError: (err: any) =>
@@ -63,7 +63,7 @@ export const useFriendActions = () => {
   const acceptRequest = useMutation({
     mutationFn: async (requestId: string) => {
       // Integration: POST /api/friends/requests/:id/accept
-      await api.post(`api/friends/requests/${requestId}/accept`);
+      await api.post(`/friends/requests/${requestId}/accept`);
     },
     onSuccess: () => handleSuccess("Friend request accepted!"),
   });
@@ -71,7 +71,7 @@ export const useFriendActions = () => {
   const rejectRequest = useMutation({
     mutationFn: async (requestId: string) => {
       // Integration: DELETE /api/friends/requests/:id/reject
-      await api.delete(`api/friends/requests/${requestId}/reject`);
+      await api.delete(`/friends/requests/${requestId}/reject`);
     },
     onSuccess: () => handleSuccess("Friend request ignored"),
   });

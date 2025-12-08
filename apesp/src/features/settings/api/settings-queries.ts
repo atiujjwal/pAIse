@@ -20,7 +20,7 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: async (payload: UpdateProfilePayload) => {
       // Integration: PATCH /api/users/me
-      const { data } = await api.patch<{ data: User }>("api/users/me", payload);
+      const { data } = await api.patch<{ data: User }>("/users/me", payload);
       return data.data;
     },
     onSuccess: (updatedUser) => {

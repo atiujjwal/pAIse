@@ -32,7 +32,7 @@ export function ReceiptScanner() {
     try {
       // Integration: POST /api/ai/scan-receipt [cite: 219]
       const { data } = await api.post<ApiResponse<DraftExpense>>(
-        "api/ai/scan-receipt",
+        "/ai/scan-receipt",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

@@ -20,7 +20,7 @@ export const useGroupsList = () => {
       // Integration: GET /api/users/me/groups
       // Ensure your backend includes `_count: { members: true }` in the Prisma query
       const { data } = await api.get<ApiResponse<{ groups: GroupSummary[] }>>(
-        "api/users/me/groups"
+        "/users/me/groups"
       );
       return data.data?.groups || [];
     },

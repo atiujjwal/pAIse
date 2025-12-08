@@ -23,7 +23,7 @@ export const useDashboardSummary = () => {
     queryFn: async () => {
     //   [cite_start]; // Integration: GET /api/dashboard/summary [cite: 196]
       const { data } = await api.get<ApiResponse<DashboardSummary>>(
-        "api/dashboard/summary"
+        "/dashboard/summary"
       );
       return data.data!;
     },
@@ -39,7 +39,7 @@ export const useRecentExpenses = () => {
     //   [cite_start]; // Integration: GET /api/expenses?limit=5 [cite: 319]
       // FIXED: Accessing data.data.data based on your JSON response
       const { data } = await api.get<ApiResponse<{ data: any[] }>>(
-        "api/expenses",
+        "/expenses",
         {
           params: { limit: 5, sort_by: "date", sort_order: "desc" },
         }

@@ -213,7 +213,7 @@ export default function ExpenseForm() {
 
   const mutation = useMutation({
     mutationFn: async (data: CreateExpenseInput) => {
-      await api.post("api/expenses", data);
+      await api.post("/expenses", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });

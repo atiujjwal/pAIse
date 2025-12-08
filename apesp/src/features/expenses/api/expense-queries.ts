@@ -31,7 +31,7 @@ export const useExpenses = (params: GetExpensesParams) => {
 
       const { data } = await api.get<
         ApiResponse<{ data: Expense[]; meta: any }>
-      >("api/expenses", {
+      >("/expenses", {
         params: queryParams,
       });
       return data.data;

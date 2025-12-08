@@ -22,7 +22,7 @@ export const useGroupMembers = (groupId: string | null | undefined) => {
 
       const { data } = await api.get<
         ApiResponse<{ members: GroupMember[] }>
-      >(`api/groups/${groupId}/members`);
+      >(`/groups/${groupId}/members`);
       const members = data.data! || [];
       return members.map<ExpenseParticipant>((m) => ({
         id: m.user.id,

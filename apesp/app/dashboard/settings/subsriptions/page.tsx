@@ -32,7 +32,7 @@ export default function SubscriptionsPage() {
     queryKey: ["subscriptions"],
     queryFn: async () => {
       const { data } = await api.get<ApiResponse<{ items: Subscription[] }>>(
-        "api/subscriptions"
+        "/subscriptions"
       );
       return data.data?.items || []; // Assuming backend wraps in items or returns array
     },
@@ -41,7 +41,7 @@ export default function SubscriptionsPage() {
   // [cite_start]; // Create Subscription [cite: 69, 465]
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      await api.post("api/subscriptions", data);
+      await api.post("/subscriptions", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
@@ -54,7 +54,7 @@ export default function SubscriptionsPage() {
   // [cite_start]; // Delete Subscription [cite: 71, 471]
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`api/subscriptions/${id}`);
+      await api.delete(`/subscriptions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });

@@ -43,7 +43,7 @@ export function FinancialChatbot() {
       // This endpoint uses RAG to fetch financial data context
       const { data } = await api.post<
         ApiResponse<{ answer: string; data?: any }>
-      >("api/ai/query", {
+      >("/ai/query", {
         prompt: text,
       });
       return data.data!;

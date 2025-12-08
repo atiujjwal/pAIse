@@ -36,7 +36,7 @@ export function SmartInputs({
     formData.append("context", JSON.stringify(contextData));
 
     try {
-      const { data } = await api.post("api/ai/voice-expense", formData, {
+      const { data } = await api.post("/ai/voice-expense", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -63,7 +63,7 @@ export function SmartInputs({
     formData.append("receipt", file);
 
     try {
-      const { data } = await api.post("api/ai/scan-receipt", formData, {
+      const { data } = await api.post("/ai/scan-receipt", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

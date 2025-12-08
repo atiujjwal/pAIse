@@ -16,7 +16,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: async (credentials: LoginInput) => {
       const { data } = await api.post<ApiResponse<AuthResponse>>(
-        "api/auth/login",
+        "/auth/login",
         credentials
       );
       return data.data!;
@@ -55,7 +55,7 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: async () => {
       if (refreshToken) {
-        await api.post("api/auth/logout", { refreshToken });
+        await api.post("/auth/logout", { refreshToken });
       }
     },
     onSettled: () => {

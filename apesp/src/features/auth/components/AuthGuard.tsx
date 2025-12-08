@@ -36,7 +36,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       try {
         // We only call this if we haven't checked recently or to ensure validity
         const { data } = await api.get<ApiResponse<{ user: User }>>(
-          "api/users/me"
+          "/users/me"
         );
         if (data.data?.user) {
           updateUser(data.data.user);

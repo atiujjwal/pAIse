@@ -29,7 +29,7 @@ export default function ExpenseDetailsPage() {
     queryFn: async () => {
       // Integration: GET /expenses/{expenseId}
       const { data } = await api.get<ApiResponse<any>>(
-        `api/expenses/${expenseId}`
+        `/expenses/${expenseId}`
       );
       return data.data!;
     },
@@ -38,7 +38,7 @@ export default function ExpenseDetailsPage() {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       // Integration: DELETE /expenses/{expenseId} [cite: 157]
-      await api.delete(`api/expenses/${expenseId}`);
+      await api.delete(`/expenses/${expenseId}`);
     },
     onSuccess: () => {
       addToast("Expense deleted", "success");

@@ -32,7 +32,7 @@ export function UserSearch({
     queryFn: async () => {
       if (!debouncedQuery) return [];
       const res = await api.get<ApiResponse<{ users: User[] }>>(
-        "api/users/search",
+        "/users/search",
         {
           params: { query: debouncedQuery },
         }

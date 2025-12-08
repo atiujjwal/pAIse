@@ -37,7 +37,7 @@ export default function ExpenseWizard() {
         payers: draft.payers?.length ? draft.payers : [{ user_id: 'u1', amount: draft.amount! }],
       };
 
-      await api.post('api/expenses', payload);
+      await api.post('/expenses', payload);
       
       addToast('Expense created successfully', 'success');
       queryClient.invalidateQueries({ queryKey: ['expenses'] });

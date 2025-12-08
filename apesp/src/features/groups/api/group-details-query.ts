@@ -49,16 +49,12 @@ export const useGroupDetails = (groupId: string | undefined) => {
     queryFn: async () => {
       if (!groupId) throw new Error("Group ID is required");
       const { data } = await api.get<ApiResponse<GroupDetails>>(
-        `api/groups/${groupId}`
+        `/groups/${groupId}`
       );
-      console.log("54: ", data);
-
       return data.data!;
     },
     enabled: !!groupId,
   });
-  console.log("58: ", result);
-
   return result;
 };
 
@@ -68,7 +64,7 @@ export const useGroupBalances = (groupId: string | undefined) => {
     queryFn: async () => {
       if (!groupId) throw new Error("Group ID is required");
       const { data } = await api.get<ApiResponse<GroupBalances>>(
-        `api/balances/groups/${groupId}`
+        `/balances/groups/${groupId}`
       );
       return data.data!;
     },
@@ -90,7 +86,7 @@ export const useCreateGroup = () => {
       avatar_url?: string;
     }) => {
       const response = await api.post<ApiResponse<GroupDetails>>(
-        "api/groups",
+        "/groups",
         data
       );
       return response.data.data!;
@@ -111,7 +107,7 @@ export const useUpdateGroup = (groupId: string) => {
 
   return useMutation({
     mutationFn: async (data: { name?: string; description?: string }) => {
-      await api.patch(`api/groups/${groupId}`, data);
+      await api.patch(`/groups/${groupId}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["groups", groupId] });
@@ -127,7 +123,7 @@ export const useDeleteGroup = (groupId: string) => {
 
   return useMutation({
     mutationFn: async () => {
-      await api.delete(`api/groups/${groupId}`);
+      await api.delete(`/groups/${groupId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
@@ -143,7 +139,7 @@ export const useAddGroupMember = (groupId: string) => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      await api.post(`api/groups/${groupId}/members`, {
+      await api.post(`/groups/${groupId}/members`, {
         user_id: userId,
         role: "MEMBER",
       });
@@ -163,7 +159,7 @@ export const useSimplifyDebts = (groupId: string | undefined) => {
       if (!groupId) throw new Error("Group ID is required");
       const { data } = await api.get<
         ApiResponse<{ optimized_payments: OptimizedPayment[] }>
-      >(`api/groups/${groupId}/simplify`);
+      >(`/groups/${groupId}/simplify`);
       return data.data!.optimized_payments;
     },
   });
@@ -178,7 +174,7 @@ export const useRemoveMember = (groupId: string) => {
   return useMutation({
     mutationFn: async (userId: string) => {
       // Integration: DELETE /api/groups/:groupId/members/:userId
-      await api.delete(`api/groups/${groupId}/members/${userId}`);
+      await api.delete(`/groups/${groupId}/members/${userId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["groups", groupId] });
@@ -202,7 +198,7 @@ export const useUpdateMemberRole = (groupId: string) => {
       role: "ADMIN" | "MEMBER";
     }) => {
       // Integration: PATCH /api/groups/:groupId/members/:userId
-      await api.patch(`api/groups/${groupId}/members/${userId}`, { role });
+      await api.patch(`/groups/${groupId}/members/${userId}`, { role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["groups", groupId] });
@@ -220,7 +216,7 @@ export const useUpdateGroupDetails = (groupId: string) => {
   return useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
       // Integration: PUT /api/groups/:groupId
-      const { data: res } = await api.put(`api/groups/${groupId}`, data);
+      const { data: res } = await api.put(`/groups/${groupId}`, data);
       return res.data;
     },
     onSuccess: () => {

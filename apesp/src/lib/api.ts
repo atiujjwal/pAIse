@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../features/auth/store";
 import { ApiResponse } from "./response";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 export const api = axios.create({
   baseURL: BASE_URL,

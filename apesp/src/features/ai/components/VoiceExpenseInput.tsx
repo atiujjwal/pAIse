@@ -52,7 +52,7 @@ export function VoiceExpenseInput() {
       formData.append("audio", audioBlob);
 
       // Async pattern: Upload -> Wait -> Get Draft [cite: 226]
-      const { data } = await api.post("api/ai/voice-expense", formData, {
+      const { data } = await api.post("/ai/voice-expense", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

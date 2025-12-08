@@ -21,7 +21,7 @@ export const useDashboardSummary = () => {
     queryKey: ["dashboard", "summary"],
     queryFn: async () => {
       const { data } = await api.get<ApiResponse<DashboardSummary>>(
-        "api/dashboard/summary"
+        "/dashboard/summary"
       );
       return data.data!;
     },
@@ -37,7 +37,7 @@ export const useRecentExpenses = () => {
     queryFn: async () => {
       // Matches the nested { data: { data: [...] } } structure
       const { data } = await api.get<ApiResponse<{ data: any[] }>>(
-        "api/expenses",
+        "/expenses",
         {
           params: { limit: 5, sort_by: "date", sort_order: "desc" },
         }

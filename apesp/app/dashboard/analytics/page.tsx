@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
     queryKey: ["analytics", "summary"],
     queryFn: async () => {
       const { data } = await api.get<ApiResponse<any>>(
-        "api/analytics/summary?period=2025"
+        "/analytics/summary?period=2025"
       );
       return data.data;
     },

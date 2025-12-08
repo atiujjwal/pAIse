@@ -30,7 +30,7 @@ export function SettleUpDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       // API Integration: POST /api/settlements [Source 171]
-      await api.post("api/settlements", {
+      await api.post("/settlements", {
         receiver_id: friend.id,
         amount: amount,
         group_id: groupId || null,
