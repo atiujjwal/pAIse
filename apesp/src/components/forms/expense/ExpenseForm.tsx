@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Users,
   User,
@@ -40,15 +40,19 @@ import { CreateExpenseInput, createExpenseSchema } from "@/src/lib/schemas";
 import { SmartInputs } from "./SmartInputs";
 import { PayerSelector } from "./PayerSelector";
 import { SplitDistribution } from "./SplitDistribution";
-
+import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 
 export default function ExpenseForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToastStore();
   const currentUser = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+
+  // --- Read Query Params (Pre-fill) ---
+  const preSelectedGroupId = searchParams.get("groupId");
 
   // --- Data Fetching ---
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
@@ -66,12 +70,23 @@ export default function ExpenseForm() {
       category: "General",
       payers: [],
       splits: [],
-      group_id: null,
+      // Initialize with URL param if valid
+      group_id: preSelectedGroupId || null,
       friend_id: null,
     },
   });
 
   const { register, setValue, control, handleSubmit, formState } = form;
+  const { isDirty } = formState;
+  const setIsDirty = useNavigationGuard((state) => state.setIsDirty);
+
+  useEffect(() => {
+    // Sync local form state to global guard
+    setIsDirty(isDirty);
+
+    // Cleanup: Always allow navigation when this component unmounts
+    return () => setIsDirty(false);
+  }, [isDirty, setIsDirty]);
 
   // --- Watch Values ---
   const selectedGroupId = useWatch({ control, name: "group_id" });
@@ -79,22 +94,34 @@ export default function ExpenseForm() {
   const splitType = useWatch({ control, name: "split_type" });
   const amount = useWatch({ control, name: "amount" });
 
+  // --- State: Context Switching ---
+  // Default to 'group' unless we want to support deep-linking friend selection later
   const [activeTab, setActiveTab] = useState<"group" | "friend">("group");
 
   const isContextSelected =
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
+  // Effect: Handle Context Switching & Cleanup
+  // We add a check to prevent clearing the pre-filled ID on the very first render
   useEffect(() => {
-    if (activeTab === "group") setValue("friend_id", null);
-    else setValue("group_id", null);
-  }, [activeTab, setValue]);
+    // Only reset if the user manually switches tabs or if the tab state mismatches the current ID
+    if (activeTab === "group") {
+      if (!selectedGroupId && selectedFriendId) setValue("friend_id", null);
+    } else {
+      if (!selectedFriendId && selectedGroupId) setValue("group_id", null);
+    }
+  }, [activeTab, setValue, selectedGroupId, selectedFriendId]);
 
   // --- Logic: Fetch & Memoize Members ---
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
 
   const activeMembers = useMemo(() => {
-    if (selectedGroupId) return groupMembers || [];
+    // Case 1: Group Selected -> Show all group members
+    if (selectedGroupId && groupMembers) {
+      return groupMembers;
+    }
+    // Case 2: Friend Selected -> Show [Me, Friend]
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
       return friend ? [currentUser, friend] : [];
@@ -102,7 +129,7 @@ export default function ExpenseForm() {
     return [];
   }, [selectedGroupId, groupMembers, selectedFriendId, friends, currentUser]);
 
-  // --- Handlers ---
+  // --- Stable Handlers ---
   const handlePayerChange = useCallback(
     (payers: any[]) => {
       setValue("payers", payers, { shouldValidate: true });
@@ -110,34 +137,32 @@ export default function ExpenseForm() {
     [setValue]
   );
 
-  // FIXED: Enhanced logic to handle Receipt and Voice data structures
   const handleSmartDraft = (draft: any) => {
     console.log("Draft Received:", draft);
 
-    // 1. Amount (Handle 'total_amount' from OCR or 'amount' from Voice)
-    const detectedAmount = draft.total_amount || draft.amount;
-    if (detectedAmount) {
-      setValue("amount", String(detectedAmount).replace(/[^0-9.]/g, "")); // Clean currency symbols
+    // 1. Amount
+    const rawAmount = draft.total_amount || draft.amount;
+    if (rawAmount) {
+      const cleanAmount = String(rawAmount).replace(/[^0-9.]/g, "");
+      setValue("amount", cleanAmount);
     }
 
-    // 2. Description (Handle 'merchant' from OCR or 'description' from Voice)
-    if (draft.merchant) {
-      setValue("description", `Payment to ${draft.merchant}`);
-    } else if (draft.description) {
-      setValue("description", draft.description);
-    }
+    // 2. Description
+    if (draft.merchant) setValue("description", `Payment to ${draft.merchant}`);
+    else if (draft.description) setValue("description", draft.description);
 
     // 3. Date
     if (draft.date) {
-      // Ensure date is YYYY-MM-DD
-      setValue("date", new Date(draft.date).toISOString().split("T")[0]);
+      try {
+        setValue("date", new Date(draft.date).toISOString().split("T")[0]);
+      } catch (e) {
+        /* keep default */
+      }
     }
 
     // 4. Category
     const detectedCategory = draft.category_suggestion || draft.category;
     if (detectedCategory) {
-      // Map AI category to our fixed list if possible, or fallback to General
-      // Our list: General, Food, Travel, Entertainment, Utilities
       const validCategories = [
         "General",
         "Food",
@@ -145,34 +170,80 @@ export default function ExpenseForm() {
         "Entertainment",
         "Utilities",
       ];
-      // Simple capitalization fix (e.g. "food" -> "Food")
       const formattedCat =
         detectedCategory.charAt(0).toUpperCase() +
         detectedCategory.slice(1).toLowerCase();
+      setValue(
+        "category",
+        validCategories.includes(formattedCat) ? formattedCat : "General"
+      );
+    }
 
-      if (validCategories.includes(formattedCat)) {
-        setValue("category", formattedCat);
-      } else {
-        setValue("category", "General");
+    // 5. Voice-Specific: Splits & Payers
+    if (draft.split_type) {
+      setValue("split_type", draft.split_type);
+    }
+
+    if (
+      draft.payers &&
+      Array.isArray(draft.payers) &&
+      draft.payers.length > 0
+    ) {
+      const validPayers = draft.payers.filter((p: any) =>
+        activeMembers.some((m) => m.id === p.user_id)
+      );
+      if (validPayers.length > 0) {
+        setValue("payers", validPayers, { shouldValidate: true });
+      }
+    }
+
+    if (
+      draft.splits &&
+      Array.isArray(draft.splits) &&
+      draft.splits.length > 0
+    ) {
+      const validSplits = draft.splits.filter((s: any) =>
+        activeMembers.some((m) => m.id === s.user_id)
+      );
+      if (validSplits.length > 0) {
+        setValue("splits", validSplits, { shouldValidate: true });
       }
     }
   };
 
   const mutation = useMutation({
     mutationFn: async (data: CreateExpenseInput) => {
-      await api.post("/expenses", data);
+      await api.post("api/expenses", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+      if (selectedGroupId) {
+        queryClient.invalidateQueries({
+          queryKey: ["groups", selectedGroupId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["balances", selectedGroupId],
+        });
+      }
+
       addToast("Expense created successfully", "success");
-      router.push("/dashboard/expenses");
+
+      // Redirect Logic
+      if (preSelectedGroupId) {
+        router.push(`/dashboard/groups/${preSelectedGroupId}`);
+      } else {
+        router.push("/dashboard/expenses");
+      }
     },
-    onError: (err: any) => addToast(err?.message || "Failed", "error"),
+    onError: (err: any) =>
+      addToast(err?.message || "Failed to create expense", "error"),
   });
 
   return (
     <div className="max-w-2xl mx-auto pb-20">
+      {/* SECTION 1: MANDATORY CONTEXT SELECTOR */}
       <div className="mb-8">
         <Label className="mb-3 block text-base font-semibold text-slate-700">
           Who is this expense with?
@@ -185,13 +256,13 @@ export default function ExpenseForm() {
           <TabsList className="grid w-full grid-cols-2 h-12 bg-slate-100 rounded-xl">
             <TabsTrigger
               value="group"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
             >
               <Users className="w-4 h-4 mr-2" /> Group
             </TabsTrigger>
             <TabsTrigger
               value="friend"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
             >
               <User className="w-4 h-4 mr-2" /> Friend
             </TabsTrigger>
@@ -205,10 +276,10 @@ export default function ExpenseForm() {
                 onValueChange={(val) => setValue("group_id", val)}
                 value={selectedGroupId || ""}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200">
+                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
                   <SelectValue
                     placeholder={
-                      loadingGroups ? "Loading..." : "Select a Group"
+                      loadingGroups ? "Loading groups..." : "Select a Group"
                     }
                   />
                 </SelectTrigger>
@@ -220,6 +291,7 @@ export default function ExpenseForm() {
                   ))}
                 </SelectContent>
               </Select>
+
               {groups?.length === 0 && !loadingGroups && (
                 <div className="p-4 border border-dashed rounded-xl flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
                   <p className="text-sm text-slate-500">No groups found.</p>
@@ -239,10 +311,10 @@ export default function ExpenseForm() {
                 onValueChange={(val) => setValue("friend_id", val)}
                 value={selectedFriendId || ""}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200">
+                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
                   <SelectValue
                     placeholder={
-                      loadingFriends ? "Loading..." : "Select a Friend"
+                      loadingFriends ? "Loading friends..." : "Select a Friend"
                     }
                   />
                 </SelectTrigger>
@@ -254,21 +326,35 @@ export default function ExpenseForm() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {friends?.length === 0 && !loadingFriends && (
+                <div className="p-4 border border-dashed rounded-xl flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
+                  <p className="text-sm text-slate-500">No friends found.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push("/dashboard/friends")}
+                  >
+                    <UserPlus className="w-4 h-4" /> Add Friend
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/* --- FORM BODY --- */}
       {isContextSelected ? (
         <form
           onSubmit={handleSubmit((data) => mutation.mutate(data))}
           className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
+          {/* 2. Smart Inputs */}
           <div>
             <Label className="mb-3 block text-base font-semibold text-slate-700">
               Quick Entry (Optional)
             </Label>
-            {/* Pass context so AI knows "Group Name" */}
             <SmartInputs
               onDraftReceived={handleSmartDraft}
               contextData={{
@@ -281,6 +367,7 @@ export default function ExpenseForm() {
             />
           </div>
 
+          {/* 3. Manual Details */}
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
@@ -359,10 +446,11 @@ export default function ExpenseForm() {
             </div>
           </div>
 
+          {/* 4. Who Paid? */}
           <div
             className={cn(
               "rounded-2xl border border-slate-100 bg-white p-6 shadow-sm",
-              !amount && "opacity-50 pointer-events-none"
+              !amount && "opacity-50 pointer-events-none grayscale"
             )}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -382,10 +470,11 @@ export default function ExpenseForm() {
             )}
           </div>
 
+          {/* 5. Split Logic */}
           <div
             className={cn(
               "rounded-2xl border border-slate-100 bg-white p-6 shadow-sm",
-              !amount && "opacity-50 pointer-events-none"
+              !amount && "opacity-50 pointer-events-none grayscale"
             )}
           >
             <div className="flex items-center justify-between mb-4">
@@ -452,7 +541,8 @@ export default function ExpenseForm() {
       {showCreateGroup && (
         <CreateGroupDialog
           isOpen={showCreateGroup}
-          onClose={() => setShowCreateGroup(false)} />
+          onClose={() => setShowCreateGroup(false)}
+        />
       )}
     </div>
   );

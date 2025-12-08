@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Mic, ScanLine, Loader2, StopCircle } from "lucide-react";
+import { Mic, ScanLine, Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { api } from "@/src/lib/api";
 import { cn } from "@/src/lib/utils";
+import { VoiceRecorder } from "./VoiceRecorder"; // Import the new component
 
 interface SmartInputsProps {
   onDraftReceived: (draft: any) => void;
@@ -17,62 +18,38 @@ export function SmartInputs({
   contextData,
 }: SmartInputsProps) {
   const { addToast } = useToastStore();
-  const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
+
+  // UI State
+  const [activeMode, setActiveMode] = useState<"none" | "voice">("none");
+
+  // Processing States
+  const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- Voice Logic ---
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder.current = new MediaRecorder(stream);
-      const chunks: BlobPart[] = [];
-
-      mediaRecorder.current.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.current.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: "audio/webm" });
-        await processVoice(audioBlob);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.current.start();
-      setIsRecording(true);
-    } catch (err) {
-      addToast("Microphone access denied", "error");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder.current && isRecording) {
-      mediaRecorder.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const processVoice = async (audioBlob: Blob) => {
-    setIsProcessing(true);
+  // --- Voice Logic (Delegated to Component) ---
+  const handleVoiceSubmit = async (audioBlob: Blob) => {
+    setIsVoiceProcessing(true);
     const formData = new FormData();
-    // Filename "voice_note.webm" helps backend detect type
     formData.append("audio", audioBlob, "voice_note.webm");
     formData.append("context", JSON.stringify(contextData));
 
     try {
       const { data } = await api.post("api/ai/voice-expense", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (data.success) {
         onDraftReceived(data.data);
         addToast("Expense details extracted!", "success");
+        setActiveMode("none"); // Close recorder on success
       }
     } catch (error) {
       console.error(error);
-      addToast("Could not process voice note", "error");
+      addToast("Could not understand the audio. Please try again.", "error");
     } finally {
-      setIsProcessing(false);
+      setIsVoiceProcessing(false);
     }
   };
 
@@ -81,16 +58,13 @@ export function SmartInputs({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsProcessing(true);
+    setIsOcrProcessing(true);
     const formData = new FormData();
     formData.append("receipt", file);
 
     try {
-      // FIXED: Path corrected to start with "/" and added multipart header
       const { data } = await api.post("api/ai/scan-receipt", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (data.success) {
@@ -101,48 +75,55 @@ export function SmartInputs({
       console.error(error);
       addToast("Scanning failed. Please try a clearer image.", "error");
     } finally {
-      setIsProcessing(false);
-      // Reset input to allow selecting same file again
+      setIsOcrProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
+  // If Voice Mode is active, show the Recorder UI
+  if (activeMode === "voice") {
+    return (
+      <div className="mb-6">
+        <VoiceRecorder
+          onCancel={() => setActiveMode("none")}
+          onSubmit={handleVoiceSubmit}
+          isSubmitting={isVoiceProcessing}
+        />
+      </div>
+    );
+  }
+
+  // Default View: Two Big Buttons
   return (
     <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* Voice Entry Button */}
       <Button
         type="button"
         variant="outline"
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={isProcessing}
-        className={cn(
-          "h-16 border-purple-200 bg-purple-50/50 hover:bg-purple-100 hover:border-purple-300 transition-all group",
-          isRecording && "bg-red-50 border-red-200 text-red-600 animate-pulse"
-        )}
+        onClick={() => setActiveMode("voice")}
+        disabled={isOcrProcessing} // Disable if OCR is running
+        className="h-24 border-purple-100 bg-purple-50/30 hover:bg-purple-50 hover:border-purple-200 transition-all group flex flex-col gap-2 rounded-xl"
       >
-        <div className="flex flex-col items-center gap-1">
-          {isProcessing ? (
-            <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
-          ) : isRecording ? (
-            <StopCircle className="h-6 w-6 text-red-500" />
-          ) : (
-            <Mic className="h-6 w-6 text-purple-600 group-hover:scale-110 transition-transform" />
-          )}
-          <span className="text-xs font-semibold text-purple-900">
-            {isProcessing
-              ? "Thinking..."
-              : isRecording
-              ? "Stop"
-              : "Voice Entry"}
+        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Mic className="h-5 w-5 text-purple-600" />
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-sm font-semibold text-purple-900">
+            Voice Entry
+          </span>
+          <span className="text-[10px] text-purple-600/80 font-medium">
+            Dictate your expense
           </span>
         </div>
       </Button>
 
+      {/* OCR Button */}
       <Button
         type="button"
         variant="outline"
         onClick={() => fileInputRef.current?.click()}
-        disabled={isProcessing}
-        className="h-16 border-blue-200 bg-blue-50/50 hover:bg-blue-100 hover:border-blue-300 transition-all group"
+        disabled={isOcrProcessing}
+        className="h-24 border-blue-100 bg-blue-50/30 hover:bg-blue-50 hover:border-blue-200 transition-all group flex flex-col gap-2 rounded-xl"
       >
         <input
           type="file"
@@ -151,15 +132,24 @@ export function SmartInputs({
           ref={fileInputRef}
           onChange={handleFileUpload}
         />
-        <div className="flex flex-col items-center gap-1">
-          {isProcessing ? (
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        <div className="flex flex-col items-center gap-2">
+          {isOcrProcessing ? (
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           ) : (
-            <ScanLine className="h-6 w-6 text-blue-600 group-hover:scale-110 transition-transform" />
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <ScanLine className="h-5 w-5 text-blue-600" />
+            </div>
           )}
-          <span className="text-xs font-semibold text-blue-900">
-            Scan Receipt
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-sm font-semibold text-blue-900">
+              {isOcrProcessing ? "Scanning..." : "Scan Receipt"}
+            </span>
+            {!isOcrProcessing && (
+              <span className="text-[10px] text-blue-600/80 font-medium">
+                Upload bill photo
+              </span>
+            )}
+          </div>
         </div>
       </Button>
     </div>
