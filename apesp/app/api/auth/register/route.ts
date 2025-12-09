@@ -68,21 +68,16 @@ export async function POST(request: NextRequest) {
     });
     const sessionId = session.id;
 
-    // Generate tokens that include sessionId and userId
-    const accessToken = generateToken(
-      String(user.id),
-      String(user.email),
-      String(inviteCode),
-      String(sessionId),
-      "accessToken"
-    );
-    const refreshToken = generateToken(
-      String(user.id),
-      String(user.email),
-      String(inviteCode),
-      String(sessionId),
-      "refreshToken"
-    );
+    const tokenPayload = {
+      userId: user.id,
+      email: user.email,
+      inviteCode: user.invite_code,
+      avatarUrl: user.avatar || undefined,
+      sessionId,
+    };
+
+    const accessToken = generateToken(tokenPayload, "accessToken"); // 2h
+    const refreshToken = generateToken(tokenPayload, "refreshToken"); // 7d
 
     // Save the refresh token in DB for this session
     await prisma.userToken.create({

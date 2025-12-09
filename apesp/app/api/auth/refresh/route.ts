@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (!payload) return unauthorized();
 
     // Lookup session
-    const { userId, email, inviteCode, sessionId } = payload;
+    const { userId, email, inviteCode, sessionId, avatarUrl } = payload;
 
     const tokenRecord = await prisma.userToken.findFirst({
       where: {
@@ -33,21 +33,17 @@ export async function POST(request: NextRequest) {
     if (!tokenRecord || tokenRecord.expires_at < new Date())
       return unauthorized();
 
+    const tokenPayload = {
+      userId,
+      email,
+      inviteCode,
+      avatarUrl,
+      sessionId,
+    };
+
     // Rotate tokens for this session
-    const newAccessToken = generateToken(
-      String(userId),
-      String(email),
-      String(inviteCode),
-      String(sessionId),
-      "accessToken"
-    );
-    const newRefreshToken = generateToken(
-      String(userId),
-      String(email),
-      String(inviteCode),
-      String(sessionId),
-      "refreshToken"
-    );
+    const newAccessToken = generateToken(tokenPayload, "accessToken");
+    const newRefreshToken = generateToken(tokenPayload, "refreshToken");
 
     await prisma.userToken.create({
       data: {

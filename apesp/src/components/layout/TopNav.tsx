@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAuthStore } from "@/src/features/auth/store";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
@@ -7,8 +8,32 @@ import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
 
 export function TopNav() {
-  const user = useAuthStore((state) => state.user);
+  const { user, accessToken } = useAuthStore((state) => state);
   const router = useRouter();
+
+  const avatarUrl = useMemo(() => {
+    if (user?.avatar_url) return user.avatar_url;
+
+    if (accessToken) {
+      try {
+        const base64Url = accessToken.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          window
+            .atob(base64)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+        );
+        const payload = JSON.parse(jsonPayload);
+        return payload.avatarUrl || payload.avatar || null;
+      } catch (error) {
+        console.warn("Could not extract avatar from token:", error);
+        return null;
+      }
+    }
+    return null;
+  }, [user, accessToken]);
 
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center justify-end border-b border-slate-100 bg-white/80 px-8 backdrop-blur-md">
@@ -20,14 +45,13 @@ export function TopNav() {
           className="relative text-slate-400 hover:bg-slate-50 hover:text-primary transition-colors"
         >
           <Bell className="h-5 w-5" />
-          {/* Optional: Notification Dot */}
           <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
         </Button>
 
         {/* Divider */}
         <div className="h-8 w-px bg-slate-100" />
 
-        {/* Profile Section - Click to go to Settings */}
+        {/* Profile Section */}
         <button
           onClick={() => router.push("/dashboard/settings")}
           className="group flex items-center gap-3 rounded-xl py-1 pl-3 pr-1 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -44,14 +68,14 @@ export function TopNav() {
           <div
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105",
-              "bg-gradient-to-tr from-purple-100 to-primary/10 text-primary font-bold"
+              "bg-gradient-to-tr from-purple-100 to-primary/10 text-primary font-bold overflow-hidden"
             )}
           >
-            {user?.avatar_url ? (
+            {avatarUrl ? (
               <img
-                src={user.avatar_url}
+                src={avatarUrl}
                 alt="Profile"
-                className="h-full w-full rounded-full object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
               <span>{user?.name?.[0]?.toUpperCase() || "U"}</span>
