@@ -32,6 +32,8 @@ export const comparePassword = async (
 // Generate access or refresh token
 export const generateToken = (
   userId: string,
+  email: string,
+  inviteCode: string,
   sessionId: string,
   type: "accessToken" | "refreshToken"
 ): string => {
@@ -39,14 +41,14 @@ export const generateToken = (
     expiresIn: type === "accessToken" ? JWT_EXPIRES_IN : JWT_REFRESH_EXPIRES_IN,
   };
   const secret = type === "accessToken" ? JWT_SECRET : JWT_REFRESH_SECRET;
-  return jwt.sign({ userId, sessionId }, secret, options);
+  return jwt.sign({ userId, email, inviteCode, sessionId }, secret, options);
 };
 
 // ✅ Verify JWT token safely
 export const verifyToken = (
   token: string,
   type: "accessToken" | "refreshToken"
-): { userId: string; sessionId: string } | null => {
+): { userId: string; email: string; inviteCode: string; sessionId: string } | null => {
   try {
     const secret = type === "accessToken" ? JWT_SECRET : JWT_REFRESH_SECRET;
     const decoded = jwt.verify(token, secret);
@@ -56,7 +58,7 @@ export const verifyToken = (
       "userId" in decoded &&
       "sessionId" in decoded
     ) {
-      return decoded as { userId: string; sessionId: string };
+      return decoded as { userId: string; email: string; inviteCode: string; sessionId: string };
     }
     return null;
   } catch {

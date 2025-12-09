@@ -18,6 +18,7 @@ export interface User {
   name: string;
   email: string;
   avatar_url?: string;
+  invite_code: string;
   currency: string;
   timezone: string;
 }
