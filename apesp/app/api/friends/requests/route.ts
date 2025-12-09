@@ -14,9 +14,14 @@ import {
   unauthorized,
 } from "@/src/lib/response";
 
-const postSchema = z.object({
-  addressee_id: z.string().cuid({ message: "Invalid user ID" }),
-});
+const friendRequestSchema = z
+  .object({
+    email: z.string().email().optional(),
+    invite_code: z.string().optional(),
+  })
+  .refine((data) => data.email || data.invite_code, {
+    message: "Either email or invite code is required",
+  });
 
 /**
  * POST /friends/requests
@@ -30,14 +35,31 @@ const postHandler = async (
     const { userId: requesterId } = payload;
     const body = await request.json();
 
-    const { addressee_id } = postSchema.parse(body);
-    
+    const { email, invite_code: inviteCode } = friendRequestSchema.parse(body);
+
+    let addressee_id: string = "";
+
+    if (email) {
+      const user = await prisma.user.findUnique({
+        where: { email: email },
+      });
+      if (!user) return notFound("User not found");
+      addressee_id = user.id;
+    } else if (inviteCode) {
+      const user = await prisma.user.findUnique({
+        where: { invite_code: inviteCode },
+      });
+      if (!user) return notFound("Invalid invite code");
+      addressee_id = user.id;
+    }
+
+    // 400: Cannot add yourself
     if (requesterId === addressee_id) return badRequest("Cannot add yourself");
 
     const addressee = await prisma.user.findUnique({
       where: { id: addressee_id, is_deleted: false },
     });
-    // 400: Cannot add yourself
+
     if (!addressee) return notFound("User not found");
 
     const existingFriendship = await prisma.friendship.findFirst({
