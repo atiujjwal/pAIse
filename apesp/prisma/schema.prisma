@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 // ----------------------------------------
 // Enums
 // ----------------------------------------
@@ -41,19 +40,21 @@ enum ExpenseStatus {
 
 // Purpose: Central identity record for all users across authentication, finance, and social features.
 model User {
-  id         String    @id @default(cuid()) // Unique identifier for each user
-  name       String // Display name used across the app.
-  email      String    @unique // Unique email (used for login)
-  phone      String?   @unique // Optional phone number for contact integration
-  password   String // Securely hashed password
-  dob        DateTime? //date of birth
-  avatar     String? // Optional profile picture URL
-  country    String? // Optional country field for localization
-  currency   String    @default("INR") // Default transaction currency (INR)
-  timezone   String    @default("Asia/Kolkata") // Default timezone for date/time display
-  is_deleted Boolean   @default(false) // Soft delete flag (keeps data but marks inactive)
-  created_at DateTime  @default(now()) // Timestamp when user account was created
-  updated_at DateTime  @updatedAt // Auto-updated timestamp on modification
+  id                     String    @id @default(cuid()) // Unique identifier for each user
+  name                   String // Display name used across the app.
+  email                  String    @unique // Unique email (used for login)
+  phone                  String?   @unique // Optional phone number for contact integration
+  password               String // Securely hashed password
+  dob                    DateTime? //date of birth
+  avatar                 String? // Optional profile picture URL
+  invite_code            String    @unique @default(nanoid()) //sharing this user can invite a friend
+  invite_code_expires_at DateTime?
+  country                String? // Optional country field for localization
+  currency               String    @default("INR") // Default transaction currency (INR)
+  timezone               String    @default("Asia/Kolkata") // Default timezone for date/time display
+  is_deleted             Boolean   @default(false) // Soft delete flag (keeps data but marks inactive)
+  created_at             DateTime  @default(now()) // Timestamp when user account was created
+  updated_at             DateTime  @updatedAt // Auto-updated timestamp on modification
 
   // Auth Relations
   sessions    Session[] // (1 User → Many Sessions): Enables multi-device authentication tracking. Each login creates a session; users can have active sessions across phone, desktop, etc.
@@ -89,6 +90,7 @@ model User {
   spendingTrend   ExpenseTrend[]
 
   @@index([email])
+  @@index([invite_code])
 }
 
 // Purpose: Tracks active user sessions for authentication and multi-device support.
@@ -132,6 +134,7 @@ model UserOtp {
   @@index([email])
   @@index([phone])
 }
+
 // ----------------------------------------
 // Social Graph Models
 // ----------------------------------------
