@@ -11,28 +11,31 @@ export function TopNav() {
   const { user, accessToken } = useAuthStore((state) => state);
   const router = useRouter();
 
+  const getAvatarFromToken = (token: string | null) => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      const payload = JSON.parse(jsonPayload);
+      return payload.avatarUrl || payload.avatar_url || payload.picture || null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   const avatarUrl = useMemo(() => {
     if (user?.avatar_url) return user.avatar_url;
+    // @ts-ignore: Handle potential schema mismatch
+    if (user?.avatar) return user.avatar;
 
-    if (accessToken) {
-      try {
-        const base64Url = accessToken.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          window
-            .atob(base64)
-            .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join("")
-        );
-        const payload = JSON.parse(jsonPayload);
-        return payload.avatarUrl || payload.avatar || null;
-      } catch (error) {
-        console.warn("Could not extract avatar from token:", error);
-        return null;
-      }
-    }
-    return null;
+    return getAvatarFromToken(accessToken);
   }, [user, accessToken]);
 
   return (
@@ -67,7 +70,7 @@ export function TopNav() {
 
           <div
             className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105",
+              "relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105",
               "bg-gradient-to-tr from-purple-100 to-primary/10 text-primary font-bold overflow-hidden"
             )}
           >
@@ -76,10 +79,18 @@ export function TopNav() {
                 src={avatarUrl}
                 alt="Profile"
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.classList.remove(
+                    "hidden"
+                  );
+                }}
               />
-            ) : (
-              <span>{user?.name?.[0]?.toUpperCase() || "U"}</span>
-            )}
+            ) : null}
+            {/* Initial Fallback (Visible if no URL or if Image Errors) */}
+            <span className={cn("absolute", avatarUrl && "hidden")}>
+              {user?.name?.[0]?.toUpperCase() || "U"}
+            </span>
           </div>
         </button>
       </div>
