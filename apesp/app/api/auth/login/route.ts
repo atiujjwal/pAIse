@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     const sessionId = session.id;
 
     // Issue both tokens INCLUDING SESSION ID in payload
-    const accessToken = generateToken(user.id, sessionId, "accessToken"); // 2h
-    const refreshToken = generateToken(user.id, sessionId, "refreshToken"); // 7d
+    const accessToken = generateToken(user.id, user.email, user.invite_code, sessionId, "accessToken"); // 2h
+    const refreshToken = generateToken(user.id, user.email, user.invite_code, sessionId, "refreshToken"); // 7d
 
     // Save the refresh token in DB for this session
     await prisma.userToken.create({

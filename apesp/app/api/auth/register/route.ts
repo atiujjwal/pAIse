@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/src/lib/db";
 import { generateToken, hashPassword, parseDevice } from "@/src/lib/auth";
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
+import { generateInviteCode } from "@/src/lib/nanoid";
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const hashedPassword = await hashPassword(data.password);
+    const inviteCode = generateInviteCode();
 
     // Create user (convert date_of_birth to Date)
     const user = await prisma.user.create({
@@ -42,6 +44,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         dob: new Date(data.dob),
         avatar: data.avatar ?? null,
+        invite_code: inviteCode,
         country: data.country ?? null,
         currency: data.currency ?? "INR",
         timezone: data.timezone ?? "Asia/Kolkata",
@@ -68,11 +71,15 @@ export async function POST(request: NextRequest) {
     // Generate tokens that include sessionId and userId
     const accessToken = generateToken(
       String(user.id),
+      String(user.email),
+      String(inviteCode),
       String(sessionId),
       "accessToken"
     );
     const refreshToken = generateToken(
       String(user.id),
+      String(user.email),
+      String(inviteCode),
       String(sessionId),
       "refreshToken"
     );
