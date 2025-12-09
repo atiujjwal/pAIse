@@ -11,6 +11,7 @@ import {
   MoreVertical,
   Shield,
   UserMinus,
+  ArrowLeft, // Added ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/src/features/auth/store";
@@ -75,6 +76,21 @@ export default function GroupDetailsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* --- ADDED: BACK BUTTON --- */}
+      <div className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 -ml-3"
+        >
+          <Link href="/dashboard/groups">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Groups
+          </Link>
+        </Button>
+      </div>
+
       {/* HEADER */}
       <div className="flex flex-col justify-between gap-6 border-b border-slate-100 pb-8 md:flex-row md:items-start">
         <div className="space-y-2">
@@ -155,8 +171,6 @@ export default function GroupDetailsPage() {
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Wallet className="h-5 w-5 text-primary" /> Detailed Breakdown
             </h2>
-            {/* ... (Keep existing Balances List Logic) ... */}
-            {/* (Reusing your existing correct logic for balances display here) */}
             <BalancesList balances={balances} />
           </div>
         </div>

@@ -6,6 +6,7 @@ import { withAuth } from "@/src/middleware/auth";
 /**
  * GET /users/me/groups
  * Lists all groups the authenticated user is a member of.
+ * Supports search and pagination.
  */
 const getHandler = async (
   request: NextRequest,
@@ -16,12 +17,30 @@ const getHandler = async (
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const search = searchParams.get("search");
 
-    // Find all GroupMember records for the user, and include the group data
+    const groupFilter = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" as const } },
+            { description: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
+
     const memberships = await prisma.groupMember.findMany({
-      where: { user_id: userId },
+      where: {
+        user_id: userId,
+        group: groupFilter,
+      },
       include: {
-        group: true, // Include the full Group object
+        group: {
+          include: {
+            _count: {
+              select: { members: true },
+            },
+          },
+        },
       },
       take: limit,
       skip: offset,
@@ -32,7 +51,6 @@ const getHandler = async (
       },
     });
 
-    // Map the results to return just the group objects
     const groups = memberships.map((mem) => ({
       id: mem.group.id,
       name: mem.group.name,
@@ -40,6 +58,7 @@ const getHandler = async (
       avatar_url: mem.group.avatar_url,
       owner_id: mem.group.owner_id,
       created_at: mem.group.created_at,
+      member_count: mem.group._count.members,
     }));
 
     return successResponse("Groups fetched successfully", { groups: groups });

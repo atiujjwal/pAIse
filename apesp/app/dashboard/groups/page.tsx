@@ -2,28 +2,29 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation"; // Import hooks
-import { Plus, Users, ArrowRight, Layers } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Plus, Users, ArrowRight, Layers, Search } from "lucide-react";
 
 import { useGroupsList } from "@/src/features/groups/api/group-list-query";
 import { CreateGroupDialog } from "@/src/features/groups/components/CreateGroupDialog";
 import { Button } from "@/src/components/ui/Button";
+import { Input } from "@/src/components/ui/Input";
 import { Skeleton } from "@/src/components/ui/Skeleton";
+import { useDebounce } from "@/src/hooks/use-debounce";
 
 export default function GroupsPage() {
-  const { data: groups, isLoading } = useGroupsList();
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // --- Deep Link Logic ---
+  const { data: groups, isLoading } = useGroupsList(debouncedSearch);
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
-    // Check if the URL has ?action=create
     if (searchParams.get("action") === "create") {
       setShowCreateDialog(true);
-
-      // Clean the URL so the dialog doesn't reopen on refresh
       router.replace("/dashboard/groups", { scroll: false });
     }
   }, [searchParams, router]);
@@ -31,21 +32,34 @@ export default function GroupsPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* --- HEADER --- */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            My Groups
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Manage your shared expenses and settlements.
-          </p>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              My Groups
+            </h1>
+            <p className="text-slate-500 mt-1">
+              Manage your shared expenses and settlements.
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowCreateDialog(true)}
+            className="shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Create Group
+          </Button>
         </div>
-        <Button
-          onClick={() => setShowCreateDialog(true)}
-          className="shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Create Group
-        </Button>
+
+        {/* --- SEARCH BAR --- */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search groups..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-11 bg-white border-slate-200 focus:bg-white transition-all"
+          />
+        </div>
       </div>
 
       {/* --- CONTENT GRID --- */}
@@ -81,9 +95,10 @@ export default function GroupsPage() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-bold text-lg">
                       {group.name[0].toUpperCase()}
                     </div>
+                    {/* Dynamic Member Count */}
                     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
                       <Users className="h-3 w-3" />
-                      {group._count?.members || 1}
+                      {group.member_count}
                     </div>
                   </div>
 
@@ -108,23 +123,27 @@ export default function GroupsPage() {
             <div className="h-20 w-20 rounded-full bg-white shadow-sm flex items-center justify-center mb-6">
               <Layers className="h-10 w-10 text-slate-300" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">No groups yet</h3>
+            <h3 className="text-xl font-bold text-slate-900">
+              {searchTerm ? "No groups found" : "No groups yet"}
+            </h3>
             <p className="text-slate-500 max-w-sm mt-2 mb-8">
-              Create a group to split expenses for trips, house rent, or daily
-              lunches with friends.
+              {searchTerm
+                ? `We couldn't find any groups matching "${searchTerm}"`
+                : "Create a group to split expenses for trips, house rent, or daily lunches with friends."}
             </p>
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              variant="outline"
-              className="border-slate-300"
-            >
-              Create your first group
-            </Button>
+            {!searchTerm && (
+              <Button
+                onClick={() => setShowCreateDialog(true)}
+                variant="outline"
+                className="border-slate-300"
+              >
+                Create your first group
+              </Button>
+            )}
           </div>
         )}
       </div>
 
-      {/* --- CREATE MODAL --- */}
       {showCreateDialog && (
         <CreateGroupDialog
           isOpen={showCreateDialog}

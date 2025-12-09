@@ -8,22 +8,20 @@ export interface GroupSummary {
   description?: string;
   avatar_url?: string;
   created_at: string;
-  _count?: {
-    members: number;
-  };
+  member_count: number;
 }
 
-export const useGroupsList = () => {
+export const useGroupsList = (search?: string) => {
   return useQuery({
-    queryKey: ["groups", "list"],
+    queryKey: ["groups", "list", search],
     queryFn: async () => {
-      // Integration: GET /api/users/me/groups
-      // Ensure your backend includes `_count: { members: true }` in the Prisma query
+      const params = search ? { search } : {};
       const { data } = await api.get<ApiResponse<{ groups: GroupSummary[] }>>(
-        "/users/me/groups"
+        "/users/me/groups",
+        { params }
       );
       return data.data?.groups || [];
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 mins
+    placeholderData: (prev) => prev,
   });
 };
