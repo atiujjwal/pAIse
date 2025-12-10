@@ -1,21 +1,26 @@
 "use client";
 
-import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { Button } from "@/src/components/ui/Button";
-import { OptimizedPayment } from "../api/group-details-query";
-import { formatCurrency } from "@/src/lib/utils";
+import { useAuthStore } from "@/src/features/auth/store";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/src/components/ui/Dialog";
+import { Button } from "@/src/components/ui/Button";
+import { Skeleton } from "@/src/components/ui/Skeleton";
+import { Check, ArrowRight, Wallet } from "lucide-react";
+import { formatCurrency } from "@/src/lib/utils";
+import { OptimizedPayment } from "../api/group-details-query"; // Ensure this import exists
+import { useCreateSettlement } from "@/src/features/settlements/api/settlement-queries"; // Import your settlement mutation
 
 interface SimplifyDebtDialogProps {
   isOpen: boolean;
   onClose: () => void;
   payments: OptimizedPayment[];
   isLoading: boolean;
+  groupId: string; // Needed for settlement context
 }
 
 export function SimplifyDebtDialog({
@@ -23,82 +28,111 @@ export function SimplifyDebtDialog({
   onClose,
   payments,
   isLoading,
+  groupId,
 }: SimplifyDebtDialogProps) {
+  const currentUser = useAuthStore((state) => state.user);
+  const { mutate: settleDebt, isPending } = useCreateSettlement();
+
+  const handleSettle = (payment: OptimizedPayment) => {
+    settleDebt({
+      receiver_id: payment.to.id,
+      group_id: groupId,
+      amount: payment.amount,
+      date: new Date().toISOString(),
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Simplified Debts</DialogTitle>
+          <DialogTitle>Simplify Debts</DialogTitle>
+          <DialogDescription>
+            The most efficient way to settle all balances in this group.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <p className="text-sm text-slate-500">
-            The following transactions are the most efficient way to settle all
-            debts in this group.
-          </p>
-
+        <div className="space-y-4 my-4 max-h-[60vh] overflow-y-auto pr-1">
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-14 bg-slate-100 rounded-lg animate-pulse"
-                />
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
               ))}
             </div>
           ) : payments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center bg-slate-50 rounded-xl border border-dashed">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500 mb-2" />
-              <p className="font-medium text-slate-900">All settled up!</p>
-              <p className="text-xs text-slate-500">No transactions needed.</p>
+            <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <Check className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
+              <p>All settled up! No payments needed.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {payments.map((payment, idx) => (
+            payments.map((payment, index) => {
+              const isPayer = payment.from.id === currentUser?.id;
+
+              return (
                 <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-white shadow-sm"
+                  key={index}
+                  className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md"
                 >
-                  <div className="flex items-center gap-3">
-                    {/* From User */}
+                  {/* Left: Avatar Flow */}
+                  <div className="flex items-center gap-3 flex-1">
                     <div className="flex flex-col items-center">
-                      <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-[10px] font-bold text-red-700">
+                      <div className="h-8 w-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">
                         {payment.from.name[0]}
                       </div>
-                      <span className="text-[10px] text-slate-500 mt-1 max-w-[50px] truncate">
-                        {payment.from.name}
+                      <span className="text-[10px] text-slate-400 mt-1">
+                        Payer
                       </span>
                     </div>
 
                     <ArrowRight className="h-4 w-4 text-slate-300" />
 
-                    {/* To User */}
                     <div className="flex flex-col items-center">
-                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700">
+                      <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">
                         {payment.to.name[0]}
                       </div>
-                      <span className="text-[10px] text-slate-500 mt-1 max-w-[50px] truncate">
-                        {payment.to.name}
+                      <span className="text-[10px] text-slate-400 mt-1">
+                        Receiver
                       </span>
+                    </div>
+
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-slate-900">
+                        {isPayer ? "You owe" : `${payment.from.name} owes`}
+                        <span className="block font-bold">
+                          {payment.to.name.split(" ")[0]}
+                        </span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="block font-bold text-slate-900">
+                  {/* Right: Amount & Action */}
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="font-mono font-bold text-slate-900">
                       {formatCurrency(payment.amount, "INR")}
                     </span>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
-                      Transfer
-                    </span>
+
+                    {isPayer && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                        onClick={() => handleSettle(payment)}
+                        disabled={isPending}
+                      >
+                        <Wallet className="h-3 w-3 mr-1" /> Pay
+                      </Button>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })
           )}
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={onClose}>Done</Button>
+        <div className="flex justify-end pt-2">
+          <Button variant="ghost" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

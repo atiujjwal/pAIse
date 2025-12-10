@@ -4,8 +4,6 @@ import { z } from "zod";
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
 
-Decimal.set({ precision: 12 });
-
 import {
   errorResponse,
   successResponse,
@@ -14,11 +12,12 @@ import {
   created,
 } from "@/src/lib/response";
 
-import { jobQueue } from "@/src/lib/queue";
 import { createSettlementSchema } from "@/src/services/settlementServices";
 import { checkGroupMembership } from "@/src/services/groupService";
 import { formatPublicUser } from "@/src/lib/formatter";
 import { balanceService } from "@/src/services/balanceService";
+
+Decimal.set({ precision: 12 });
 
 /**
  * POST /settlements
@@ -38,6 +37,11 @@ const postHandler = async (
     if (payerId === receiver_id)
       return badRequest("Cannot settle with yourself");
 
+    const decimalAmount = new Decimal(amount);
+    if (decimalAmount.isNegative() || decimalAmount.isZero()) {
+      return badRequest("Settlement amount must be positive");
+    }
+
     const receiver = await prisma.user.findUnique({
       where: { id: receiver_id, is_deleted: false },
     });
@@ -45,6 +49,7 @@ const postHandler = async (
     if (!receiver) return notFound("Receiver not found");
 
     if (group_id) {
+      // --- FLOW A: GROUP SETTLEMENT ---
       const group = await prisma.group.findUnique({
         where: { id: group_id },
       });
@@ -52,44 +57,62 @@ const postHandler = async (
 
       await checkGroupMembership(payerId, group_id);
       await checkGroupMembership(receiver_id, group_id);
+    } else {
+      // --- FLOW B: FRIEND SETTLEMENT (Non-Group) ---
+      const friendship = await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { requester_id: payerId, addressee_id: receiver_id },
+            { requester_id: receiver_id, addressee_id: payerId },
+          ],
+          status: "ACCEPTED",
+        },
+      });
+
+      if (!friendship) {
+        return badRequest(
+          "You can only settle non-group expenses with accepted friends."
+        );
+      }
     }
 
-    // Create settlement record
-    const settlement = await prisma.settlement.create({
-      data: {
-        payer_id: payerId,
-        receiver_id,
-        group_id,
-        amount: new Decimal(amount),
-        date,
-        currency: "INR",
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const settlement = await tx.settlement.create({
+        data: {
+          payer_id: payerId,
+          receiver_id,
+          group_id: group_id || null,
+          amount: decimalAmount,
+          date: new Date(date),
+          currency: "INR",
+        },
+      });
+
+      await balanceService.processSettlement(settlement.id, tx);
+      return settlement;
     });
 
-    await balanceService.processSettlement(settlement.id);
-
-    return created("Settlement recorded successfully", settlement);
+    return created("Settlement recorded successfully", result);
   } catch (error: any) {
-    console.log("Error creating settlement:", error);
-
-    if (error instanceof z.ZodError) {
+    console.error("Error creating settlement:", error);
+    if (error instanceof z.ZodError)
       return badRequest("Invalid input", error.issues);
-    }
-
-    if (error.message === "NOT_FOUND_OR_UNAUTHORIZED") {
+    if (error.message === "NOT_FOUND_OR_UNAUTHORIZED")
       return errorResponse(
         "One or more users are not in the specified group",
         400
       );
-    }
-
     return errorResponse("Internal server error");
   }
 };
 
 /**
  * GET /settlements
- * Retrieves a history of payments made or received by the user.
+ * Retrieves settlement history.
+ * Supports filtering by:
+ * - group_id: Returns ALL settlements in that group (Requires membership).
+ * - friend_id: Returns 1:1 settlements between user and friend.
+ * - (default): Returns ALL settlements involving the user.
  */
 const getHandler = async (
   request: NextRequest,
@@ -102,17 +125,64 @@ const getHandler = async (
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = parseInt(searchParams.get("offset") || "0");
     const type = searchParams.get("type"); // paid / received
+    const group_id = searchParams.get("group_id");
+    const friend_id = searchParams.get("friend_id");
 
-    let whereClause: any = {
-      OR: [{ payer_id: userId }, { receiver_id: userId }],
-    };
+    let whereClause: any = {};
 
-    if (type === "paid") whereClause = { payer_id: userId };
-    if (type === "received") whereClause = { receiver_id: userId };
+    // --- CASE 1: GROUP HISTORY (Priority) ---
+    if (group_id) {
+      // Security: Must be a member to see group history
+      try {
+        await checkGroupMembership(userId, group_id);
+      } catch (e) {
+        return errorResponse("Group not found or unauthorized", 401);
+      }
+
+      whereClause = { group_id };
+
+      // Optional: Filter within group
+      if (type === "paid") whereClause.payer_id = userId;
+      if (type === "received") whereClause.receiver_id = userId;
+    }
+    // --- CASE 2: FRIEND HISTORY (Private 1:1) ---
+    else if (friend_id) {
+      whereClause = {
+        group_id: null, // Strictly private settlements (not part of a group trip)
+        OR: [
+          { payer_id: userId, receiver_id: friend_id },
+          { payer_id: friend_id, receiver_id: userId },
+        ],
+      };
+
+      // Refine if specific direction requested
+      if (type === "paid") {
+        whereClause = {
+          group_id: null,
+          payer_id: userId,
+          receiver_id: friend_id,
+        };
+      } else if (type === "received") {
+        whereClause = {
+          group_id: null,
+          payer_id: friend_id,
+          receiver_id: userId,
+        };
+      }
+    }
+    // --- CASE 3: GENERAL DASHBOARD (All My Settlements) ---
+    else {
+      whereClause = {
+        OR: [{ payer_id: userId }, { receiver_id: userId }],
+      };
+
+      if (type === "paid") whereClause = { payer_id: userId };
+      if (type === "received") whereClause = { receiver_id: userId };
+    }
 
     const settlements = await prisma.settlement.findMany({
       where: whereClause,
-      include: { payer: true, receiver: true }, // Include public user data
+      include: { payer: true, receiver: true },
       take: limit,
       skip: offset,
       orderBy: { date: "desc" },

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Settings,
   Users,
@@ -11,9 +12,12 @@ import {
   MoreVertical,
   Shield,
   UserMinus,
-  ArrowLeft, // Added ArrowLeft
+  ArrowLeft,
+  History,
+  ChevronRight,
+  Receipt,
 } from "lucide-react";
-import Link from "next/link";
+
 import { useAuthStore } from "@/src/features/auth/store";
 import {
   useGroupDetails,
@@ -23,12 +27,21 @@ import {
   useUpdateMemberRole,
   OptimizedPayment,
 } from "@/src/features/groups/api/group-details-query";
+import { useSettlements } from "@/src/features/settlements/api/settlement-queries"; // Unified Settlement Hook
+
 import { SimplifyDebtDialog } from "@/src/features/groups/components/SimplifyDebtDialog";
 import { AddMemberDialog } from "@/src/features/groups/components/AddMemberDialog";
 import { EditGroupDialog } from "@/src/features/groups/components/EditGroupDialog";
+import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
+
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import { Button } from "@/src/components/ui/Button";
-import { formatCurrency } from "@/src/lib/utils";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,31 +50,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/Dropdown-menu";
+import { formatCurrency } from "@/src/lib/utils";
 
 export default function GroupDetailsPage() {
   const params = useParams();
   const groupId = params?.id as string;
   const user = useAuthStore((state) => state.user);
+  const router = useRouter();
 
-  // Queries
+  // --- QUERIES ---
   const { data: group, isLoading: loadingGroup } = useGroupDetails(groupId);
   const { data: balances, isLoading: loadingBalances } =
     useGroupBalances(groupId);
+  // Fetch Settlements specific to this group
+  const { data: settlements, isLoading: loadingSettlements } = useSettlements({
+    group_id: groupId,
+  });
 
-  // Mutations
+  // --- MUTATIONS ---
   const { mutate: removeMember } = useRemoveMember(groupId);
   const { mutate: updateRole } = useUpdateMemberRole(groupId);
-
-  // States
-  const [showSimplifyModal, setShowSimplifyModal] = useState(false);
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [showEditGroup, setShowEditGroup] = useState(false);
-  const [optimizedData, setOptimizedData] = useState<OptimizedPayment[]>([]);
-
   const { mutate: simplify, isPending: isSimplifying } =
     useSimplifyDebts(groupId);
 
-  // Logic
+  // --- STATE ---
+  const [showSimplifyModal, setShowSimplifyModal] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [showEditGroup, setShowEditGroup] = useState(false);
+  const [settlementTarget, setSettlementTarget] = useState<{
+    id: string;
+    name: string;
+    amount: string;
+  } | null>(null);
+  const [optimizedData, setOptimizedData] = useState<OptimizedPayment[]>([]);
+
+  // --- HANDLERS ---
   const handleSimplify = () => {
     setShowSimplifyModal(true);
     simplify(undefined, { onSuccess: (data) => setOptimizedData(data) });
@@ -76,22 +99,21 @@ export default function GroupDetailsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* --- ADDED: BACK BUTTON --- */}
+      {/* Back Button */}
       <div className="mb-2">
         <Button
           variant="ghost"
           size="sm"
           asChild
-          className="text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 -ml-3"
+          className="text-slate-500 hover:text-slate-900 -ml-3"
         >
           <Link href="/dashboard/groups">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Groups
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Groups
           </Link>
         </Button>
       </div>
 
-      {/* HEADER */}
+      {/* --- HEADER --- */}
       <div className="flex flex-col justify-between gap-6 border-b border-slate-100 pb-8 md:flex-row md:items-start">
         <div className="space-y-2">
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
@@ -102,7 +124,7 @@ export default function GroupDetailsPage() {
           </p>
           <div className="flex items-center gap-3 pt-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
-              <Users className="h-3.5 w-3.5" />
+              <Users className="h-3.5 w-3.5" />{" "}
               <span>{group.members.length} members</span>
             </div>
             <span className="text-sm text-slate-400">
@@ -120,20 +142,17 @@ export default function GroupDetailsPage() {
             <ArrowRightLeft className="mr-2 h-4 w-4 text-slate-500" /> Simplify
             Debts
           </Button>
-
           <Button asChild className="h-11 px-6 shadow-lg shadow-primary/20">
             <Link href={`/dashboard/expenses/new?groupId=${groupId}`}>
               Add Expense
             </Link>
           </Button>
-
-          {/* Admin Settings Button */}
           {isAdmin && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowEditGroup(true)}
-              className="h-11 w-11 rounded-full border border-slate-200 hover:bg-slate-100"
+              className="h-11 w-11 rounded-full border border-slate-200"
             >
               <Settings className="h-5 w-5 text-slate-500" />
             </Button>
@@ -142,8 +161,9 @@ export default function GroupDetailsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* BALANCES SECTION */}
+        {/* --- LEFT COLUMN: MAIN CONTENT (TABS) --- */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Net Balance Banner */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-xl">
             <div className="relative z-10">
               <p className="text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
@@ -167,15 +187,109 @@ export default function GroupDetailsPage() {
             <div className="absolute right-0 top-0 h-64 w-64 bg-primary/20 blur-3xl rounded-full translate-x-1/4 -translate-y-1/4 pointer-events-none" />
           </div>
 
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-primary" /> Detailed Breakdown
-            </h2>
-            <BalancesList balances={balances} />
-          </div>
+          {/* Tabs: Balances vs History */}
+          <Tabs defaultValue="balances" className="w-full">
+            <TabsList className="bg-slate-100 p-1 rounded-xl w-full sm:w-auto h-12 mb-6">
+              <TabsTrigger
+                value="balances"
+                className="rounded-lg h-10 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              >
+                Current Balances
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="rounded-lg h-10 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              >
+                Settlement History
+              </TabsTrigger>
+            </TabsList>
+
+            {/* TAB 1: BALANCES */}
+            <TabsContent value="balances" className="space-y-6">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-primary" /> Detailed Breakdown
+              </h2>
+              <BalancesList
+                balances={balances}
+                onSettleClick={(target) => setSettlementTarget(target)}
+              />
+            </TabsContent>
+
+            {/* TAB 2: SETTLEMENT HISTORY */}
+            <TabsContent value="history" className="space-y-6">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" /> Payment Log
+              </h2>
+
+              {loadingSettlements ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : settlements?.length === 0 ? (
+                <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <Receipt className="h-10 w-10 mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500">
+                    No payments recorded in this group yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {settlements.map((s: any) => {
+                    const isPayer = s.payer.id === user?.id;
+                    const isReceiver = s.receiver.id === user?.id;
+
+                    return (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`h-10 w-10 rounded-full flex items-center justify-center text-lg ${
+                              isPayer
+                                ? "bg-rose-100 text-rose-600"
+                                : "bg-emerald-100 text-emerald-600"
+                            }`}
+                          >
+                            {isPayer ? "↑" : "↓"}
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-900">
+                              <span className="font-bold">
+                                {isPayer ? "You" : s.payer.name}
+                              </span>{" "}
+                              paid{" "}
+                              <span className="font-bold">
+                                {isReceiver ? "You" : s.receiver.name}
+                              </span>
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(s.date).toLocaleDateString(undefined, {
+                                dateStyle: "medium",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={`font-bold font-mono ${
+                            isPayer ? "text-rose-600" : "text-emerald-600"
+                          }`}
+                        >
+                          {isPayer ? "-" : "+"}
+                          {formatCurrency(s.amount, s.currency)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* MEMBERS SIDEBAR */}
+        {/* --- RIGHT COLUMN: MEMBERS SIDEBAR --- */}
         <div className="lg:col-span-1">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sticky top-6">
             <div className="flex items-center justify-between mb-6">
@@ -189,33 +303,28 @@ export default function GroupDetailsPage() {
                 <UserPlus className="h-4 w-4 mr-1" /> Add
               </Button>
             </div>
-
             <div className="space-y-1">
               {group.members.map((member) => (
                 <div
                   key={member.user.id}
                   className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors group"
                 >
-                  <div className="flex items-center gap-3">
+                  <Link
+                    href={`/dashboard/friends/${member.user.id}`}
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                  >
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 group-hover:bg-primary group-hover:text-white transition-colors">
                       {member.user.name[0]}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-700 leading-none flex items-center gap-2">
+                      <p className="text-sm font-medium text-slate-700 leading-none">
                         {member.user.name}
-                        {member.user.id === user?.id && (
-                          <span className="text-[10px] bg-slate-100 px-1.5 rounded text-slate-500">
-                            You
-                          </span>
-                        )}
                       </p>
                       <p className="text-[10px] text-slate-400 font-semibold mt-1 uppercase tracking-wide">
                         {member.role}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Admin Actions for Members */}
+                  </Link>
                   {isAdmin && member.user.id !== user?.id && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -239,17 +348,14 @@ export default function GroupDetailsPage() {
                             })
                           }
                         >
-                          <Shield className="mr-2 h-4 w-4" />
-                          {member.role === "ADMIN"
-                            ? "Demote to Member"
-                            : "Promote to Admin"}
+                          <Shield className="mr-2 h-4 w-4" />{" "}
+                          {member.role === "ADMIN" ? "Demote" : "Promote"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          className="text-red-600"
                           onClick={() => removeMember(member.user.id)}
                         >
-                          <UserMinus className="mr-2 h-4 w-4" /> Remove from
-                          Group
+                          <UserMinus className="mr-2 h-4 w-4" /> Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -267,6 +373,7 @@ export default function GroupDetailsPage() {
         onClose={() => setShowSimplifyModal(false)}
         payments={optimizedData}
         isLoading={isSimplifying}
+        groupId={groupId}
       />
       <AddMemberDialog
         isOpen={showAddMember}
@@ -280,13 +387,40 @@ export default function GroupDetailsPage() {
         groupId={groupId}
         initialData={{ name: group.name, description: group.description }}
       />
+
+      {/* Settle Up Modal */}
+      {settlementTarget && user && (
+        <SettlementModal
+          isOpen={!!settlementTarget}
+          onClose={() => setSettlementTarget(null)}
+          currentUser={{
+            id: user.id,
+            name: user.name,
+            avatar: user.avatar_url || user.avatar,
+          }}
+          counterparty={{
+            id: settlementTarget.id,
+            name: settlementTarget.name,
+          }}
+          defaultAmount={settlementTarget.amount}
+          context={{ type: "group", groupId: group.id, groupName: group.name }}
+        />
+      )}
     </div>
   );
 }
 
-// Sub-component for clean Balances logic
-function BalancesList({ balances }: { balances: any }) {
+// Sub-component for Balances List (Same as before, ensuring navigation)
+function BalancesList({
+  balances,
+  onSettleClick,
+}: {
+  balances: any;
+  onSettleClick: (t: any) => void;
+}) {
   if (!balances) return null;
+  const router = useRouter();
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4">
@@ -301,24 +435,47 @@ function BalancesList({ balances }: { balances: any }) {
           balances.you_owe.map((item: any) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-4 rounded-2xl border border-rose-100 bg-white shadow-sm hover:shadow-md transition-all"
+              className="flex items-center justify-between p-4 rounded-2xl border border-rose-100 bg-white shadow-sm hover:shadow-md transition-all group"
             >
-              <div className="flex items-center gap-3">
+              <div
+                className="flex items-center gap-3 cursor-pointer flex-1"
+                onClick={() => router.push(`/dashboard/friends/${item.id}`)}
+              >
                 <div className="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center text-sm font-bold text-rose-600">
                   {item.name[0]}
                 </div>
-                <span className="font-semibold text-slate-700">
-                  {item.name}
-                </span>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors flex items-center gap-1">
+                    {item.name}{" "}
+                    <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Tap to see details
+                  </span>
+                </div>
               </div>
-              <span className="font-bold text-rose-600 font-mono text-lg">
-                {formatCurrency(item.amount, balances.currency)}
-              </span>
+              <div className="flex flex-col items-end gap-2">
+                <span className="font-bold text-rose-600 font-mono text-lg">
+                  {formatCurrency(item.amount, balances.currency)}
+                </span>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-rose-600 hover:bg-rose-700 text-white"
+                  onClick={() =>
+                    onSettleClick({
+                      id: item.id,
+                      name: item.name,
+                      amount: item.amount,
+                    })
+                  }
+                >
+                  Settle
+                </Button>
+              </div>
             </div>
           ))
         )}
       </div>
-
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Owed to
@@ -332,13 +489,14 @@ function BalancesList({ balances }: { balances: any }) {
           balances.you_are_owed.map((item: any) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-white shadow-sm hover:shadow-md transition-all"
+              className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-white shadow-sm hover:shadow-md transition-all group cursor-pointer"
+              onClick={() => router.push(`/dashboard/friends/${item.id}`)}
             >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-sm font-bold text-emerald-600">
                   {item.name[0]}
                 </div>
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors">
                   {item.name}
                 </span>
               </div>

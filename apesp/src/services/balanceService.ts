@@ -1,4 +1,4 @@
-import { Balance, Settlement, User } from "@prisma/client";
+import { Balance, Prisma, Settlement, User } from "@prisma/client";
 import { prisma } from "@/src/lib/db";
 import { Decimal } from "decimal.js";
 import { formatPublicUser } from "../lib/formatter";
@@ -389,21 +389,25 @@ export class BalanceService {
 
   /**
    * Upserts the calculated deltas into the Balance table.
+   * Accepts an optional transaction client (tx)
    */
   private async applyDeltasToDb(
     deltas: PairwiseDelta[],
-    groupId: string | null
+    groupId: string | null,
+    txClient?: Prisma.TransactionClient // New optional parameter
   ) {
-    // Process sequentially for safety
+    const db = txClient || prisma; // Use passed transaction or default prisma
+
     for (const item of deltas) {
       const { user_A_id, user_B_id, delta } = item;
 
-      // Optimization: Don't write zero updates
       if (delta.isZero()) continue;
 
-      await prisma.$transaction(async (tx) => {
-        // Safe findFirst to handle nullable group_id compound key issues
-        const existing = await tx.balance.findFirst({
+      // We cannot use $transaction inside a loop if we are already IN a transaction.
+      // So we check if db is the raw prisma client or a transaction client.
+
+      const operation = async (client: Prisma.TransactionClient) => {
+        const existing = await client.balance.findFirst({
           where: {
             user_A_id,
             user_B_id,
@@ -413,15 +417,12 @@ export class BalanceService {
 
         if (existing) {
           const newAmount = existing.amount.add(delta);
-
-          // Optimization: If balance becomes 0, we could delete it,
-          // but keeping it with 0 is safer for history unless cleaning up.
-          await tx.balance.update({
+          await client.balance.update({
             where: { id: existing.id },
             data: { amount: newAmount },
           });
         } else {
-          await tx.balance.create({
+          await client.balance.create({
             data: {
               user_A_id,
               user_B_id,
@@ -430,15 +431,31 @@ export class BalanceService {
             },
           });
         }
-      });
+      };
+
+      // If we are already in a transaction (txClient exists), run directly.
+      // If not, creates a new mini-transaction for this loop iteration.
+      if (txClient) {
+        await operation(txClient);
+      } else {
+        await prisma.$transaction(async (newTx) => {
+          await operation(newTx);
+        });
+      }
     }
   }
 
   /**
    * SETTLEMENT: Processes a new settlement (payment) and updates balances.
+   * Accepts optional transaction client to ensure atomicity with Settlement Creation
    */
-  public async processSettlement(settlementId: string): Promise<void> {
-    const settlement = await prisma.settlement.findUnique({
+  public async processSettlement(
+    settlementId: string,
+    txClient?: Prisma.TransactionClient
+  ): Promise<void> {
+    const db = txClient || prisma;
+
+    const settlement = await db.settlement.findUnique({
       where: { id: settlementId },
     });
 
@@ -447,15 +464,13 @@ export class BalanceService {
       return;
     }
 
-    // Calculate the Delta
     const delta = this.calculateSettlementDelta(
       settlement.payer_id,
       settlement.receiver_id,
       new Decimal(settlement.amount)
     );
 
-    // Apply to DB
-    await this.applyDeltasToDb([delta], settlement.group_id);
+    await this.applyDeltasToDb([delta], settlement.group_id, db);
 
     console.log(`[BalanceService] Applied settlement ${settlementId}`);
   }
