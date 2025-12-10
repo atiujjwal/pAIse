@@ -165,7 +165,7 @@ model Group {
   id          String   @id @default(cuid()) // Unique group identifier
   name        String // Group name
   description String? // Optional group description
-  avatar_url  String? // Optional group avatar
+  avatar      String?  @map("avatar_url") // Optional group avatar
   owner_id    String // FK → User (creator)
   created_at  DateTime @default(now()) // When group created
   updated_at  DateTime @updatedAt // Last modification timestamp
