@@ -93,7 +93,7 @@ export default function FriendDetailsPage() {
   const handleRemind = () => {
     // Mock Notification Logic
     addToast(`Reminder sent to ${friend?.name}`, "success");
-    // Future: Call API POST /friends/remind { friendId }
+    //TODO: Future: Call API POST /friends/remind { friendId }
   };
 
   if (loadingFriend)
@@ -275,7 +275,7 @@ export default function FriendDetailsPage() {
           currentUser={{
             id: currentUser.id,
             name: currentUser.name,
-            avatar: currentUser.avatar || currentUser.avatar,
+            avatar: currentUser.avatar,
           }}
           counterparty={{
             id: friend.id,

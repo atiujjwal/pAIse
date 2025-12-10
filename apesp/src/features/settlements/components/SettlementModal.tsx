@@ -60,7 +60,8 @@ export function SettlementModal({
     defaultDirection
   );
   const { mutate: createSettlement, isPending } = useCreateSettlement();
-
+  console.log("63: ", currentUser);
+  
   const {
     register,
     handleSubmit,
@@ -132,7 +133,7 @@ export function SettlementModal({
           <div className="flex items-center justify-between px-4 py-6 bg-slate-50 rounded-xl border border-slate-100">
             <div className="flex flex-col items-center gap-2">
               <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                <AvatarImage src={currentUser.avatar || ""} />
+                <AvatarImage src={currentUser.avatar || ""} />    { /*need changes here */}
                 <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
               </Avatar>
               <span className="text-xs font-medium text-slate-600">You</span>

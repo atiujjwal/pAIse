@@ -16,7 +16,6 @@ import {
   History,
   ChevronRight,
   Receipt,
-  Image as ImageIcon, // Imported for fallback
 } from "lucide-react";
 
 import { useAuthStore } from "@/src/features/auth/store";
@@ -37,6 +36,11 @@ import { SettlementModal } from "@/src/features/settlements/components/Settlemen
 
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import { Button } from "@/src/components/ui/Button";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/Avatar";
 import {
   Tabs,
   TabsContent,
@@ -77,11 +81,15 @@ export default function GroupDetailsPage() {
   const [showSimplifyModal, setShowSimplifyModal] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
+
+  // UPDATED STATE TYPE: Added avatar
   const [settlementTarget, setSettlementTarget] = useState<{
     id: string;
     name: string;
     amount: string;
+    avatar?: string | null; // Added
   } | null>(null);
+
   const [optimizedData, setOptimizedData] = useState<OptimizedPayment[]>([]);
 
   // --- HANDLERS ---
@@ -117,13 +125,12 @@ export default function GroupDetailsPage() {
       <div className="flex flex-col justify-between gap-6 border-b border-slate-100 pb-8 md:flex-row md:items-start">
         {/* Left Side: Avatar + Details */}
         <div className="flex items-start gap-6">
-          {/* Avatar Rendering */}
           <div
             className={cn(
               "h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm flex items-center justify-center",
               !group.avatar
                 ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
-                : "bg-slate-50"
+                : "bg-white"
             )}
           >
             {group.avatar ? (
@@ -132,19 +139,7 @@ export default function GroupDetailsPage() {
                 alt={group.name}
                 className="h-full w-full object-cover"
                 onError={(e) => {
-                  // Fallback if image fails
                   e.currentTarget.style.display = "none";
-                  e.currentTarget.parentElement!.classList.add(
-                    "bg-gradient-to-br",
-                    "from-primary/10",
-                    "to-purple-500/10",
-                    "text-primary"
-                  );
-                  // We inject the Initial as a sibling text node logic or just show icon
-                  const span = document.createElement("span");
-                  span.innerText = group.name[0].toUpperCase();
-                  span.className = "text-3xl font-bold";
-                  e.currentTarget.parentElement!.appendChild(span);
                 }}
               />
             ) : (
@@ -154,7 +149,6 @@ export default function GroupDetailsPage() {
             )}
           </div>
 
-          {/* Text Details */}
           <div className="space-y-2">
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               {group.name}
@@ -203,7 +197,7 @@ export default function GroupDetailsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* --- LEFT COLUMN: MAIN CONTENT (TABS) --- */}
+        {/* --- LEFT COLUMN: MAIN CONTENT --- */}
         <div className="lg:col-span-2 space-y-8">
           {/* Net Balance Banner */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-xl">
@@ -229,7 +223,7 @@ export default function GroupDetailsPage() {
             <div className="absolute right-0 top-0 h-64 w-64 bg-primary/20 blur-3xl rounded-full translate-x-1/4 -translate-y-1/4 pointer-events-none" />
           </div>
 
-          {/* Tabs: Balances vs History */}
+          {/* Tabs */}
           <Tabs defaultValue="balances" className="w-full">
             <TabsList className="bg-slate-100 p-1 rounded-xl w-full sm:w-auto h-12 mb-6">
               <TabsTrigger
@@ -246,18 +240,17 @@ export default function GroupDetailsPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: BALANCES */}
             <TabsContent value="balances" className="space-y-6">
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-primary" /> Detailed Breakdown
               </h2>
+              {/* Balances List with Avatar Support */}
               <BalancesList
                 balances={balances}
                 onSettleClick={(target) => setSettlementTarget(target)}
               />
             </TabsContent>
 
-            {/* TAB 2: SETTLEMENT HISTORY */}
             <TabsContent value="history" className="space-y-6">
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <History className="h-5 w-5 text-primary" /> Payment Log
@@ -355,12 +348,17 @@ export default function GroupDetailsPage() {
                     href={`/dashboard/friends/${member.user.id}`}
                     className="flex items-center gap-3 flex-1 cursor-pointer"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 group-hover:bg-primary group-hover:text-white transition-colors">
-                      {member.user.name[0]}
-                    </div>
+                    <Avatar className="h-9 w-9 border border-white shadow-sm">
+                      <AvatarImage src={member.user.avatar} />
+                      <AvatarFallback className="bg-slate-100 text-slate-600 font-bold text-xs">
+                        {member.user.name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+
                     <div>
                       <p className="text-sm font-medium text-slate-700 leading-none">
                         {member.user.name}
+                        {member.user.id === user?.id && " (You)"}
                       </p>
                       <p className="text-[10px] text-slate-400 font-semibold mt-1 uppercase tracking-wide">
                         {member.role}
@@ -427,7 +425,6 @@ export default function GroupDetailsPage() {
         isOpen={showEditGroup}
         onClose={() => setShowEditGroup(false)}
         groupId={groupId}
-        // FIXED: Passed avatar to the edit dialog
         initialData={{
           name: group.name,
           description: group.description,
@@ -443,11 +440,12 @@ export default function GroupDetailsPage() {
           currentUser={{
             id: user.id,
             name: user.name,
-            avatar: user.avatar || user.avatar,
+            avatar: user.avatar,
           }}
           counterparty={{
             id: settlementTarget.id,
             name: settlementTarget.name,
+            avatar: settlementTarget.avatar, // FIXED: Now passing avatar
           }}
           defaultAmount={settlementTarget.amount}
           context={{ type: "group", groupId: group.id, groupName: group.name }}
@@ -457,7 +455,7 @@ export default function GroupDetailsPage() {
   );
 }
 
-// Sub-component for Balances List (Same as before)
+// --- SUB-COMPONENT: BALANCES LIST ---
 function BalancesList({
   balances,
   onSettleClick,
@@ -470,6 +468,7 @@ function BalancesList({
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
+      {/* YOU OWE */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-rose-600 uppercase tracking-wider flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-rose-500"></span> You Owe
@@ -488,9 +487,13 @@ function BalancesList({
                 className="flex items-center gap-3 cursor-pointer flex-1"
                 onClick={() => router.push(`/dashboard/friends/${item.id}`)}
               >
-                <div className="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center text-sm font-bold text-rose-600">
-                  {item.name[0]}
-                </div>
+                <Avatar className="h-10 w-10 border border-white shadow-sm">
+                  <AvatarImage src={item.avatar} />
+                  <AvatarFallback className="bg-rose-50 text-rose-600 font-bold">
+                    {item.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+
                 <div className="flex flex-col">
                   <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors flex items-center gap-1">
                     {item.name}{" "}
@@ -513,6 +516,7 @@ function BalancesList({
                       id: item.id,
                       name: item.name,
                       amount: item.amount,
+                      avatar: item.avatar, // FIXED: Pass Avatar here
                     })
                   }
                 >
@@ -523,6 +527,8 @@ function BalancesList({
           ))
         )}
       </div>
+
+      {/* OWED TO YOU */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Owed to
@@ -540,9 +546,13 @@ function BalancesList({
               onClick={() => router.push(`/dashboard/friends/${item.id}`)}
             >
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-sm font-bold text-emerald-600">
-                  {item.name[0]}
-                </div>
+                <Avatar className="h-10 w-10 border border-white shadow-sm">
+                  <AvatarImage src={item.avatar} />
+                  <AvatarFallback className="bg-emerald-50 text-emerald-600 font-bold">
+                    {item.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+
                 <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors">
                   {item.name}
                 </span>
