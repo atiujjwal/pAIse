@@ -11,6 +11,7 @@ import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import { useDebounce } from "@/src/hooks/use-debounce";
+import { cn } from "@/src/lib/utils"; // Ensure cn is imported
 
 export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,9 +93,38 @@ export default function GroupsPage() {
               >
                 <div>
                   <div className="flex items-start justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-bold text-lg">
-                      {group.name[0].toUpperCase()}
+                    {/* FIXED: Show Avatar Image if available, else show Initial */}
+                    <div
+                      className={cn(
+                        "flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden font-bold text-lg",
+                        !group.avatar
+                          ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
+                          : "bg-slate-50"
+                      )}
+                    >
+                      {group.avatar ? (
+                        <img
+                          src={group.avatar}
+                          alt={group.name}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            // Fallback to initial if image fails to load
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.parentElement!.classList.add(
+                              "bg-gradient-to-br",
+                              "from-primary/10",
+                              "to-purple-500/10",
+                              "text-primary"
+                            );
+                            e.currentTarget.parentElement!.innerText =
+                              group.name[0].toUpperCase();
+                          }}
+                        />
+                      ) : (
+                        group.name[0].toUpperCase()
+                      )}
                     </div>
+
                     {/* Dynamic Member Count */}
                     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
                       <Users className="h-3 w-3" />

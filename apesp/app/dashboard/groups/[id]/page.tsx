@@ -16,6 +16,7 @@ import {
   History,
   ChevronRight,
   Receipt,
+  Image as ImageIcon, // Imported for fallback
 } from "lucide-react";
 
 import { useAuthStore } from "@/src/features/auth/store";
@@ -27,7 +28,7 @@ import {
   useUpdateMemberRole,
   OptimizedPayment,
 } from "@/src/features/groups/api/group-details-query";
-import { useSettlements } from "@/src/features/settlements/api/settlement-queries"; // Unified Settlement Hook
+import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
 
 import { SimplifyDebtDialog } from "@/src/features/groups/components/SimplifyDebtDialog";
 import { AddMemberDialog } from "@/src/features/groups/components/AddMemberDialog";
@@ -50,7 +51,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/Dropdown-menu";
-import { formatCurrency } from "@/src/lib/utils";
+import { formatCurrency, cn } from "@/src/lib/utils";
 
 export default function GroupDetailsPage() {
   const params = useParams();
@@ -62,7 +63,6 @@ export default function GroupDetailsPage() {
   const { data: group, isLoading: loadingGroup } = useGroupDetails(groupId);
   const { data: balances, isLoading: loadingBalances } =
     useGroupBalances(groupId);
-  // Fetch Settlements specific to this group
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     group_id: groupId,
   });
@@ -115,24 +115,66 @@ export default function GroupDetailsPage() {
 
       {/* --- HEADER --- */}
       <div className="flex flex-col justify-between gap-6 border-b border-slate-100 pb-8 md:flex-row md:items-start">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
-            {group.name}
-          </h1>
-          <p className="text-slate-500 text-lg max-w-2xl">
-            {group.description || "No description provided."}
-          </p>
-          <div className="flex items-center gap-3 pt-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
-              <Users className="h-3.5 w-3.5" />{" "}
-              <span>{group.members.length} members</span>
+        {/* Left Side: Avatar + Details */}
+        <div className="flex items-start gap-6">
+          {/* Avatar Rendering */}
+          <div
+            className={cn(
+              "h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm flex items-center justify-center",
+              !group.avatar
+                ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
+                : "bg-slate-50"
+            )}
+          >
+            {group.avatar ? (
+              <img
+                src={group.avatar}
+                alt={group.name}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  // Fallback if image fails
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.parentElement!.classList.add(
+                    "bg-gradient-to-br",
+                    "from-primary/10",
+                    "to-purple-500/10",
+                    "text-primary"
+                  );
+                  // We inject the Initial as a sibling text node logic or just show icon
+                  const span = document.createElement("span");
+                  span.innerText = group.name[0].toUpperCase();
+                  span.className = "text-3xl font-bold";
+                  e.currentTarget.parentElement!.appendChild(span);
+                }}
+              />
+            ) : (
+              <span className="text-3xl font-bold">
+                {group.name[0].toUpperCase()}
+              </span>
+            )}
+          </div>
+
+          {/* Text Details */}
+          <div className="space-y-2">
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+              {group.name}
+            </h1>
+            <p className="text-slate-500 text-lg max-w-2xl">
+              {group.description || "No description provided."}
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
+                <Users className="h-3.5 w-3.5" />{" "}
+                <span>{group.members.length} members</span>
+              </div>
+              <span className="text-sm text-slate-400">
+                Created by {group.owner.name}
+              </span>
             </div>
-            <span className="text-sm text-slate-400">
-              Created by {group.owner.name}
-            </span>
           </div>
         </div>
 
+        {/* Right Side: Actions */}
         <div className="flex flex-wrap gap-3 items-center">
           <Button
             variant="outline"
@@ -385,7 +427,12 @@ export default function GroupDetailsPage() {
         isOpen={showEditGroup}
         onClose={() => setShowEditGroup(false)}
         groupId={groupId}
-        initialData={{ name: group.name, description: group.description }}
+        // FIXED: Passed avatar to the edit dialog
+        initialData={{
+          name: group.name,
+          description: group.description,
+          avatar: group.avatar,
+        }}
       />
 
       {/* Settle Up Modal */}
@@ -410,7 +457,7 @@ export default function GroupDetailsPage() {
   );
 }
 
-// Sub-component for Balances List (Same as before, ensuring navigation)
+// Sub-component for Balances List (Same as before)
 function BalancesList({
   balances,
   onSettleClick,

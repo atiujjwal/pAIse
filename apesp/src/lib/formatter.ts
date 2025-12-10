@@ -9,7 +9,20 @@ export const formatPublicUser = (user: Partial<User>) => {
   return {
     id: user.id,
     name: user.name,
-    avatar: user.avatar, // Maps schema 'avatar' to API 'avatar'
+    avatar: user.avatar,
+  };
+};
+
+export const formatFriendUser = (user: Partial<User>) => {
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    avatar: user.avatar,
+    currency: user.currency,
+    timezone: user.timezone, 
   };
 };
 

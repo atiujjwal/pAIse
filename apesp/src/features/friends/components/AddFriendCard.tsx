@@ -14,7 +14,9 @@ import {
   Download,
 } from "lucide-react";
 import QRCode from "react-qr-code";
+import { useQuery } from "@tanstack/react-query"; // Added useQuery
 
+import { api } from "@/src/lib/api"; // Added api
 import { useAuthStore } from "@/src/features/auth/store";
 import { useFriendActions } from "@/src/features/friends/api/friend-queries";
 import { Button } from "@/src/components/ui/Button";
@@ -28,17 +30,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/src/components/ui/Dialog";
+import { Skeleton } from "@/src/components/ui/Skeleton"; // Added Skeleton
 
 const addFriendSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
 
 export function AddFriendCard() {
-  const user = useAuthStore((state) => state.user);
+  const { user: storedUser } = useAuthStore((state) => state);
   const { sendRequest } = useFriendActions();
   const { addToast } = useToastStore();
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
+
+  // 1. FETCH FRESH PROFILE DATA
+  // This ensures we get the invite_code even if local storage is stale
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ["user", "me"],
+    queryFn: async () => {
+      const { data } = await api.get("/users/me");
+      return data.data;
+    },
+    placeholderData: storedUser, // Show cached data while fetching
+  });
+
+  // Use the freshest data available
+  const activeUser = profile || storedUser;
 
   const {
     register,
@@ -50,11 +67,16 @@ export function AddFriendCard() {
   });
 
   const onSubmit = (data: { email: string }) => {
-    sendRequest.mutate({ email: data.email }, { onSuccess: () => reset() });
+    sendRequest.mutate(
+      { email: data.email },
+      {
+        onSuccess: () => reset(),
+      }
+    );
   };
 
-  const inviteLink = user?.invite_code
-    ? `https://paise.app/dashboard/add?code=${user.invite_code}`
+  const inviteLink = activeUser?.invite_code
+    ? `https://paise.app/add?code=${activeUser.invite_code}`
     : "";
 
   const handleCopyLink = () => {
@@ -84,7 +106,7 @@ export function AddFriendCard() {
         ctx.drawImage(img, 0, 0);
         const pngFile = canvas.toDataURL("image/png");
         const downloadLink = document.createElement("a");
-        downloadLink.download = `paise-tag-${user?.name}.png`;
+        downloadLink.download = `paise-tag-${activeUser?.name || "user"}.png`;
         downloadLink.href = pngFile;
         downloadLink.click();
       }
@@ -96,14 +118,18 @@ export function AddFriendCard() {
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sticky top-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-slate-900">Add Friends</h3>
-        {/* QR Modal Trigger */}
-        {inviteLink && (
+
+        {/* QR Code Trigger */}
+        {isLoadingProfile && !inviteLink ? (
+          <Skeleton className="h-9 w-9 rounded-md" />
+        ) : inviteLink ? (
           <Dialog>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-slate-400 hover:text-primary"
+                className="text-slate-400 hover:text-primary hover:bg-primary/5"
+                title="Show QR Code"
               >
                 <QrCode className="h-5 w-5" />
               </Button>
@@ -134,7 +160,7 @@ export function AddFriendCard() {
               </div>
             </DialogContent>
           </Dialog>
-        )}
+        ) : null}
       </div>
 
       {/* Option 1: Email */}
@@ -182,29 +208,34 @@ export function AddFriendCard() {
       {/* Option 2: Copy Link */}
       <div className="space-y-3">
         <Label className="text-slate-600">Your Invite Link</Label>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 pr-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
-            <LinkIcon className="h-4 w-4 text-slate-400" />
+
+        {isLoadingProfile && !inviteLink ? (
+          <Skeleton className="h-12 w-full rounded-xl" />
+        ) : (
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 pr-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
+              <LinkIcon className="h-4 w-4 text-slate-400" />
+            </div>
+            <div className="flex-1 min-w-0 px-2">
+              <p className="truncate text-xs font-mono text-slate-500">
+                {inviteLink || "Generate a tag in Settings"}
+              </p>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleCopyLink}
+              disabled={!inviteLink}
+              className="h-8 w-8 hover:bg-white hover:shadow-sm"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4 text-slate-500" />
+              )}
+            </Button>
           </div>
-          <div className="flex-1 min-w-0 px-2">
-            <p className="truncate text-xs font-mono text-slate-500">
-              {inviteLink || "Generate a tag in Settings"}
-            </p>
-          </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleCopyLink}
-            disabled={!inviteLink}
-            className="h-8 w-8 hover:bg-white hover:shadow-sm"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-green-600" />
-            ) : (
-              <Copy className="h-4 w-4 text-slate-500" />
-            )}
-          </Button>
-        </div>
+        )}
       </div>
     </div>
   );

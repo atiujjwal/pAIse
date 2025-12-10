@@ -35,7 +35,6 @@ import {
 } from "@/src/components/ui/Select";
 import { cn } from "@/src/lib/utils";
 
-// Schema
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email().optional(),
@@ -60,38 +59,72 @@ export default function SettingsPage() {
 
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
 
-  // 1. FETCH LATEST PROFILE DATA (Fixes missing/stale data issue)
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+
+  const { data: profile, isLoading } = useQuery({
     queryKey: ["user", "me"],
     queryFn: async () => {
       const { data } = await api.get("/users/me");
-      return data.data; // Expecting full user object
+      return data.data;
     },
-    // If we have a stored user, use it as placeholder data to avoid layout shift
     placeholderData: storedUser,
   });
 
-  // --- Mutations ---
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      currency: "INR",
+      timezone: "UTC",
+      avatar: "",
+    },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, dirtyFields, isDirty },
+  } = form;
+
+  const currentAvatar = watch("avatar");
+
+  // 2. POPULATE FORM WITH API DATA
+  useEffect(() => {
+    if (profile) {
+      const apiAvatar = profile.avatar || "";
+
+      reset({
+        name: profile.name || "",
+        email: profile.email || "",
+        currency: profile.currency || "INR",
+        timezone: profile.timezone || "UTC",
+        avatar: apiAvatar,
+      });
+    }
+  }, [profile, reset]);
+
+  // --- MUTATIONS ---
   const { mutate: updateProfile, isPending } = useMutation({
     mutationFn: async (data: any) => {
       const res = await api.patch("/users/me", data);
       return res.data.data;
     },
     onSuccess: (updatedUser) => {
-      // Sync Global Store & React Query Cache
       updateStoreUser(updatedUser);
       queryClient.setQueryData(["user", "me"], updatedUser);
 
       addToast("Profile updated successfully", "success");
       setIsEditingAvatar(false);
 
-      // Reset form to clean state
       reset({
         name: updatedUser.name,
         email: updatedUser.email,
-        currency: updatedUser.currency || "INR",
-        timezone: updatedUser.timezone || "UTC",
-        avatar: updatedUser.avatar || updatedUser.avatar || "",
+        currency: updatedUser.currency,
+        timezone: updatedUser.timezone,
+        avatar: updatedUser.avatar || "",
       });
     },
     onError: (err: any) => {
@@ -118,48 +151,14 @@ export default function SettingsPage() {
     onError: () => addToast("Failed to generate tag", "error"),
   });
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      currency: "INR",
-      timezone: "UTC",
-      avatar: "",
-    },
-  });
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors, dirtyFields, isDirty },
-  } = form;
-
-  const currentAvatar = watch("avatar");
-
-  // 2. INITIALIZE FORM WITH FETCHED DATA
-  useEffect(() => {
-    if (profile) {
-      reset({
-        name: profile.name || "",
-        email: profile.email || "",
-        currency: profile.currency || "INR",
-        timezone: profile.timezone || "UTC",
-        // Handle both casing possibilities just in case
-        avatar: profile.avatar || profile.avatar || "",
-      });
-    }
-  }, [profile, reset]);
-
+  // --- HANDLERS ---
   const onSubmit = (data: ProfileFormValues) => {
     const payload: Record<string, any> = {};
 
     if (dirtyFields.name) payload.name = data.name;
     if (dirtyFields.currency) payload.currency = data.currency;
     if (dirtyFields.timezone) payload.timezone = data.timezone;
+
     if (dirtyFields.avatar) {
       payload.avatar = data.avatar === "" ? null : data.avatar;
     }
@@ -169,7 +168,6 @@ export default function SettingsPage() {
   };
 
   const handleCancelAvatarEdit = () => {
-    // Revert to the fetched profile URL
     setValue("avatar", profile?.avatar || "");
     setIsEditingAvatar(false);
   };
@@ -321,7 +319,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Other Fields */}
+          {/* Form Fields */}
           <div className="space-y-6">
             <div className="space-y-2">
               <Label>Display Name</Label>
