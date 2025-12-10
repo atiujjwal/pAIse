@@ -36,8 +36,12 @@ const getHandler = async (
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
+      dob: user.dob,
       avatar: user.avatar,
       currency: user.currency,
+      country: user.country,
+      invite_code: user.invite_code,
       timezone: user.timezone,
       created_at: user.created_at,
     };

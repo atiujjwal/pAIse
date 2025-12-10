@@ -40,7 +40,7 @@ const postHandler = async (
       data: {
         name,
         description: description || null,
-        avatar_url: avatar || null,
+        avatar: avatar || null,
         owner_id: userId,
         members: {
           create: {
