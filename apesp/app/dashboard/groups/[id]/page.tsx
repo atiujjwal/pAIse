@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -60,7 +60,7 @@ import { formatCurrency, cn } from "@/src/lib/utils";
 export default function GroupDetailsPage() {
   const params = useParams();
   const groupId = params?.id as string;
-  const user = useAuthStore((state) => state.user);
+  const { user, accessToken } = useAuthStore((state) => state);
   const router = useRouter();
 
   // --- QUERIES ---
@@ -81,16 +81,36 @@ export default function GroupDetailsPage() {
   const [showSimplifyModal, setShowSimplifyModal] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
-
-  // UPDATED STATE TYPE: Added avatar
   const [settlementTarget, setSettlementTarget] = useState<{
     id: string;
     name: string;
     amount: string;
-    avatar?: string | null; // Added
+    avatar?: string | null;
   } | null>(null);
-
   const [optimizedData, setOptimizedData] = useState<OptimizedPayment[]>([]);
+
+  const userAvatar = useMemo(() => {
+    if (user?.avatar) return user.avatar;
+    
+    if (accessToken) {
+      try {
+        const base64Url = accessToken.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          window
+            .atob(base64)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+        );
+        const payload = JSON.parse(jsonPayload);
+        return payload.avatar || payload.avatar_url || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }, [user, accessToken]);
 
   // --- HANDLERS ---
   const handleSimplify = () => {
@@ -440,12 +460,12 @@ export default function GroupDetailsPage() {
           currentUser={{
             id: user.id,
             name: user.name,
-            avatar: user.avatar,
+            avatar: userAvatar,
           }}
           counterparty={{
             id: settlementTarget.id,
             name: settlementTarget.name,
-            avatar: settlementTarget.avatar, // FIXED: Now passing avatar
+            avatar: settlementTarget.avatar,
           }}
           defaultAmount={settlementTarget.amount}
           context={{ type: "group", groupId: group.id, groupName: group.name }}
@@ -487,6 +507,7 @@ function BalancesList({
                 className="flex items-center gap-3 cursor-pointer flex-1"
                 onClick={() => router.push(`/dashboard/friends/${item.id}`)}
               >
+                {/* User Avatar with Red tint fallback */}
                 <Avatar className="h-10 w-10 border border-white shadow-sm">
                   <AvatarImage src={item.avatar} />
                   <AvatarFallback className="bg-rose-50 text-rose-600 font-bold">
@@ -516,7 +537,7 @@ function BalancesList({
                       id: item.id,
                       name: item.name,
                       amount: item.amount,
-                      avatar: item.avatar, // FIXED: Pass Avatar here
+                      avatar: item.avatar,
                     })
                   }
                 >
@@ -546,6 +567,7 @@ function BalancesList({
               onClick={() => router.push(`/dashboard/friends/${item.id}`)}
             >
               <div className="flex items-center gap-3">
+                {/* User Avatar with Green tint fallback */}
                 <Avatar className="h-10 w-10 border border-white shadow-sm">
                   <AvatarImage src={item.avatar} />
                   <AvatarFallback className="bg-emerald-50 text-emerald-600 font-bold">

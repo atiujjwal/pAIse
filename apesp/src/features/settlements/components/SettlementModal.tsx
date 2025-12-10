@@ -60,7 +60,6 @@ export function SettlementModal({
     defaultDirection
   );
   const { mutate: createSettlement, isPending } = useCreateSettlement();
-  console.log("63: ", currentUser);
   
   const {
     register,
