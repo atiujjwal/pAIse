@@ -104,7 +104,7 @@ const getHandler = async (
     const publicProfile = {
       id: user.id,
       name: user.name,
-      avatar_url: user.avatar,
+      avatar: user.avatar,
     };
 
     return successResponse(

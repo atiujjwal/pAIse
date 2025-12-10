@@ -6,7 +6,7 @@ export interface GroupSummary {
   id: string;
   name: string;
   description?: string;
-  avatar_url?: string;
+  avatar?: string;
   created_at: string;
   member_count: number;
 }

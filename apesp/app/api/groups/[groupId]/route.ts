@@ -17,7 +17,7 @@ import { formatGroupMember, formatPublicUser } from "@/src/lib/formatter";
 const updateGroupSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
-  avatar_url: z.string().url().nullable().optional(),
+  avatar: z.string().url().nullable().optional(),
 });
 
 /**
@@ -57,7 +57,7 @@ const getHandler = async (
       id: group.id,
       name: group.name,
       description: group.description,
-      avatar_url: group.avatar_url,
+      avatar: group.avatar,
       owner: formatPublicUser(group.owner),
       members: group.members.map(formatGroupMember),
     };

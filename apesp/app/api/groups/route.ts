@@ -8,7 +8,7 @@ import { created, errorResponse } from "@/src/lib/response";
 const createGroupSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  avatar_url: z.string().url().nullable().optional(),
+  avatar: z.string().url().nullable().optional(),
 });
 
 /**
@@ -33,14 +33,14 @@ const postHandler = async (
       );
     }
 
-    const { name, description, avatar_url } = parseResult.data;
+    const { name, description, avatar } = parseResult.data;
 
     // create Group and GroupMember (as ADMIN)
     const newGroup = await prisma.group.create({
       data: {
         name,
         description: description || null,
-        avatar_url: avatar_url || null,
+        avatar_url: avatar || null,
         owner_id: userId,
         members: {
           create: {
@@ -56,7 +56,7 @@ const postHandler = async (
       id: newGroup.id,
       name: newGroup.name,
       description: newGroup.description,
-      avatar_url: newGroup.avatar_url,
+      avatar: newGroup.avatar,
       owner_id: newGroup.owner_id,
       created_at: newGroup.created_at,
     });

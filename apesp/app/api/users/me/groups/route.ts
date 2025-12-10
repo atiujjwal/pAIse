@@ -55,7 +55,7 @@ const getHandler = async (
       id: mem.group.id,
       name: mem.group.name,
       description: mem.group.description,
-      avatar_url: mem.group.avatar_url,
+      avatar: mem.group.avatar,
       owner_id: mem.group.owner_id,
       created_at: mem.group.created_at,
       member_count: mem.group._count.members,

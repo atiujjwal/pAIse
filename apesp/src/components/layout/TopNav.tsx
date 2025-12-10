@@ -24,14 +24,14 @@ export function TopNav() {
           .join("")
       );
       const payload = JSON.parse(jsonPayload);
-      return payload.avatarUrl || payload.avatar_url || payload.picture || null;
+      return payload.avatar || null;
     } catch (e) {
       return null;
     }
   };
 
-  const avatarUrl = useMemo(() => {
-    if (user?.avatar_url) return user.avatar_url;
+  const avatar = useMemo(() => {
+    if (user?.avatar) return user.avatar;
     // @ts-ignore: Handle potential schema mismatch
     if (user?.avatar) return user.avatar;
 
@@ -74,9 +74,9 @@ export function TopNav() {
               "bg-gradient-to-tr from-purple-100 to-primary/10 text-primary font-bold overflow-hidden"
             )}
           >
-            {avatarUrl ? (
+            {avatar ? (
               <img
-                src={avatarUrl}
+                src={avatar}
                 alt="Profile"
                 className="h-full w-full object-cover"
                 onError={(e) => {
@@ -88,7 +88,7 @@ export function TopNav() {
               />
             ) : null}
             {/* Initial Fallback (Visible if no URL or if Image Errors) */}
-            <span className={cn("absolute", avatarUrl && "hidden")}>
+            <span className={cn("absolute", avatar && "hidden")}>
               {user?.name?.[0]?.toUpperCase() || "U"}
             </span>
           </div>

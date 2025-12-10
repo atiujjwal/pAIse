@@ -275,7 +275,7 @@ export default function FriendDetailsPage() {
           currentUser={{
             id: currentUser.id,
             name: currentUser.name,
-            avatar: currentUser.avatar_url || currentUser.avatar,
+            avatar: currentUser.avatar || currentUser.avatar,
           }}
           counterparty={{
             id: friend.id,

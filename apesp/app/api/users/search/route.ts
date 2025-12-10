@@ -47,7 +47,7 @@ const getHandler = async (
     const formattedUsers = users.map((user) => ({
       id: user.id,
       name: user.name,
-      avatar_url: user.avatar, // ALIAS from 'avatar' in schema
+      avatar: user.avatar,
     }));
 
     return successResponse("Users searched successfully", {

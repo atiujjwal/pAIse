@@ -396,7 +396,7 @@ export default function GroupDetailsPage() {
           currentUser={{
             id: user.id,
             name: user.name,
-            avatar: user.avatar_url || user.avatar,
+            avatar: user.avatar || user.avatar,
           }}
           counterparty={{
             id: settlementTarget.id,

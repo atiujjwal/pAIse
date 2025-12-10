@@ -2,7 +2,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  avatarUrl?: string;
+  avatar?: string;
   currency: string;
   timezone?: string;
 };
@@ -12,7 +12,7 @@ export type Group = {
   name: string;
   description?: string;
   coverUrl?: string;
-  members: Array<Pick<User, "id" | "name" | "avatarUrl">>;
+  members: Array<Pick<User, "id" | "name" | "avatar">>;
   currency: string;
 };
 
@@ -32,10 +32,10 @@ export type Expense = {
   created_by: {
     id: string;
     name: string;
-    avatar_url: string | null;
+    avatar: string | null;
   };
   payers: Array<{
-    user: { id: string; name: string; avatar_url: string | null };
+    user: { id: string; name: string; avatar: string | null };
     amount: number;
   }>;
 };

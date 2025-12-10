@@ -36,7 +36,7 @@ const getHandler = async (
       id: user.id,
       name: user.name,
       email: user.email,
-      avatar_url: user.avatar,
+      avatar: user.avatar,
       currency: user.currency,
       timezone: user.timezone,
       created_at: user.created_at,
@@ -85,7 +85,7 @@ const patchHandler = async (
       id: updatedUser.id,
       name: updatedUser.name,
       email: updatedUser.email,
-      avatar_url: updatedUser.avatar, // ALIAS from 'avatar' in schema
+      avatar: updatedUser.avatar, // ALIAS from 'avatar' in schema
       currency: updatedUser.currency,
       timezone: updatedUser.timezone,
       created_at: updatedUser.created_at,

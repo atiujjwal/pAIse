@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       inviteCode: user.invite_code,
-      avatarUrl: user.avatar || undefined,
+      avatar: user.avatar || undefined,
       sessionId,
     };
 

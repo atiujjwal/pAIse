@@ -27,8 +27,8 @@ export function Header() {
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
           <div className="h-9 w-9 overflow-hidden rounded-full bg-primary/20">
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="Avatar" />
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" />
             ) : (
               <div className="flex h-full w-full items-center justify-center font-bold text-primary">
                 {user?.name?.[0]}

@@ -91,7 +91,7 @@ export default function SettingsPage() {
         email: updatedUser.email,
         currency: updatedUser.currency || "INR",
         timezone: updatedUser.timezone || "UTC",
-        avatar: updatedUser.avatar_url || updatedUser.avatar || "",
+        avatar: updatedUser.avatar || updatedUser.avatar || "",
       });
     },
     onError: (err: any) => {
@@ -149,7 +149,7 @@ export default function SettingsPage() {
         currency: profile.currency || "INR",
         timezone: profile.timezone || "UTC",
         // Handle both casing possibilities just in case
-        avatar: profile.avatar_url || profile.avatar || "",
+        avatar: profile.avatar || profile.avatar || "",
       });
     }
   }, [profile, reset]);
@@ -170,7 +170,7 @@ export default function SettingsPage() {
 
   const handleCancelAvatarEdit = () => {
     // Revert to the fetched profile URL
-    setValue("avatar", profile?.avatar_url || profile?.avatar || "");
+    setValue("avatar", profile?.avatar || "");
     setIsEditingAvatar(false);
   };
 

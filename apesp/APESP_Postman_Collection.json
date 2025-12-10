@@ -339,7 +339,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Trip to Goa\",\n  \"description\": \"Summer vacation group\",\n  \"avatar_url\": \"https://example.com/group.jpg\"\n}"
+              "raw": "{\n  \"name\": \"Trip to Goa\",\n  \"description\": \"Summer vacation group\",\n  \"avatar\": \"https://example.com/group.jpg\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/groups",

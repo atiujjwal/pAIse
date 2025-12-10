@@ -10,11 +10,11 @@ export interface GroupDetails {
   id: string;
   name: string;
   description?: string;
-  avatar_url?: string | null;
+  avatar?: string | null;
   owner: {
     id: string;
     name: string;
-    avatar_url?: string;
+    avatar?: string;
   };
   members: {
     role: "ADMIN" | "MEMBER";
@@ -29,15 +29,15 @@ export interface GroupBalances {
   you_are_owed: {
     id: string;
     name: string;
-    avatar_url?: string;
+    avatar?: string;
     amount: string;
   }[];
-  you_owe: { id: string; name: string; avatar_url?: string; amount: string }[];
+  you_owe: { id: string; name: string; avatar?: string; amount: string }[];
 }
 
 export interface OptimizedPayment {
-  from: { id: string; name: string; avatar_url?: string };
-  to: { id: string; name: string; avatar_url?: string };
+  from: { id: string; name: string; avatar?: string };
+  to: { id: string; name: string; avatar?: string };
   amount: string;
 }
 
@@ -83,7 +83,7 @@ export const useCreateGroup = () => {
     mutationFn: async (data: {
       name: string;
       description?: string;
-      avatar_url?: string;
+      avatar?: string;
     }) => {
       const response = await api.post<ApiResponse<GroupDetails>>(
         "/groups",

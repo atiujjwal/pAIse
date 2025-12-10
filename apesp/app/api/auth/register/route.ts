@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       inviteCode: user.invite_code,
-      avatarUrl: user.avatar || undefined,
+      avatar: user.avatar || undefined,
       sessionId,
     };
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         date_of_birth: user.dob,
-        avatar_url: user.avatar,
+        avatar: user.avatar,
         country: user.country,
         currency: user.currency,
         timezone: user.timezone,

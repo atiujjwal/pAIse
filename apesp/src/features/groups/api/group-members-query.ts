@@ -10,7 +10,7 @@ export interface GroupMember {
 export interface ExpenseParticipant {
   id: string;
   name: string;
-  avatar_url: string;
+  avatar: string;
   role: "ADMIN" | "MEMBER";
 }
 
@@ -27,7 +27,7 @@ export const useGroupMembers = (groupId: string | null | undefined) => {
       return members.map<ExpenseParticipant>((m) => ({
         id: m.user.id,
         name: m.user.name,
-        avatar_url: m.user.avatar_url,
+        avatar: m.user.avatar,
         role: m.role,
       }));
     },

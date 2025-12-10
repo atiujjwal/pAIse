@@ -33,7 +33,7 @@ type TokenPayload = {
   userId: string;
   email: string;
   inviteCode: string;
-  avatarUrl?: string;
+  avatar?: string;
   sessionId: string;
 };
 
@@ -58,7 +58,7 @@ export const verifyToken = (
   userId: string;
   email: string;
   inviteCode: string;
-  avatarUrl: string;
+  avatar: string;
   sessionId: string;
 } | null => {
   try {
@@ -74,7 +74,7 @@ export const verifyToken = (
         userId: string;
         email: string;
         inviteCode: string;
-        avatarUrl: string;
+        avatar: string;
         sessionId: string;
       };
     }

@@ -74,9 +74,9 @@ export function UserSearch({
               >
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">
-                    {user.avatarUrl ? (
+                    {user.avatar ? (
                       <img
-                        src={user.avatarUrl}
+                        src={user.avatar}
                         alt={user.name}
                         className="h-full w-full rounded-full"
                       />
