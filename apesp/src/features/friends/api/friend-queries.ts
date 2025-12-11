@@ -10,6 +10,12 @@ export interface FriendshipRequest {
   created_at: string;
 }
 
+interface RemindPayload {
+  friendId: string;
+  amount: string;
+  message?: string;
+}
+
 // --- Queries ---
 
 export const useFriends = () => {
@@ -108,4 +114,24 @@ export const useFriendActions = () => {
     rejectRequest,
     cancelRequest,
   };
+};
+
+export const useRemindFriend = () => {
+  const { addToast } = useToastStore();
+
+  return useMutation({
+    mutationFn: async ({ friendId, amount, message }: RemindPayload) => {
+      await api.post(`/friends/${friendId}/remind`, { amount, message });
+    },
+    onSuccess: () => {
+      addToast("Reminder sent successfully", "success");
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Failed to send reminder";
+      addToast(message, "error");
+    },
+  });
 };

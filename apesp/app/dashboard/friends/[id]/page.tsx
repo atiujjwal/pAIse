@@ -9,14 +9,18 @@ import {
   ArrowRightLeft,
   Bell,
   CheckCircle2,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { Decimal } from "decimal.js";
 
-import { useFriends } from "@/src/features/friends/api/friend-queries";
+import {
+  useFriends,
+  useRemindFriend,
+} from "@/src/features/friends/api/friend-queries";
 import { useExpenses } from "@/src/features/expenses/api/expense-queries";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
 import { useAuthStore } from "@/src/features/auth/store";
-import { useToastStore } from "@/src/hooks/use-toast"; // For Remind Feedback
 
 import { Button } from "@/src/components/ui/Button";
 import { Skeleton } from "@/src/components/ui/Skeleton";
@@ -35,54 +39,47 @@ export default function FriendDetailsPage() {
   const friendId = params?.id as string;
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
-  const { addToast } = useToastStore();
 
   // --- Data Fetching ---
   const { data: friendsList, isLoading: loadingFriend } = useFriends();
   const { data: expensesData } = useExpenses({ friend_id: friendId });
   const { data: settlementsData } = useSettlements({ friend_id: friendId });
 
+  // --- Mutation ---
+  const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
+
   const friend = friendsList?.find((f) => f.id === friendId);
   const [showSettlement, setShowSettlement] = useState(false);
+  const [isReminded, setIsReminded] = useState(false);
 
   // --- Derived State ---
   const expenses = expensesData?.data || [];
   const settlements = settlementsData || [];
 
-  // Calculate Net Balance Client-Side
-  // (In a large app, this should be a dedicated backend endpoint like GET /balances/friend/:id)
   const netBalance = useMemo(() => {
     if (!currentUser || !expenses || !settlements) return new Decimal(0);
 
     let balance = new Decimal(0);
 
-    // 1. Calculate from Expenses (Who paid vs Who owes)
+    // 1. Calculate from Expenses
     expenses.forEach((exp) => {
-      // If I paid, I am owed the splits (positive)
-      // If Friend paid, I owe my split (negative)
       const myPayerEntry = exp.payers.find((p) => p.user.id === currentUser.id);
       const friendPayerEntry = exp.payers.find((p) => p.user.id === friendId);
-
       const mySplit = exp.splits.find((s) => s.user.id === currentUser.id);
       const friendSplit = exp.splits.find((s) => s.user.id === friendId);
 
-      // Simple case: 1 Payer (Standard)
       if (myPayerEntry) {
-        // I paid -> Friend owes me their split
         if (friendSplit) balance = balance.add(friendSplit.amount_owed);
       } else if (friendPayerEntry) {
-        // Friend paid -> I owe my split
         if (mySplit) balance = balance.sub(mySplit.amount_owed);
       }
     });
 
-    // 2. Calculate from Settlements (Payments made)
+    // 2. Calculate from Settlements
     settlements.forEach((s: any) => {
       if (s.payer.id === currentUser.id) {
-        // I paid -> I owe less (Add to balance, moving towards positive)
         balance = balance.add(s.amount);
       } else if (s.receiver.id === currentUser.id) {
-        // I received -> Friend owes less (Subtract from balance)
         balance = balance.sub(s.amount);
       }
     });
@@ -90,10 +87,33 @@ export default function FriendDetailsPage() {
     return balance;
   }, [expenses, settlements, currentUser, friendId]);
 
+  const balanceValue = parseFloat(netBalance.toFixed(2));
+  const isOwed = balanceValue > 0;
+  const isDebt = balanceValue < 0;
+  const isSettled = balanceValue === 0;
+
+  // --- HANDLERS ---
   const handleRemind = () => {
-    // Mock Notification Logic
-    addToast(`Reminder sent to ${friend?.name}`, "success");
-    //TODO: Future: Call API POST /friends/remind { friendId }
+    if (isReminded) return;
+
+    // FIXED: Pass the required 'amount' to the mutation
+    const amountString = formatCurrency(
+      Math.abs(balanceValue).toString(),
+      "INR"
+    );
+
+    remindFriend(
+      {
+        friendId,
+        amount: amountString,
+        message: `Friendly reminder: You owe me ${amountString}. Please settle up when you can!`,
+      },
+      {
+        onSuccess: () => {
+          setIsReminded(true);
+        },
+      }
+    );
   };
 
   if (loadingFriend)
@@ -104,11 +124,6 @@ export default function FriendDetailsPage() {
     );
   if (!friend || !currentUser)
     return <div className="p-8 text-center">Friend not found</div>;
-
-  const balanceValue = parseFloat(netBalance.toFixed(2));
-  const isOwed = balanceValue > 0;
-  const isDebt = balanceValue < 0;
-  const isSettled = balanceValue === 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -167,9 +182,21 @@ export default function FriendDetailsPage() {
             {isOwed && (
               <Button
                 onClick={handleRemind}
-                className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-100 text-white"
+                disabled={isReminding || isReminded}
+                className={`text-white shadow-lg transition-all ${
+                  isReminded
+                    ? "bg-slate-400 hover:bg-slate-400 cursor-default shadow-none"
+                    : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100"
+                }`}
               >
-                <Bell className="h-4 w-4 mr-2" /> Remind
+                {isReminding ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : isReminded ? (
+                  <Check className="h-4 w-4 mr-2" />
+                ) : (
+                  <Bell className="h-4 w-4 mr-2" />
+                )}
+                {isReminded ? "Reminded" : "Remind"}
               </Button>
             )}
 
@@ -183,7 +210,7 @@ export default function FriendDetailsPage() {
         </div>
       </div>
 
-      {/* Content Tabs */}
+      {/* Content Tabs (Same as before) */}
       <Tabs defaultValue="expenses" className="w-full">
         <TabsList className="bg-slate-100 p-1 rounded-xl h-12 w-full md:w-auto">
           <TabsTrigger value="expenses" className="rounded-lg h-10 px-6">
@@ -267,7 +294,7 @@ export default function FriendDetailsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Settle Modal (Only opens if you Owe) */}
+      {/* Settle Modal */}
       {showSettlement && isDebt && (
         <SettlementModal
           isOpen={showSettlement}
@@ -282,7 +309,7 @@ export default function FriendDetailsPage() {
             name: friend.name,
             avatar: friend.avatar,
           }}
-          defaultAmount={Math.abs(balanceValue).toString()} // Auto-fill owed amount
+          defaultAmount={Math.abs(balanceValue).toString()}
           context={{ type: "friend" }}
         />
       )}

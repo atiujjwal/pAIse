@@ -105,7 +105,7 @@ const postHandler = async (
 
       sendEmail({
         to: addressee.email,
-        templateId: 4,
+        templateId: 5,
         data: { requesterName: newFriendship.requester.name, magicLink },
         subject: "New Friend Request",
       });

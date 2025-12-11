@@ -25,6 +25,15 @@ export type Expense = {
   category: string;
   receipt_url: string | null;
   split_type: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARE";
+  splits: Array<{
+    user: {
+      id: string;
+      name: string;
+      avatar: string | null;
+    };
+    amount_owed: number;
+  }>;
+  created_at: string;
   group: {
     id: string;
     name: string;
