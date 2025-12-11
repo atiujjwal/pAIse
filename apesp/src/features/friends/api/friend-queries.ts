@@ -6,6 +6,7 @@ import { useToastStore } from "@/src/hooks/use-toast";
 export interface FriendshipRequest {
   id: string;
   requester: User;
+  addressee: User;
   status: "PENDING";
   created_at: string;
 }
@@ -16,8 +17,9 @@ interface RemindPayload {
   message?: string;
 }
 
-// --- Queries ---
+// --- QUERIES ---
 
+// Fetch Accepted Friends
 export const useFriends = () => {
   return useQuery({
     queryKey: ["friends", "list"],
@@ -30,19 +32,21 @@ export const useFriends = () => {
   });
 };
 
-export const useFriendRequests = () => {
+// Fetch Pending Requests (Supports Incoming/Outgoing)
+// Defaults to "incoming" to preserve existing behavior for other components
+export const useFriendRequests = (
+  type: "incoming" | "outgoing" = "incoming"
+) => {
   return useQuery({
-    queryKey: ["friends", "requests"],
+    queryKey: ["friends", "requests", type],
     queryFn: async () => {
       const { data } = await api.get<
         ApiResponse<{ requests: FriendshipRequest[] }>
-      >("/friends/requests");
+      >(`/friends/requests?type=${type}`);
       return data.data!.requests;
     },
   });
 };
-
-// --- Mutations ---
 
 export const useFriendActions = () => {
   const queryClient = useQueryClient();
@@ -63,8 +67,10 @@ export const useFriendActions = () => {
     },
     onSuccess: () => {
       addToast("Friend request sent successfully", "success");
-      // If you have a "Sent Requests" list, invalidate it here
-      queryClient.invalidateQueries({ queryKey: ["friends", "sent-requests"] });
+      // Invalidate outgoing list so the new request appears immediately
+      queryClient.invalidateQueries({
+        queryKey: ["friends", "requests", "outgoing"],
+      });
     },
     onError: (error) => handleError(error, "Failed to send request"),
   });
@@ -82,8 +88,7 @@ export const useFriendActions = () => {
     onError: (error) => handleError(error, "Failed to accept request"),
   });
 
-  // Reject Request (For Recipient)
-  // Uses your existing DELETE endpoint
+  // Reject Request (Incoming)
   const rejectRequest = useMutation({
     mutationFn: async (requestId: string) => {
       await api.delete(`/friends/requests/${requestId}/reject`);
@@ -95,14 +100,15 @@ export const useFriendActions = () => {
     onError: (error) => handleError(error, "Failed to reject request"),
   });
 
-  // Cancel/Revoke Request (For Sender)
-  // Uses THE SAME DELETE endpoint, but we wrap it for semantic clarity in UI
+  // Cancel Request (Outgoing)
   const cancelRequest = useMutation({
     mutationFn: async (requestId: string) => {
       await api.delete(`/friends/requests/${requestId}/reject`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friends", "sent-requests"] });
+      queryClient.invalidateQueries({
+        queryKey: ["friends", "requests", "outgoing"],
+      });
       addToast("Friend request cancelled", "success");
     },
     onError: (error) => handleError(error, "Failed to cancel request"),
