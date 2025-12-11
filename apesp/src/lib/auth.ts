@@ -8,6 +8,7 @@ function requireEnv(name: string): string {
 }
 
 const JWT_SECRET = requireEnv("JWT_SECRET");
+const JWT_DATA_SECRET = requireEnv("JWT_DATA_SECRET");
 const JWT_REFRESH_SECRET = requireEnv("JWT_REFRESH_SECRET");
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as `${number}${
   | "s"
@@ -16,6 +17,22 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as `${number}${
   | "d"}`;
 const JWT_REFRESH_EXPIRES_IN = process.env
   .JWT_REFRESH_EXPIRES_IN as `${number}${"s" | "m" | "h" | "d"}`;
+
+
+export const tokenSecretMap = {
+  "accessToken":{
+    "expiresIn" : JWT_EXPIRES_IN,
+    "secretKey" : JWT_SECRET
+  },
+  "refreshToken":{
+      "expiresIn" : JWT_REFRESH_EXPIRES_IN,
+      "secretKey" : JWT_REFRESH_SECRET
+    },
+    "friendRequest":{
+      "expiresIn" : JWT_EXPIRES_IN,
+      "secretKey" : JWT_DATA_SECRET
+    },
+};
 
 export const hashPassword = async (password: string): Promise<string> => {
   const salt = await bcrypt.genSalt(10);
@@ -37,48 +54,23 @@ type TokenPayload = {
   sessionId: string;
 };
 
-type TokenType = "accessToken" | "refreshToken";
+type TokenType = "accessToken" | "refreshToken" | "friendRequest";
 
-export const generateToken = (
-  payload: TokenPayload,
-  type: TokenType
-): string => {
-  const options: SignOptions = {
-    expiresIn: type === "accessToken" ? JWT_EXPIRES_IN : JWT_REFRESH_EXPIRES_IN,
-  };
-  const secret = type === "accessToken" ? JWT_SECRET : JWT_REFRESH_SECRET;
-  return jwt.sign(payload, secret, options);
+export const generateToken = (payload: any, type: TokenType): string => {
+
+  const options: SignOptions = { expiresIn: tokenSecretMap[type].expiresIn };
+  return jwt.sign(payload, tokenSecretMap[type].secretKey, options);
 };
 
 // ✅ Verify JWT token safely
 export const verifyToken = (
   token: string,
-  type: "accessToken" | "refreshToken"
-): {
-  userId: string;
-  email: string;
-  inviteCode: string;
-  avatar: string;
-  sessionId: string;
-} | null => {
+  type: TokenType
+): any => {
   try {
-    const secret = type === "accessToken" ? JWT_SECRET : JWT_REFRESH_SECRET;
+    const secret = tokenSecretMap[type].secretKey;
     const decoded = jwt.verify(token, secret);
-
-    if (
-      typeof decoded === "object" &&
-      "userId" in decoded &&
-      "sessionId" in decoded
-    ) {
-      return decoded as {
-        userId: string;
-        email: string;
-        inviteCode: string;
-        avatar: string;
-        sessionId: string;
-      };
-    }
-    return null;
+    return decoded;
   } catch {
     return null;
   }

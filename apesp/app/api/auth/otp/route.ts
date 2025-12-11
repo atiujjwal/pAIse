@@ -1,58 +1,101 @@
+import { NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/src/lib/db";
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
-import { sendEmailOtp } from "@/src/services/otpServices";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { sendEmail } from "@/src/services/messageServices";
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-const sendOtpSchema = z.object({
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  type: z.string().min(2), // "register", "login", "forgot_password", etc.
-});
-const verifyOtpSchema = z.object({
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  type: z.string().min(2), // "register", "login", "forgot_password", etc.
-  otp: z.string().length(6),
-});
+const sendOtpSchema = z
+  .object({
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    type: z.string().min(2), // "register", "login", "forgot_password"
+  })
+  .refine((data) => data.email || data.phone, {
+    message: "Either email or phone is required",
+  });
+
+const verifyOtpSchema = z
+  .object({
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    type: z.string().min(2),
+    otp: z.string().length(6),
+  })
+  .refine((data) => data.email || data.phone, {
+    message: "Either email or phone is required",
+  });
 
 // --- GET = send OTP ---
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url!);
-    const email = url.searchParams.get("email") ?? undefined;
-    const phone = url.searchParams.get("phone") ?? undefined;
+    const url = new URL(req.url);
+    const email = url.searchParams.get("email") || undefined;
+    const phone = url.searchParams.get("phone") || undefined;
     const type = url.searchParams.get("type") || "";
 
-    sendOtpSchema.parse({ email, phone, type });
+    const validation = sendOtpSchema.safeParse({ email, phone, type });
+
+    if (!validation.success) {
+      return badRequest("Invalid input", validation.error);
+    }
 
     const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await prisma.userOtp.create({
-      data: { email, phone, otp, type, expires_at: expiresAt },
+      data: {
+        email,
+        phone,
+        otp,
+        type,
+        expires_at: expiresAt,
+      },
     });
 
     if (email) {
-      await sendEmailOtp(email, otp);
+      switch (type) {
+        case "register":
+          sendEmail({
+            to: email,
+            templateId: 4,
+            data: {},
+            subject: "New Friend Request",
+          });
+          break;
+        case "login":
+          sendEmail({
+            to: email,
+            templateId: 4,
+            data: {},
+            subject: "New Friend Request",
+          });
+          break;
+        case "forgot_password":
+          sendEmail({
+            to: email,
+            templateId: 4,
+            data: {},
+            subject: "New Friend Request",
+          });
+          break;
+        default:
+          return badRequest("Invalid type");
+      }
     } else if (phone) {
-      // TODO: implement phone otp
+      // TODO: Integrate SMS provider here
       console.log(`[SMS MOCK] To: ${phone}, OTP: ${otp}`);
     }
 
     return successResponse("OTP sent successfully", {
       message: "OTP sent",
-      otp, // REMOVE in production!
       expiresAt,
     });
   } catch (error) {
-    console.log("Error sending OTP: ", error);
-    if (error instanceof z.ZodError)
-      return badRequest("Invalid request", error.issues);
+    console.error("Error sending OTP: ", error);
     return errorResponse("Internal server error");
   }
 }
@@ -61,33 +104,32 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, phone, type, otp } = verifyOtpSchema.parse(body);
+    const validation = verifyOtpSchema.safeParse(body);
 
-    const where: any = {
+    if (!validation.success) {
+      return badRequest("Invalid input", validation.error);
+    }
+
+    const { email, phone, type, otp } = validation.data;
+
+    const whereClause: any = {
       otp,
       type,
       used: false,
       expires_at: { gt: new Date() },
     };
-    if (email) where.email = email;
-    if (phone) where.phone = phone;
+
+    if (email) whereClause.email = email;
+    if (phone) whereClause.phone = phone;
 
     const otpRecord = await prisma.userOtp.findFirst({
-      where: {
-        email,
-        otp,
-        type,
-        used: false,
-        expires_at: { gt: new Date() },
-      },
+      where: whereClause,
     });
 
-    if (!otpRecord)
-      return NextResponse.json(
-        { error: "Invalid or expired OTP" },
-        { status: 400 }
-      );
-      
+    if (!otpRecord) {
+      return badRequest("Invalid or expired OTP");
+    }
+
     await prisma.userOtp.update({
       where: { id: otpRecord.id },
       data: { used: true },
@@ -95,9 +137,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse("OTP verified");
   } catch (error) {
-    console.log("Error getting OTP: ", error);
-    if (error instanceof z.ZodError)
-      return badRequest("Invalid request", error.issues);
+    console.error("Error verifying OTP: ", error);
     return errorResponse("Internal server error");
   }
 }

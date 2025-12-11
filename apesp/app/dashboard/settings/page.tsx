@@ -178,7 +178,7 @@ export default function SettingsPage() {
   };
 
   const inviteLink = profile?.invite_code
-    ? `https://paise.app/add?code=${profile.invite_code}`
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/add?code=${profile.invite_code}`
     : "";
 
   const copyToClipboard = () => {

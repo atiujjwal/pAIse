@@ -12,11 +12,12 @@ import {
   Loader2,
   QrCode,
   Download,
+  AlertCircle,
 } from "lucide-react";
 import QRCode from "react-qr-code";
-import { useQuery } from "@tanstack/react-query"; // Added useQuery
+import { useQuery } from "@tanstack/react-query";
 
-import { api } from "@/src/lib/api"; // Added api
+import { api } from "@/src/lib/api";
 import { useAuthStore } from "@/src/features/auth/store";
 import { useFriendActions } from "@/src/features/friends/api/friend-queries";
 import { Button } from "@/src/components/ui/Button";
@@ -28,9 +29,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
   DialogTrigger,
 } from "@/src/components/ui/Dialog";
-import { Skeleton } from "@/src/components/ui/Skeleton"; // Added Skeleton
+import { Skeleton } from "@/src/components/ui/Skeleton";
 
 const addFriendSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -43,18 +46,17 @@ export function AddFriendCard() {
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
-  // 1. FETCH FRESH PROFILE DATA
-  // This ensures we get the invite_code even if local storage is stale
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["user", "me"],
     queryFn: async () => {
       const { data } = await api.get("/users/me");
       return data.data;
     },
-    placeholderData: storedUser, // Show cached data while fetching
   });
 
-  // Use the freshest data available
   const activeUser = profile || storedUser;
 
   const {
@@ -70,13 +72,37 @@ export function AddFriendCard() {
     sendRequest.mutate(
       { email: data.email },
       {
-        onSuccess: () => reset(),
+        onSuccess: () => {
+          reset();
+          addToast("Request sent successfully", "success");
+        },
+        onError: (err: any) => {
+          let displayMsg = err || "An unexpected error occurred.";
+          try {
+            if (err?.response?.data && typeof err.response.data === "object") {
+              const apiData = err.response.data;
+              if (apiData.error && typeof apiData.error === "string") {
+                displayMsg = apiData.error;
+              }
+              else if (apiData.message && typeof apiData.message === "string") {
+                displayMsg = apiData.message;
+              }
+            }
+            else if (err?.message && typeof err.message === "string") {
+              displayMsg = err.message;
+            }
+          } catch (e) {
+            console.error("Error parsing API response:", e);
+          }
+          setErrorMessage(String(displayMsg));
+          setIsErrorOpen(true);
+        },
       }
     );
   };
 
   const inviteLink = activeUser?.invite_code
-    ? `https://paise.app/add?code=${activeUser.invite_code}`
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/add?code=${activeUser.invite_code}`
     : "";
 
   const handleCopyLink = () => {
@@ -115,128 +141,154 @@ export function AddFriendCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sticky top-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-slate-900">Add Friends</h3>
+    <>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sticky top-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-slate-900">Add Friends</h3>
 
-        {/* QR Code Trigger */}
-        {isLoadingProfile && !inviteLink ? (
-          <Skeleton className="h-9 w-9 rounded-md" />
-        ) : inviteLink ? (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-slate-400 hover:text-primary hover:bg-primary/5"
-                title="Show QR Code"
-              >
-                <QrCode className="h-5 w-5" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="text-center">
-                  Your pAIse Tag
-                </DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col items-center justify-center p-6 space-y-6">
-                <div
-                  ref={qrRef}
-                  className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm"
-                >
-                  <QRCode value={inviteLink} size={200} />
-                </div>
+          {isLoadingProfile && !inviteLink ? (
+            <Skeleton className="h-9 w-9 rounded-md" />
+          ) : inviteLink ? (
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button
-                  onClick={downloadQRCode}
-                  variant="outline"
-                  className="w-full"
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-400 hover:text-primary hover:bg-primary/5"
+                  title="Show QR Code"
                 >
-                  <Download className="h-4 w-4 mr-2" /> Download QR
+                  <QrCode className="h-5 w-5" />
                 </Button>
-                <p className="text-xs text-center text-slate-500">
-                  Friends can scan this to add you instantly.
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="text-center">
+                    Your pAIse Tag
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center p-6 space-y-6">
+                  <div
+                    ref={qrRef}
+                    className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm"
+                  >
+                    <QRCode value={inviteLink} size={200} />
+                  </div>
+                  <Button
+                    onClick={downloadQRCode}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" /> Download QR
+                  </Button>
+                  <p className="text-xs text-center text-slate-500">
+                    Friends can scan this to add you instantly.
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : null}
+        </div>
+
+        <div className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+            <Label className="text-slate-600">Invite by Email</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <Input
+                  {...register("email")}
+                  placeholder="friend@example.com"
+                  className="pl-9 h-11 bg-slate-50 border-slate-200"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={sendRequest.isPending}
+                className="h-11 shadow-md shadow-primary/20"
+              >
+                {sendRequest.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Send"
+                )}
+              </Button>
+            </div>
+            {errors.email && (
+              <p className="text-xs text-red-500 ml-1">
+                {errors.email.message}
+              </p>
+            )}
+          </form>
+        </div>
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-100" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-slate-400 font-medium">
+              Or share link
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-slate-600">Your Invite Link</Label>
+
+          {isLoadingProfile && !inviteLink ? (
+            <Skeleton className="h-12 w-full rounded-xl" />
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 pr-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
+                <LinkIcon className="h-4 w-4 text-slate-400" />
+              </div>
+              <div className="flex-1 min-w-0 px-2">
+                <p className="truncate text-xs font-mono text-slate-500">
+                  {inviteLink || "Generate a tag in Settings"}
                 </p>
               </div>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-      </div>
-
-      {/* Option 1: Email */}
-      <div className="space-y-4">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          <Label className="text-slate-600">Invite by Email</Label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-              <Input
-                {...register("email")}
-                placeholder="friend@example.com"
-                className="pl-9 h-11 bg-slate-50 border-slate-200"
-              />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleCopyLink}
+                disabled={!inviteLink}
+                className="h-8 w-8 hover:bg-white hover:shadow-sm"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4 text-slate-500" />
+                )}
+              </Button>
             </div>
-            <Button
-              type="submit"
-              disabled={sendRequest.isPending}
-              className="h-11 shadow-md shadow-primary/20"
-            >
-              {sendRequest.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Send"
-              )}
-            </Button>
-          </div>
-          {errors.email && (
-            <p className="text-xs text-red-500 ml-1">{errors.email.message}</p>
           )}
-        </form>
-      </div>
-
-      <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-100" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-slate-400 font-medium">
-            Or share link
-          </span>
         </div>
       </div>
 
-      {/* Option 2: Copy Link */}
-      <div className="space-y-3">
-        <Label className="text-slate-600">Your Invite Link</Label>
-
-        {isLoadingProfile && !inviteLink ? (
-          <Skeleton className="h-12 w-full rounded-xl" />
-        ) : (
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 pr-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
-              <LinkIcon className="h-4 w-4 text-slate-400" />
+      {/* --- ERROR ALERT DIALOG --- */}
+      <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
+        <DialogContent className="sm:max-w-[400px] border-l-4 border-l-red-500">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-red-600 mb-2">
+              <AlertCircle className="h-5 w-5" />
+              <DialogTitle className="text-lg font-semibold">
+                Request Failed
+              </DialogTitle>
             </div>
-            <div className="flex-1 min-w-0 px-2">
-              <p className="truncate text-xs font-mono text-slate-500">
-                {inviteLink || "Generate a tag in Settings"}
-              </p>
-            </div>
+            <DialogDescription className="text-slate-700 font-medium text-base pt-1">
+              {errorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 sm:justify-end">
             <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleCopyLink}
-              disabled={!inviteLink}
-              className="h-8 w-8 hover:bg-white hover:shadow-sm"
+              onClick={() => setIsErrorOpen(false)}
+              className="bg-slate-900 text-white hover:bg-slate-800"
             >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-600" />
-              ) : (
-                <Copy className="h-4 w-4 text-slate-500" />
-              )}
+              OK
             </Button>
-          </div>
-        )}
-      </div>
-    </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

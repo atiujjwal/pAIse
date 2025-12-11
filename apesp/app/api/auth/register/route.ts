@@ -5,15 +5,20 @@ import { prisma } from "@/src/lib/db";
 import { generateToken, hashPassword, parseDevice } from "@/src/lib/auth";
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
 import { generateInviteCode } from "@/src/lib/nanoid";
+import { sendEmail } from "@/src/services/messageServices";
 
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phone: z.string().optional().nullable(),
   password: z.string().min(6),
-  dob: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid date_of_birth",
-  }),
+  dob: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: "Invalid date_of_birth",
+    })
+    .optional()
+    .nullable(),
   avatar: z.string().url().optional().nullable(),
   country: z.string().optional().nullable(),
   currency: z.string().optional().nullable(),
@@ -42,7 +47,7 @@ export async function POST(request: NextRequest) {
         email: data.email,
         phone: data.phone,
         password: hashedPassword,
-        dob: new Date(data.dob),
+        dob: data.dob ? new Date(data.dob) : null,
         avatar: data.avatar ?? null,
         invite_code: inviteCode,
         country: data.country ?? null,
@@ -78,6 +83,12 @@ export async function POST(request: NextRequest) {
 
     const accessToken = generateToken(tokenPayload, "accessToken"); // 2h
     const refreshToken = generateToken(tokenPayload, "refreshToken"); // 7d
+
+    sendEmail({
+      to: user.email,
+      templateId: 2,
+      data: { name: user.name },
+    });
 
     // Save the refresh token in DB for this session
     await prisma.userToken.create({

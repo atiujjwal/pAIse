@@ -13,6 +13,8 @@ import {
   successResponse,
   unauthorized,
 } from "@/src/lib/response";
+import { sendEmail } from "@/src/services/messageServices";
+import { generateToken } from "@/src/lib/auth";
 
 const friendRequestSchema = z
   .object({
@@ -87,6 +89,29 @@ const postHandler = async (
         addressee: true,
       },
     });
+
+    try {
+      const token = generateToken(
+        {
+          requestId: newFriendship.id,
+          email: addressee.email,
+        },
+        "friendRequest"
+      );
+
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const magicLink = `${baseUrl}/dashboard/friends/accept?token=${token}`;
+
+      sendEmail({
+        to: addressee.email,
+        templateId: 4,
+        data: { requesterName: newFriendship.requester.name, magicLink },
+        subject: "New Friend Request",
+      });
+    } catch (emailError) {
+      console.error("Failed to send friend request email:", emailError);
+    }
 
     return created(
       "Friend request sent successfully",

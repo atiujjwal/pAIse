@@ -9,23 +9,41 @@ import {
   unauthorized,
 } from "@/src/lib/response";
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
+const schema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().optional(),
+    otp: z.string().optional(),
+  })
+  .refine((data) => data.password || data.otp, {
+    message: "Either password or OTP is required",
+  });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = schema.parse(body);
+    const { email, password, otp } = schema.parse(body);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return unauthorized();
+    if (!user) return unauthorized("Invalid credentials");
 
-    const valid = await comparePassword(password, user.password);
-    if (!valid) return unauthorized();
+    if (password) {
+      const valid = await comparePassword(password, user.password);
+      if (!valid) return unauthorized("Invalid credentials");
+    } else if (otp) {
+      const validOtp = await prisma.userOtp.findFirst({
+        where: {
+          type: "login",
+          email: user.email,
+          code: otp,
+          expires_at: { gt: new Date() },
+        },
+      });
 
-    // Create a new session
+      if (!validOtp) return unauthorized("Invalid or expired OTP");
+      await prisma.userOtp.delete({ where: { id: validOtp.id } });
+    }
+
     const h = await headers();
     const userAgent = h.get("user-agent");
     const ip = h.get("x-forwarded-for") || "unknown";
