@@ -20,6 +20,7 @@ const sendOtpSchema = z
 
 const verifyOtpSchema = z
   .object({
+    name: z.string().optional(),
     email: z.string().email().optional(),
     phone: z.string().optional(),
     type: z.string().min(2),
@@ -33,11 +34,12 @@ const verifyOtpSchema = z
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
+    const name = url.searchParams.get("name") || undefined;
     const email = url.searchParams.get("email") || undefined;
     const phone = url.searchParams.get("phone") || undefined;
     const type = url.searchParams.get("type") || "";
 
-    const validation = sendOtpSchema.safeParse({ email, phone, type });
+    const validation = sendOtpSchema.safeParse({ email, phone, type, name });
 
     if (!validation.success) {
       return badRequest("Invalid input", validation.error);
@@ -92,7 +94,7 @@ export async function GET(req: NextRequest) {
           await sendEmail({
             to: email,
             templateId: 2, // Welcome/Verify Template
-            data: { otp, name: "User" },
+            data: { otp, name },
             subject: "Verify your Email - pAIse",
           });
           break;
@@ -100,7 +102,7 @@ export async function GET(req: NextRequest) {
           await sendEmail({
             to: email,
             templateId: 3, // Login OTP Template
-            data: { otp, name: "User" },
+            data: { otp, name },
             subject: "Your Login Code - pAIse",
           });
           break;
@@ -108,7 +110,7 @@ export async function GET(req: NextRequest) {
           await sendEmail({
             to: email,
             templateId: 4, // Forgot Password Template
-            data: { otp, name: "User" },
+            data: { otp, name },
             subject: "Reset Password Request - pAIse",
           });
           break;

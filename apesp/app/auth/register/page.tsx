@@ -1,17 +1,43 @@
 "use client";
 
-import { useRegister } from "@/src/features/auth/api/auth-queries";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Link from "next/link";
+import { Loader2, X, ArrowRight, KeyRound, Mail } from "lucide-react";
+
+import {
+  useRegister,
+  useSendOtp,
+  useVerifyOtp,
+} from "@/src/features/auth/api/auth-queries";
 import { registerSchema, RegisterInput } from "@/src/lib/schemas";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Label } from "@/src/components/ui/label";
-import { Loader2, X } from "lucide-react";
-import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/src/components/ui/Dialog";
+import { useToastStore } from "@/src/hooks/use-toast";
 
 export default function RegisterPage() {
-  const { mutate, isPending, error } = useRegister();
+  // Hooks
+  const { mutate: registerUser, isPending: isRegistering } = useRegister();
+  const { mutate: sendOtp, isPending: isSendingOtp } = useSendOtp();
+  const { mutate: verifyOtp, isPending: isVerifyingOtp } = useVerifyOtp();
+  const { addToast } = useToastStore();
+
+  // Local State
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
+  const [formData, setFormData] = useState<RegisterInput | null>(null);
+  const [otp, setOtp] = useState("");
+  const [timer, setTimer] = useState(0);
+
   const {
     register,
     handleSubmit,
@@ -20,9 +46,65 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
+  // Timer for Resend
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timer > 0) {
+      interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  // Step 1: Intercept Submit -> Send OTP
+  const onFormSubmit = (data: RegisterInput) => {
+    setFormData(data); // Save form data for later
+
+    sendOtp(
+      { email: data.email, type: "register" },
+      {
+        onSuccess: () => {
+          setShowVerifyDialog(true);
+          setTimer(60);
+        },
+      }
+    );
+  };
+
+  // Step 2: Resend OTP
+  const handleResendOtp = () => {
+    if (!formData?.email) return;
+
+    sendOtp(
+      { email: formData.email, type: "register" },
+      {
+        onSuccess: () => setTimer(60),
+      }
+    );
+  };
+
+  // Step 3: Verify OTP -> Final Register
+  const handleVerify = () => {
+    if (!formData?.email || otp.length !== 6) return;
+
+    verifyOtp(
+      { email: formData.email, otp, type: "register" },
+      {
+        onSuccess: () => {
+          // Close dialog and create user
+          setShowVerifyDialog(false);
+          registerUser(formData);
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.message || "Invalid OTP";
+          addToast(msg, "error");
+        },
+      }
+    );
+  };
+
   return (
     <>
-      {/* Close Button - Matches the "Soft" UI aesthetic */}
+      {/* Close Button */}
       <Button
         variant="ghost"
         size="icon"
@@ -44,17 +126,14 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit((data) => mutate(data))}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
               id="name"
               {...register("name")}
               placeholder="John Doe"
-              disabled={isPending}
+              disabled={isSendingOtp}
               className="h-12 rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all"
             />
             {errors.name && (
@@ -69,7 +148,7 @@ export default function RegisterPage() {
               type="email"
               {...register("email")}
               placeholder="name@example.com"
-              disabled={isPending}
+              disabled={isSendingOtp}
               className="h-12 rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all"
             />
             {errors.email && (
@@ -83,7 +162,7 @@ export default function RegisterPage() {
               id="password"
               type="password"
               {...register("password")}
-              disabled={isPending}
+              disabled={isSendingOtp}
               className="h-12 rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all"
             />
             {errors.password && (
@@ -91,18 +170,12 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {error && (
-            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100">
-              {(error as any).message ||
-                "Registration failed. Please try again."}
-            </div>
-          )}
-
           <Button
-            disabled={isPending}
+            type="submit"
+            disabled={isSendingOtp || isRegistering}
             className="h-12 w-full rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.01] transition-all duration-200"
           >
-            {isPending ? (
+            {isSendingOtp ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               "Sign Up"
@@ -120,6 +193,72 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+
+      {/* --- EMAIL VERIFICATION DIALOG --- */}
+      <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">
+              Verify your Email
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              We sent a 6-digit code to{" "}
+              <span className="font-semibold text-slate-900">
+                {formData?.email}
+              </span>
+              . Enter it below to complete registration.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-slate-500 tracking-wider">
+                Verification Code
+              </Label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                <Input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                  placeholder="123456"
+                  className="pl-10 h-12 text-lg tracking-widest font-mono text-center"
+                  maxLength={6}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleVerify}
+              disabled={isVerifyingOtp || otp.length < 6}
+              className="w-full h-11"
+            >
+              {isVerifyingOtp || isRegistering ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  Verify & Create Account{" "}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={timer > 0 || isSendingOtp}
+                className={`text-xs font-medium ${
+                  timer > 0 ? "text-slate-400" : "text-primary hover:underline"
+                }`}
+              >
+                {timer > 0
+                  ? `Resend code in ${timer}s`
+                  : "Resend Verification Code"}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -8,18 +8,37 @@ const decimalString = z
 // --- Auth Schemas ---
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  // Password is optional in schema because user might use OTP
+  password: z.string().optional(),
+  otp: z.string().length(6, "OTP must be 6 digits").optional(),
   device: z.string().optional(),
+}).refine((data) => data.password || data.otp, {
+  message: "Password or OTP is required",
+  path: ["password"], // Attach error to password field for UI focus
 });
 
 export const registerSchema = z.object({
   name: z.string().min(2, "Name is too short"),
-  email: z.string().email(),
-  password: z.string().min(10, "Password must be at least 10 characters"), // Backend constraint [85]
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(10, "Password must be at least 10 characters"),
   phone: z.string().optional(),
   timezone: z.string().optional(),
   currency: z.string().default("INR"),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export const resetPasswordSchema = z.object({
+  otp: z.string().length(6, "OTP must be 6 digits"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
 
 // --- Expense Schemas (Complex) ---
 export const expensePayerSchema = z.object({
@@ -94,3 +113,5 @@ export const createExpenseSchema = z
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

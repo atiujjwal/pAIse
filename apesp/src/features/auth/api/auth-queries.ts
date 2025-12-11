@@ -18,6 +18,12 @@ type ChangePasswordPayload = {
   newPassword: string;
 };
 
+type VerifyOtpPayload = {
+  email: string;
+  otp: string;
+  type: "register" | "login" | "forgot_password";
+};
+
 // --- QUERIES ---
 
 export const useLogin = () => {
@@ -52,13 +58,12 @@ export const useSendOtp = () => {
   const { addToast } = useToastStore();
 
   return useMutation({
-    // Updated to accept an object with type support
     mutationFn: async ({
       email,
       type,
     }: {
       email: string;
-      type: "login" | "forgot_password";
+      type: "register" | "login" | "forgot_password";
     }) => {
       const { data } = await api.get<ApiResponse<{ message: string }>>(
         `/auth/otp?email=${email}&type=${type}`
@@ -66,7 +71,7 @@ export const useSendOtp = () => {
       return data;
     },
     onSuccess: () => {
-      addToast("OTP sent to your email", "success");
+      addToast("Verification code sent to your email", "success");
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Failed to send OTP";
@@ -75,7 +80,16 @@ export const useSendOtp = () => {
   });
 };
 
-// Hook to handle the final password change step
+// NEW: Hook to verify OTP
+export const useVerifyOtp = () => {
+  return useMutation({
+    mutationFn: async (payload: VerifyOtpPayload) => {
+      const { data } = await api.post<ApiResponse<void>>("/auth/otp", payload);
+      return data;
+    },
+  });
+};
+
 export const useChangePassword = () => {
   const { addToast } = useToastStore();
   const router = useRouter();
@@ -83,7 +97,7 @@ export const useChangePassword = () => {
   return useMutation({
     mutationFn: async (payload: ChangePasswordPayload) => {
       const { data } = await api.post<ApiResponse<void>>(
-        "/auth/password",
+        "/auth/password/change",
         payload
       );
       return data;
@@ -101,7 +115,6 @@ export const useChangePassword = () => {
     },
   });
 };
-
 
 export const useRegister = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
