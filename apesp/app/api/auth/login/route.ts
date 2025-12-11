@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         where: {
           type: "login",
           email: user.email,
-          code: otp,
+          otp,
           expires_at: { gt: new Date() },
         },
       });

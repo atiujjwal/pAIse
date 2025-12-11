@@ -1,8 +1,8 @@
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcrypt";
 import { prisma } from "@/src/lib/db";
+import { hashPassword } from "@/src/lib/auth";
 
 const changePasswordSchema = z.object({
   email: z.string().email(),
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       data: { used: true },
     });
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await hashPassword(newPassword);
 
     await prisma.user.update({
       where: { email },

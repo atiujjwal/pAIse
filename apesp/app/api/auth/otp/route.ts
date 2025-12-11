@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/src/lib/db";
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
-import { sendEmail } from "@/src/services/messageServices";
+import { sendEmail, sendSms } from "@/src/services/messageServices";
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -43,55 +43,88 @@ export async function GET(req: NextRequest) {
       return badRequest("Invalid input", validation.error);
     }
 
-    const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // Check for existing valid OTP
+    const now = new Date();
+    const oneMinuteFromNow = new Date(now.getTime() + 60 * 1000);
 
-    await prisma.userOtp.create({
-      data: {
-        email,
-        phone,
-        otp,
-        type,
-        expires_at: expiresAt,
-      },
+    const whereClause: any = {
+      type,
+      used: false,
+      expires_at: { gt: now },
+    };
+    if (email) whereClause.email = email;
+    if (phone) whereClause.phone = phone;
+
+    const existingOtp = await prisma.userOtp.findFirst({
+      where: whereClause,
+      orderBy: { created_at: "desc" },
     });
+
+    let otp = "";
+    let expiresAt = new Date();
+
+    if (existingOtp && existingOtp.expires_at > oneMinuteFromNow) {
+      console.log(`[OTP] Reusing existing valid OTP for ${email || phone}`);
+      otp = existingOtp.otp;
+      expiresAt = existingOtp.expires_at;
+    } else {
+      if (existingOtp) {
+        await prisma.userOtp.delete({ where: { id: existingOtp.id } });
+      }
+
+      otp = generateOtp();
+      expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes validity
+
+      await prisma.userOtp.create({
+        data: {
+          email,
+          phone,
+          otp,
+          type,
+          expires_at: expiresAt,
+        },
+      });
+    }
 
     if (email) {
       switch (type) {
         case "register":
-          sendEmail({
+          await sendEmail({
             to: email,
-            templateId: 4,
-            data: {},
-            subject: "New Friend Request",
+            templateId: 2, // Welcome/Verify Template
+            data: { otp, name: "User" },
+            subject: "Verify your Email - pAIse",
           });
           break;
         case "login":
-          sendEmail({
+          await sendEmail({
             to: email,
-            templateId: 4,
-            data: {},
-            subject: "New Friend Request",
+            templateId: 3, // Login OTP Template
+            data: { otp, name: "User" },
+            subject: "Your Login Code - pAIse",
           });
           break;
         case "forgot_password":
-          sendEmail({
+          await sendEmail({
             to: email,
-            templateId: 4,
-            data: {},
-            subject: "New Friend Request",
+            templateId: 4, // Forgot Password Template
+            data: { otp, name: "User" },
+            subject: "Reset Password Request - pAIse",
           });
           break;
         default:
-          return badRequest("Invalid type");
+          return badRequest("Invalid OTP type");
       }
     } else if (phone) {
-      // TODO: Integrate SMS provider here
-      console.log(`[SMS MOCK] To: ${phone}, OTP: ${otp}`);
+      await sendSms({
+        mobile: phone,
+        body: `Your pAIse verification code is ${otp}. Valid for 5 mins.`,
+      });
     }
 
     return successResponse("OTP sent successfully", {
       message: "OTP sent",
+      otp, // REMOVE in production for security!
       expiresAt,
     });
   } catch (error) {
