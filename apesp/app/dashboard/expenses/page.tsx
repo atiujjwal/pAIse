@@ -3,13 +3,112 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Plus, Receipt } from "lucide-react";
+import { Plus, Receipt, Layers, User, Calendar } from "lucide-react";
 
 import { Button } from "@/src/components/ui/Button";
 import { FilterBar } from "@/src/components/expenses/FilterBar";
 import { useExpenses } from "@/src/features/expenses/api/expense-queries";
 import { Skeleton } from "@/src/components/ui/Skeleton";
-import { ExpenseList } from "@/src/features/expenses/components/ExpenseList";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/Avatar";
+import { formatCurrency, cn } from "@/src/lib/utils";
+import { useAuthStore } from "@/src/features/auth/store";
+
+const ExpenseCard = ({ expense }: { expense: any }) => {
+  const { user } = useAuthStore();
+
+  const isGroupExpense = !!expense.group;
+
+  let avatarUrl: string | null | undefined = null;
+  let displayName: string = "";
+  let FallbackIcon = User;
+
+  if (isGroupExpense) {
+    avatarUrl = expense.group.avatar;
+    displayName = expense.group.name;
+    FallbackIcon = Layers;
+  } else {
+    const otherPerson = expense.splits.find(
+      (split: any) => split.user.id !== user?.id
+    )?.user;
+
+    if (otherPerson) {
+      avatarUrl = otherPerson.avatar;
+      displayName = otherPerson.name;
+    } else {
+      avatarUrl = expense.created_by.avatar;
+      displayName = expense.created_by.name;
+    }
+    FallbackIcon = User;
+  }
+
+  return (
+    <div className="flex items-center gap-4 p-4">
+      {/* Dynamic Avatar Section */}
+      <Avatar className="h-10 w-10 border border-slate-100 shadow-sm">
+        <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+        <AvatarFallback
+          className={cn(
+            "text-xs font-bold",
+            isGroupExpense
+              ? "bg-indigo-50 text-indigo-600"
+              : "bg-emerald-50 text-emerald-600"
+          )}
+        >
+          {displayName?.[0]?.toUpperCase() || (
+            <FallbackIcon className="h-4 w-4" />
+          )}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <h4 className="font-semibold text-sm text-slate-900 truncate">
+            {expense.description}
+          </h4>
+          {/* Small context badge */}
+          <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600">
+            {isGroupExpense ? "Group" : "Friend"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>
+              {new Date(expense.date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <span className="capitalize">{expense.category}</span>
+          <span className="text-slate-300">•</span>
+          <span className="truncate max-w-[100px]">
+            {isGroupExpense ? expense.group.name : displayName}
+          </span>
+        </div>
+      </div>
+
+      {/* Amount Section */}
+      <div className="text-right">
+        <span className="block font-bold text-slate-900 font-mono text-sm">
+          {formatCurrency(expense.amount, expense.currency)}
+        </span>
+        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+          {expense.split_type}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// --- Main Page Component ---
 
 export default function ExpensesPage() {
   const searchParams = useSearchParams();
@@ -17,7 +116,7 @@ export default function ExpensesPage() {
   const queryParams = useMemo(
     () => ({
       page: Number(searchParams.get("page")) || 1,
-      limit: 20, // Increased limit for better scrolling
+      limit: 20,
       search: searchParams.get("search") || undefined,
       category: searchParams.get("category") || undefined,
       sort_by: searchParams.get("sort_by") || "created_at",
@@ -60,12 +159,12 @@ export default function ExpensesPage() {
       <FilterBar />
 
       {/* Content List */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm min-h-[400px]">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm min-h-[400px] overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-xl" />
+                <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-4 w-1/3" />
                   <Skeleton className="h-3 w-1/4" />
@@ -101,7 +200,8 @@ export default function ExpensesPage() {
                 href={`/dashboard/expenses/${expense.id}`}
                 className="block hover:bg-slate-50/80 transition-colors"
               >
-                <ExpenseList expense={expense} />
+                {/* Using the new Local ExpenseCard Logic */}
+                <ExpenseCard expense={expense} />
               </Link>
             ))}
           </div>

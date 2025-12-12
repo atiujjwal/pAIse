@@ -288,7 +288,7 @@ const getHandler = async (
         },
         include: {
           group: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, avatar: true },
           },
           created_by: {
             select: { id: true, name: true, avatar: true },
@@ -319,7 +319,9 @@ const getHandler = async (
       split_type: exp.split_type,
 
       // Context Info
-      group: exp.group ? { id: exp.group.id, name: exp.group.name } : null,
+      group: exp.group
+        ? { id: exp.group.id, name: exp.group.name, avatar: exp.group.avatar }
+        : null,
       created_by: formatPublicUser(exp.created_by!),
 
       // Details
