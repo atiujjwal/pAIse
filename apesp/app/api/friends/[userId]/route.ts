@@ -1,13 +1,17 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/src/lib/db";
-import { FriendshipStatus } from "@prisma/client";
+import { ExpenseStatus, FriendshipStatus } from "@prisma/client";
 import { withAuth } from "@/src/middleware/auth";
+import { Decimal } from "decimal.js";
 import {
   errorResponse,
   noContent,
   notFound,
   successResponse,
 } from "@/src/lib/response";
+import { formatPublicUser } from "@/src/lib/formatter";
+
+Decimal.set({ precision: 12 });
 
 /**
  * DELETE /friends/{userId}
@@ -71,8 +75,11 @@ const deleteHandler = async (
 };
 
 /**
- * GET /friends/{userId}
- * Get a friend details by their user ID.
+ * GET /friends/[userId]
+ * Fetches detailed profile of a friend, including:
+ * 1. Basic Profile Info
+ * 2. Net Balance (Aggregated across all groups and direct expenses)
+ * 3. Shared Expense Lists (Separated by Friend vs Group expenses)
  */
 const getHandler = async (
   request: NextRequest,
@@ -93,28 +100,119 @@ const getHandler = async (
       },
     });
 
-    if (!friendship) return notFound("Friendship not found");
+    if (!friendship) {
+      return notFound("Friendship not found or not active");
+    }
 
-    const user = await prisma.user.findUnique({
+    const friendUser = await prisma.user.findUnique({
       where: { id: friendId, is_deleted: false },
     });
 
-    if (!user) return notFound("User not found");
+    if (!friendUser) return notFound("User not found");
 
-    const publicProfile = {
-      id: user.id,
-      name: user.name,
-      avatar: user.avatar,
+    // Calculate Net Balance
+    const balances = await prisma.balance.findMany({
+      where: {
+        OR: [
+          { user_A_id: myId, user_B_id: friendId },
+          { user_A_id: friendId, user_B_id: myId },
+        ],
+      },
+    });
+
+    let netBalance = new Decimal(0);
+
+    for (const b of balances) {
+      if (b.user_A_id === myId) netBalance = netBalance.add(b.amount);
+      else netBalance = netBalance.sub(b.amount);
+    }
+
+    const balanceVal = netBalance.toNumber();
+    let status: "settled" | "owe" | "owed" = "settled";
+
+    if (balanceVal < -0.01) status = "owe";
+    else if (balanceVal > 0.01) status = "owed";
+
+    const baseExpenseFilter = {
+      status: ExpenseStatus.ACTIVE,
+      AND: [
+        {
+          OR: [
+            { payers: { some: { user_id: myId } } },
+            { splits: { some: { user_id: myId } } },
+          ],
+        },
+        {
+          OR: [
+            { payers: { some: { user_id: friendId } } },
+            { splits: { some: { user_id: friendId } } },
+          ],
+        },
+      ],
     };
 
-    return successResponse(
-      "Friend details fetched successfully",
-      publicProfile
-    );
+    const [friendExpenses, groupExpenses] = await Promise.all([
+      // Friend (Direct) Expenses -> group_id is null
+      prisma.expense.findMany({
+        where: {
+          ...baseExpenseFilter,
+          group_id: null,
+        },
+        orderBy: { date: "desc" },
+        select: {
+          id: true,
+          friend_id: true,
+          description: true,
+          amount: true,
+          category: true,
+          date: true,
+          status: true,
+          created_at: true,
+          created_by: {
+            select: { id: true, name: true, avatar: true },
+          },
+        },
+      }),
+      // Group Expenses -> group_id is NOT null
+      prisma.expense.findMany({
+        where: {
+          ...baseExpenseFilter,
+          group_id: { not: null },
+        },
+        orderBy: { date: "desc" },
+        select: {
+          id: true,
+          group_id: true,
+          description: true,
+          amount: true,
+          category: true,
+          date: true,
+          status: true,
+          created_at: true,
+          group: {
+            select: { id: true, name: true, avatar: true },
+          },
+          created_by: {
+            select: { id: true, name: true, avatar: true },
+          },
+        },
+      }),
+    ]);
+
+    return successResponse("Friend details fetched successfully", {
+      ...formatPublicUser(friendUser),
+      net_balance: netBalance.abs().toFixed(2),
+      status, // "owe" | "owed" | "settled"
+      currency: "INR", // TODO: Fetch from user preferences or common group currency
+      expenses: {
+        friend_expenses: friendExpenses,
+        group_expenses: groupExpenses,
+      },
+    });
   } catch (error: any) {
-    console.log("Error getting friend details: ", error);
-    if (error.message.includes("token")) {
-      return errorResponse("unauthorized");
+    console.error("Error getting friend details: ", error);
+    if (error.message?.includes("token")) {
+      return errorResponse("Unauthorized", 401);
     }
     return errorResponse("Internal server error");
   }

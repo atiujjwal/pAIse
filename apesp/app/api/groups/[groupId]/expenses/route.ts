@@ -20,7 +20,6 @@ const getHandler = async (
     const { groupId } = context.params;
     const { searchParams } = new URL(request.url);
 
-    // 401/404 handled internally (same as 1st file)
     await checkGroupMembership(userId, groupId);
 
     const limit = parseInt(searchParams.get("limit") || "20");
@@ -37,8 +36,6 @@ const getHandler = async (
         amount: true,
         date: true,
         category: true,
-
-        // Fetch payers with user basic info
         payers: {
           select: {
             id: true,
@@ -53,26 +50,6 @@ const getHandler = async (
             },
           },
         },
-
-        // Fetch splits with user info
-        splits: {
-          select: {
-            id: true,
-            amount_owed: true,
-            percent_owed: true,
-            shares_owed: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-
-        // Fetch group details
         group: {
           select: {
             id: true,
@@ -80,11 +57,9 @@ const getHandler = async (
             avatar: true,
           },
         },
-
-        // If needed in future: created_by user
-        // created_by: {
-        //   select: { id: true, name: true, email: true }
-        // }
+        created_by: {
+          select: { id: true, name: true, email: true }
+        }
       },
       take: limit,
       skip: offset,
