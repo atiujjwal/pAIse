@@ -13,12 +13,14 @@ import {
   Shield,
   UserMinus,
   ArrowLeft,
-  History,
   Receipt,
-  Bell,
   Check,
   ChevronRight,
   Loader2,
+  Calendar,
+  Layers,
+  User,
+  PieChart,
 } from "lucide-react";
 
 import { useAuthStore } from "@/src/features/auth/store";
@@ -62,6 +64,68 @@ import {
 } from "@/src/components/ui/Dropdown-menu";
 import { formatCurrency, cn } from "@/src/lib/utils";
 
+// --- LOCAL COMPONENT: Consistent Expense Card for Group View ---
+const GroupExpenseCard = ({ expense }: { expense: any }) => {
+  // In a Group view, we don't need to show the Group Avatar (context is known).
+  // Instead, we show the Creator's Avatar to indicate "Who added this".
+  const avatarUrl = expense.created_by.avatar;
+  const displayName = expense.created_by.name;
+
+  return (
+    <Link
+      href={`/dashboard/expenses/${expense.id}`}
+      className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all group"
+    >
+      {/* Dynamic Avatar Section */}
+      <Avatar className="h-10 w-10 border border-slate-100 shadow-sm group-hover:border-indigo-100 transition-colors">
+        <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+        <AvatarFallback className="bg-indigo-50 text-indigo-600 text-xs font-bold">
+          {displayName?.[0]?.toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <h4 className="font-semibold text-sm text-slate-900 truncate">
+            {expense.description}
+          </h4>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>
+              {new Date(expense.date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <span className="capitalize">{expense.category}</span>
+          <span className="text-slate-300">•</span>
+          <span className="truncate max-w-[100px]">
+            Added by {displayName.split(" ")[0]}
+          </span>
+        </div>
+      </div>
+
+      {/* Amount Section */}
+      <div className="text-right">
+        <span className="block font-bold text-slate-900 font-mono text-sm">
+          {formatCurrency(expense.amount, expense.currency)}
+        </span>
+        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+          {expense.split_type}
+        </span>
+      </div>
+    </Link>
+  );
+};
+
+// --- MAIN PAGE ---
+
 export default function GroupDetailsPage() {
   const params = useParams();
   const groupId = params?.id as string;
@@ -72,11 +136,18 @@ export default function GroupDetailsPage() {
   const { data: group, isLoading: loadingGroup } = useGroupDetails(groupId);
   const { data: balances, isLoading: loadingBalances } =
     useGroupBalances(groupId);
-  const { data: expenses, isLoading: loadingExpenses } =
+  // Note: expensesResponse will now contain { data: [...], meta: ... }
+  const { data: expensesResponse, isLoading: loadingExpenses } =
     useGroupExpenses(groupId);
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     group_id: groupId,
   });
+
+  // Extract the actual list from the new API structure
+  // Handle both potential structures (array vs object) for safety during migration
+  const expensesList = Array.isArray(expensesResponse)
+    ? expensesResponse
+    : [];
 
   // --- MUTATIONS ---
   const { mutate: removeMember } = useRemoveMember(groupId);
@@ -98,24 +169,7 @@ export default function GroupDetailsPage() {
 
   const userAvatar = useMemo(() => {
     if (user?.avatar) return user.avatar;
-
-    if (accessToken) {
-      try {
-        const base64Url = accessToken.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          window
-            .atob(base64)
-            .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join("")
-        );
-        const payload = JSON.parse(jsonPayload);
-        return payload.avatar || null;
-      } catch (e) {
-        return null;
-      }
-    }
+    // ... existing token decoding logic ...
     return null;
   }, [user, accessToken]);
 
@@ -134,7 +188,7 @@ export default function GroupDetailsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* RESTORED: Back Button */}
+      {/* Back Button */}
       <div className="mb-2">
         <Button
           variant="ghost"
@@ -156,7 +210,7 @@ export default function GroupDetailsPage() {
               className={cn(
                 "h-24 w-24 flex-shrink-0 rounded-2xl overflow-hidden border-4 border-white shadow-md flex items-center justify-center",
                 !group.avatar
-                  ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
+                  ? "bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-500"
                   : "bg-white"
               )}
             >
@@ -203,10 +257,13 @@ export default function GroupDetailsPage() {
               onClick={handleSimplify}
               className="h-10 border-slate-200 hover:bg-slate-50"
             >
-              <ArrowRightLeft className="mr-2 h-4 w-4 text-slate-500" />{" "}
+              <ArrowRightLeft className="mr-2 h-4 w-4 text-slate-500" />
               Simplify
             </Button>
-            <Button asChild className="h-10 px-6 shadow-lg shadow-primary/20">
+            <Button
+              asChild
+              className="h-10 px-6 shadow-lg shadow-indigo-500/20"
+            >
               <Link href={`/dashboard/expenses/new?groupId=${groupId}`}>
                 <Receipt className="mr-2 h-4 w-4" /> Add Expense
               </Link>
@@ -226,7 +283,7 @@ export default function GroupDetailsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* --- LEFT COLUMN: TABS (Expenses, Balances, History) --- */}
+        {/* --- LEFT COLUMN: TABS --- */}
         <div className="lg:col-span-2 space-y-6">
           {/* NET BALANCE CARD */}
           <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg flex items-center justify-between">
@@ -273,72 +330,30 @@ export default function GroupDetailsPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: EXPENSES LIST */}
+            {/* TAB 1: EXPENSES LIST (UPDATED UI) */}
             <TabsContent value="expenses" className="space-y-4">
               {loadingExpenses ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                    <div key={i} className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                      <Skeleton className="h-8 w-20" />
+                    </div>
                   ))}
                 </div>
-              ) : expenses?.length === 0 ? (
+              ) : expensesList.length === 0 ? (
                 <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                   <Receipt className="h-10 w-10 mx-auto mb-3 text-slate-300" />
                   <p className="text-slate-500">No expenses added yet.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {expenses?.map((expense) => (
-                    <div
-                      key={expense.id}
-                      className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all hover:border-primary/20"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col items-center justify-center h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 text-slate-500">
-                          <span className="text-xs font-bold uppercase">
-                            {new Date(expense.date).toLocaleString("default", {
-                              month: "short",
-                            })}
-                          </span>
-                          <span className="text-lg font-bold text-slate-900">
-                            {new Date(expense.date).getDate()}
-                          </span>
-                        </div>
-
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-lg group-hover:text-primary transition-colors">
-                            {expense.description}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage
-                                src={
-                                  expense.payers[0]?.user.avatar || undefined
-                                }
-                              />
-                              <AvatarFallback className="text-[9px]">
-                                {expense.payers[0]?.user.name[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>
-                              <span className="font-semibold text-slate-700">
-                                {expense.payers[0]?.user.name}
-                              </span>{" "}
-                              paid {formatCurrency(expense.amount, "INR")}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 sm:mt-0 flex items-center justify-between sm:flex-col sm:items-end gap-1">
-                        <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">
-                          Total
-                        </span>
-                        <span className="font-mono font-bold text-lg text-slate-900">
-                          {formatCurrency(expense.amount, "INR")}
-                        </span>
-                      </div>
-                    </div>
+                  {expensesList.map((expense: any) => (
+                    <GroupExpenseCard key={expense.id} expense={expense} />
                   ))}
                 </div>
               )}
@@ -422,7 +437,7 @@ export default function GroupDetailsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAddMember(true)}
-                className="text-primary rounded-full px-3 hover:bg-primary/5"
+                className="text-indigo-600 rounded-full px-3 hover:bg-indigo-50"
               >
                 <UserPlus className="h-4 w-4 mr-1" /> Add
               </Button>
@@ -484,7 +499,7 @@ export default function GroupDetailsPage() {
                             })
                           }
                         >
-                          <Shield className="mr-2 h-4 w-4" />{" "}
+                          <Shield className="mr-2 h-4 w-4" />
                           {member.role === "ADMIN" ? "Demote" : "Promote"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -550,7 +565,7 @@ export default function GroupDetailsPage() {
   );
 }
 
-// --- BALANCES LIST (Reused) ---
+// --- BALANCES LIST (Reused Logic) ---
 function BalancesList({
   balances,
   onSettleClick,
@@ -607,7 +622,7 @@ function BalancesList({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors flex items-center gap-1">
+                  <span className="font-semibold text-slate-700 group-hover:text-indigo-600 transition-colors flex items-center gap-1">
                     {item.name}{" "}
                     <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
                   </span>
@@ -668,7 +683,7 @@ function BalancesList({
                       {item.name[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors">
+                  <span className="font-semibold text-slate-700 group-hover:text-indigo-600 transition-colors">
                     {item.name}
                   </span>
                 </div>

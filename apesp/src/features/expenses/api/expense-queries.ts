@@ -11,12 +11,15 @@ export interface ExpenseDetails {
   amount: string;
   currency: string;
   date: string;
+  group_id?: string | null;
+  friend_id?: string | null;
   category: string;
   receipt_url?: string | null;
   status: "ACTIVE" | "DELETED";
   split_type: string;
   created_by: User;
   group?: { id: string; name: string; avatar?: string } | null;
+  friend?: { id: string; name: string; avatar?: string } | null;
   payers: {
     id: string;
     amount: string;
