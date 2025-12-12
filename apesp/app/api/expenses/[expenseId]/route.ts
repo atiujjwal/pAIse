@@ -43,20 +43,32 @@ const getHandler = async (
         created_by: true,
         payers: { include: { user: true } },
         splits: { include: { user: true } },
+        group: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            avatar: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
       },
     });
 
     if (!expense) return notFound("Expense not found");
 
-    let expenseGroupId: string | null = null;
-    let friendId: string | null = null;
-
-    if (expense?.group_id) {
-      expenseGroupId = expense.group_id;
-      //401: Unauthorized (User is not part of the group)
-      await checkGroupMembership(userId, expenseGroupId);
-    } else if (expense?.friend_id) {
-      friendId = expense.friend_id;
+    if (expense.group_id) {
+      // 401: Unauthorized (User is not part of the group)
+      await checkGroupMembership(userId, expense.group_id);
+    } else if (expense.friend_id) {
+      const friendId = expense.friend_id;
       const friendship = await prisma.friendship.findFirst({
         where: {
           OR: [
@@ -69,15 +81,19 @@ const getHandler = async (
       if (!friendship) return forbidden("Users are not friends");
     }
 
-    return successResponse(
-      "Expense fetched successfully",
-      formatDetailedExpense(expense)
-    );
+    const formattedData = formatDetailedExpense(expense);
+
+    return successResponse("Expense fetched successfully", {
+      ...formattedData,
+      group: expense.group || undefined,
+      friend: expense.user || undefined,
+    });
   } catch (error: any) {
     console.log("Error fetching expense:", error);
-    if (error.message.includes("token")) return errorResponse("Unauthorized");
+    if (error.message?.includes("token"))
+      return errorResponse("Unauthorized", 401);
     if (error.message === "NOT_FOUND_OR_UNAUTHORIZED") {
-      return errorResponse("Expense not found or unauthorized");
+      return errorResponse("Expense not found or unauthorized", 404);
     }
     return errorResponse("Internal server error");
   }

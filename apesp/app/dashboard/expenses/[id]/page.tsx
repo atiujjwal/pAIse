@@ -78,6 +78,26 @@ export default function ExpenseDetailsPage() {
   const isCreator = expense.created_by.id === user?.id;
   const canDelete = isCreator;
 
+  // 1. Strictly determine Context (Group vs Friend) using ID
+  const isGroupExpense = !!expense?.group_id;
+
+  // 2. Prepare Display Data based strictly on Context
+  let mainAvatarUrl: string | null | undefined = null;
+  let mainAvatarName: string | undefined = "";
+  let MainFallbackIcon = User; // Default
+
+  if (isGroupExpense) {
+    // GROUP MODE
+    mainAvatarUrl = expense.group?.avatar;
+    mainAvatarName = expense.group?.name;
+    MainFallbackIcon = Layers;
+  } else {
+    // FRIEND MODE
+    mainAvatarUrl = expense.friend?.avatar;
+    mainAvatarName = expense.friend?.name;
+    MainFallbackIcon = User;
+  }
+
   const handleDelete = () => {
     deleteExpense(expense.id as string);
   };
@@ -109,12 +129,12 @@ export default function ExpenseDetailsPage() {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Banner */}
         <div className="bg-slate-50/50 p-8 text-center border-b border-slate-100 relative">
-          {/* Context Badge (Group vs Friend) */}
+          {/* Context Badge (Top Right) */}
           <div className="absolute top-4 right-4">
-            {expense.group ? (
+            {isGroupExpense ? (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-600 shadow-sm">
                 <Layers className="h-3.5 w-3.5 text-indigo-500" />
-                <span>{expense.group.name}</span>
+                <span>{expense.group?.name || "Group Expense"}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-600 shadow-sm">
@@ -124,9 +144,22 @@ export default function ExpenseDetailsPage() {
             )}
           </div>
 
-          {/* Icon & Amounts */}
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-slate-100 shadow-sm text-primary">
-            <Receipt className="h-8 w-8" />
+          {/* Icon & Avatar Section */}
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center relative">
+            {mainAvatarUrl ? (
+              // Case A: Avatar Image Available (Group or Friend)
+              <Avatar className="h-20 w-20 border-4 border-white shadow-sm">
+                <AvatarImage src={mainAvatarUrl} className="object-cover" />
+                <AvatarFallback className="bg-slate-200 text-slate-400 text-2xl font-bold">
+                  {mainAvatarName?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              // Case B: No Image -> Context Aware Icon (Group Icon OR Friend Icon)
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-slate-100 shadow-sm text-primary">
+                <MainFallbackIcon className="h-8 w-8 text-slate-700" />
+              </div>
+            )}
           </div>
 
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -153,8 +186,20 @@ export default function ExpenseDetailsPage() {
             </div>
           </div>
 
-          <div className="mt-4 text-xs text-slate-400">
-            Added by {expense.created_by.name}
+          {/* Added By User (Creator) */}
+          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
+            <span>Added by</span>
+            <div className="flex items-center gap-2 rounded-full bg-white px-2 py-1 border border-slate-100 shadow-sm">
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={expense.created_by.avatar || undefined} />
+                <AvatarFallback className="text-[9px] bg-slate-100">
+                  {expense.created_by.name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-slate-700">
+                {expense.created_by.name}
+              </span>
+            </div>
           </div>
         </div>
 
