@@ -222,7 +222,7 @@ model Expense {
   created_by User           @relation("createdBy", fields: [created_by_id], references: [id], onDelete: Restrict)
   payers     ExpensePayer[] // (1Expense → Many payers)
   splits     ExpenseSplit[] // (1Expense → Multiple splits)
-  user       User?          @relation(fields: [friend_id], references: [id]) // i think if user paid whole
+  user       User?          @relation(fields: [friend_id], references: [id])
   friend_id  String? // for non group expenses
 
   @@index([group_id])
