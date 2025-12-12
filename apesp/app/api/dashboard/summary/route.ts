@@ -5,6 +5,7 @@ import { Decimal } from "decimal.js";
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
 import { errorResponse, successResponse } from "@/src/lib/response";
+import { formatPublicUser } from "@/src/lib/formatter";
 
 const getHandler = async (
   request: NextRequest,
@@ -23,21 +24,70 @@ const getHandler = async (
     const upcomingDate = new Date();
     upcomingDate.setDate(now.getDate() + 30);
 
-    const balances = await prisma.balance.findMany({
+    const rawBalances = await prisma.balance.findMany({
       where: {
         OR: [{ user_A_id: userId }, { user_B_id: userId }],
       },
+      include: {
+        user_a: true,
+        user_b: true,
+      },
     });
 
-    const totalBalance = balances.reduce((acc, balance) => {
-      if (balance.user_A_id === userId) {
-        return acc.add(balance.amount);
-      } else {
-        return acc.sub(balance.amount);
-      }
-    }, new Decimal(0));
+    let totalBalance = new Decimal(0);
+    const netBalanceMap = new Map<string, Decimal>();
+    const userMap = new Map<string, any>();
 
-    // We query ExpenseSplit to get the user's *actual* share, not just what they paid for.
+    for (const b of rawBalances) {
+      const isUserA = b.user_A_id === userId;
+      const otherUser = isUserA ? b.user_b : b.user_a;
+      const otherUserId = otherUser.id;
+
+      if (!userMap.has(otherUserId)) {
+        userMap.set(otherUserId, formatPublicUser(otherUser));
+      }
+
+      let netChange: Decimal;
+      if (isUserA) {
+        netChange = b.amount;
+      } else {
+        netChange = b.amount.negated();
+      }
+
+      totalBalance = totalBalance.add(netChange);
+      const currentFriendNet = netBalanceMap.get(otherUserId) || new Decimal(0);
+      netBalanceMap.set(otherUserId, currentFriendNet.add(netChange));
+    }
+
+    const you_owe: any[] = [];
+    const you_are_owed: any[] = [];
+
+    for (const [friendId, net] of netBalanceMap.entries()) {
+      const balanceVal = net.toNumber();
+      if (Math.abs(balanceVal) < 0.01) continue;
+
+      const friendDetails = userMap.get(friendId);
+      let status: "owe" | "owed" | "settled" = "settled";
+
+      if (balanceVal < 0) {
+        status = "owe";
+        you_owe.push({
+          ...friendDetails,
+          net_balance: net.abs().toFixed(2),
+          status,
+          currency: "INR", // TODO: Fetch from preferences if needed
+        });
+      } else {
+        status = "owed";
+        you_are_owed.push({
+          ...friendDetails,
+          net_balance: net.abs().toFixed(2),
+          status,
+          currency: "INR",
+        });
+      }
+    }
+
     const userMonthlySplits = await prisma.expenseSplit.findMany({
       where: {
         user_id: userId,
@@ -64,13 +114,6 @@ const getHandler = async (
       categoryMap.set(category, currentCatTotal.add(amount));
     });
 
-    // Format category data for the chart
-    const spendingByCategory = Array.from(categoryMap.entries()).map(
-      ([category, amount]) => ({
-        category,
-        amount: amount.toNumber(),
-      })
-    );
 
     const monthlyBudgetAgg = await prisma.budget.aggregate({
       where: {
@@ -85,7 +128,6 @@ const getHandler = async (
     const budgetLimit = monthlyBudgetAgg._sum.budget_amount || new Decimal(0);
     const remainingBudget = budgetLimit.sub(totalSpent);
 
-    // Calculate percentage (handle division by zero)
     let budgetUsedPercent = 0;
     if (!budgetLimit.isZero()) {
       budgetUsedPercent = totalSpent
@@ -94,7 +136,6 @@ const getHandler = async (
         .toDecimalPlaces(1)
         .toNumber();
     } else if (totalSpent.gt(0)) {
-      // If no budget set but money spent, theoretically 100% or "Over"
       budgetUsedPercent = 100;
     }
 
@@ -113,45 +154,77 @@ const getHandler = async (
       take: 5,
     });
 
-    const recentExpenses = await prisma.expense.findMany({
+    const recentExpensesRaw = await prisma.expense.findMany({
       where: {
         status: "ACTIVE",
         OR: [
-          { created_by_id: userId }, 
-          { splits: { some: { user_id: userId } } }, // OR I am involved in the split
+          { created_by_id: userId },
+          { payers: { some: { user_id: userId } } }, // I paid
+          { splits: { some: { user_id: userId } } }, // OR I owe
         ],
-      },
-      include: {
-        group: { select: { name: true } },
-        created_by: { select: { name: true } },
       },
       orderBy: { date: "desc" },
       take: 5,
+      include: {
+        group: {
+          select: { id: true, name: true, avatar: true },
+        },
+        created_by: {
+          select: { id: true, name: true, avatar: true },
+        },
+        payers: {
+          include: {
+            user: { select: { id: true, name: true, avatar: true } },
+          },
+        },
+        splits: {
+          include: {
+            user: { select: { id: true, name: true, avatar: true } },
+          },
+        },
+      },
     });
 
+    const recentExpenses = recentExpensesRaw.map((exp) => ({
+      id: exp.id,
+      description: exp.description,
+      amount: exp.amount,
+      currency: exp.currency,
+      date: exp.date,
+      category: exp.category,
+      receipt_url: exp.receipt_url,
+      split_type: exp.split_type,
+      group: exp.group
+        ? { id: exp.group.id, name: exp.group.name, avatar: exp.group.avatar }
+        : null,
+      created_by: formatPublicUser(exp.created_by!),
+      payers: exp.payers.map((p) => ({
+        user: formatPublicUser(p.user),
+        amount: p.amount,
+      })),
+      splits: exp.splits.map((s) => ({
+        user: formatPublicUser(s.user),
+        amount_owed: s.amount_owed,
+      })),
+    }));
+
     const summary = {
-      total_balance: totalBalance.toNumber(),
+      total_balance: totalBalance.toFixed(2),
       monthly_metrics: {
         total_spent: totalSpent.toNumber(),
         budget_limit: budgetLimit.toNumber(),
         remaining: remainingBudget.toNumber(),
         budget_used_percent: budgetUsedPercent,
       },
-      spending_by_category: spendingByCategory,
       upcoming_subscriptions: upcomingSubscriptions.map((sub) => ({
         id: sub.id,
         name: sub.name,
         amount: sub.amount.toNumber(),
         next_charge_date: sub.next_charge_date,
       })),
-      recent_expenses: recentExpenses.map((exp) => ({
-        id: exp.id,
-        description: exp.description,
-        amount: exp.amount.toNumber(),
-        date: exp.date,
-        group: exp.group?.name || null,
-        created_by: exp.created_by.name,
-      })),
+      recent_expenses: recentExpenses,
+      you_owe,
+      you_are_owed,
     };
 
     return successResponse("Dashboard summary fetched successfully", summary);
