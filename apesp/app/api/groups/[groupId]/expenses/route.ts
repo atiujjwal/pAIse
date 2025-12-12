@@ -31,13 +31,60 @@ const getHandler = async (
         group_id: groupId,
         status: ExpenseStatus.ACTIVE,
       },
-      // Select only the fields specified in the success response
       select: {
         id: true,
         description: true,
         amount: true,
         date: true,
         category: true,
+
+        // Fetch payers with user basic info
+        payers: {
+          select: {
+            id: true,
+            amount: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+
+        // Fetch splits with user info
+        splits: {
+          select: {
+            id: true,
+            amount_owed: true,
+            percent_owed: true,
+            shares_owed: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+
+        // Fetch group details
+        group: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+
+        // If needed in future: created_by user
+        // created_by: {
+        //   select: { id: true, name: true, email: true }
+        // }
       },
       take: limit,
       skip: offset,
