@@ -96,7 +96,6 @@ export default function FriendDetailsPage() {
   const handleRemind = () => {
     if (isReminded) return;
 
-    // FIXED: Pass the required 'amount' to the mutation
     const amountString = formatCurrency(
       Math.abs(balanceValue).toString(),
       "INR"
@@ -127,21 +126,22 @@ export default function FriendDetailsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Profile Header */}
+      {/* Profile Header Card */}
       <div className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 p-8 shadow-sm">
-        <div className="absolute top-4 left-4">
+        <div className="mb-6 flex items-start">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="text-slate-400 hover:text-slate-700"
+            className="text-slate-400 hover:text-slate-700 -ml-2"
           >
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-6 mt-6 md:mt-0">
-          <div className="h-24 w-24 rounded-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-400 border-4 border-white shadow-sm">
+        {/* Profile Content */}
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="h-24 w-24 flex-shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-400 border-4 border-white shadow-sm">
             {friend.avatar ? (
               <img
                 src={friend.avatar}
@@ -210,7 +210,7 @@ export default function FriendDetailsPage() {
         </div>
       </div>
 
-      {/* Content Tabs (Same as before) */}
+      {/* Content Tabs */}
       <Tabs defaultValue="expenses" className="w-full">
         <TabsList className="bg-slate-100 p-1 rounded-xl h-12 w-full md:w-auto">
           <TabsTrigger value="expenses" className="rounded-lg h-10 px-6">
