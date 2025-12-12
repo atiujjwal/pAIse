@@ -31,7 +31,7 @@ import {
   OptimizedPayment,
 } from "@/src/features/groups/api/group-details-query";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
-import { useRemindFriend } from "@/src/features/friends/api/friend-queries"; // NEW IMPORT
+import { useRemindFriend } from "@/src/features/friends/api/friend-queries"; // Import Remind Hook
 
 import { SimplifyDebtDialog } from "@/src/features/groups/components/SimplifyDebtDialog";
 import { AddMemberDialog } from "@/src/features/groups/components/AddMemberDialog";
@@ -401,10 +401,16 @@ export default function GroupDetailsPage() {
                           <MoreVertical className="h-4 w-4 text-slate-400" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Manage Member</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
+                      <DropdownMenuContent
+                        align="end"
+                        className="bg-white border border-slate-100 shadow-xl rounded-xl z-50 min-w-[160px] p-1"
+                      >
+                        <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Manage Member
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="-mx-1 my-1 h-px bg-slate-100" />
                         <DropdownMenuItem
+                          className="flex items-center px-2 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
                           onClick={() =>
                             updateRole({
                               userId: member.user.id,
@@ -413,11 +419,11 @@ export default function GroupDetailsPage() {
                             })
                           }
                         >
-                          <Shield className="mr-2 h-4 w-4" />{" "}
+                          <Shield className="mr-2 h-4 w-4 text-slate-400" />{" "}
                           {member.role === "ADMIN" ? "Demote" : "Promote"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="flex items-center px-2 py-2 text-sm text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
                           onClick={() => removeMember(member.user.id)}
                         >
                           <UserMinus className="mr-2 h-4 w-4" /> Remove
@@ -484,7 +490,7 @@ export default function GroupDetailsPage() {
 function BalancesList({
   balances,
   onSettleClick,
-  groupName, // New Prop
+  groupName,
 }: {
   balances: any;
   onSettleClick: (t: any) => void;
@@ -493,7 +499,7 @@ function BalancesList({
   if (!balances) return null;
   const router = useRouter();
 
-  // NEW: Hooks for Reminder Logic
+  // Logic for reminders
   const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
   const [remindedSet, setRemindedSet] = useState<Set<string>>(new Set());
 
@@ -506,7 +512,7 @@ function BalancesList({
       {
         friendId: userId,
         amount: formattedAmount,
-        message: `Reminder: You owe ${formattedAmount} in group "${groupName}".`,
+        message: `Friendly reminder: You owe ${formattedAmount} in group "${groupName}".`,
       },
       {
         onSuccess: () => {
@@ -618,10 +624,10 @@ function BalancesList({
                     {formatCurrency(item.amount, balances.currency)}
                   </span>
 
-                  {/* NEW: Remind Button */}
+                  {/* Remind Button */}
                   <Button
                     size="sm"
-                    className={`h-7 text-xs ${
+                    className={`h-7 text-xs transition-colors ${
                       isReminded
                         ? "bg-slate-100 text-slate-400 hover:bg-slate-100 cursor-default"
                         : "bg-emerald-600 hover:bg-emerald-700 text-white"
