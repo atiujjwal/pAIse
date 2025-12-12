@@ -41,10 +41,43 @@ export interface OptimizedPayment {
   amount: string;
 }
 
+export interface GroupExpense {
+  id: string;
+  description: string;
+  amount: string;
+  date: string;
+  category: string;
+  payers: {
+    id: string;
+    amount: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      avatar: string | null;
+    };
+  }[];
+  splits: {
+    id: string;
+    amount_owed: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      avatar: string | null;
+    };
+  }[];
+  group: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+}
+
 // --- Queries ---
 
 export const useGroupDetails = (groupId: string | undefined) => {
-  const result = useQuery({
+  return useQuery({
     queryKey: ["groups", groupId],
     queryFn: async () => {
       if (!groupId) throw new Error("Group ID is required");
@@ -55,7 +88,6 @@ export const useGroupDetails = (groupId: string | undefined) => {
     },
     enabled: !!groupId,
   });
-  return result;
 };
 
 export const useGroupBalances = (groupId: string | undefined) => {
@@ -72,12 +104,26 @@ export const useGroupBalances = (groupId: string | undefined) => {
   });
 };
 
+export const useGroupExpenses = (groupId: string | undefined) => {
+  return useQuery({
+    queryKey: ["group-expenses", groupId],
+    queryFn: async () => {
+      if (!groupId) throw new Error("Group ID is required");
+      const { data } = await api.get<ApiResponse<{ expenses: GroupExpense[] }>>(
+        `/groups/${groupId}/expenses`
+      );
+      return data.data!.expenses;
+    },
+    enabled: !!groupId,
+  });
+};
+
 // --- Mutations ---
 
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
   const { addToast } = useToastStore();
-  const router = useRouter(); // This now uses the correct App Router hook
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async (data: {
@@ -119,7 +165,7 @@ export const useUpdateGroup = (groupId: string) => {
 export const useDeleteGroup = (groupId: string) => {
   const queryClient = useQueryClient();
   const { addToast } = useToastStore();
-  const router = useRouter(); // This now uses the correct App Router hook
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async () => {

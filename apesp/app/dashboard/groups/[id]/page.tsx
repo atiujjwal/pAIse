@@ -14,10 +14,10 @@ import {
   UserMinus,
   ArrowLeft,
   History,
-  ChevronRight,
   Receipt,
   Bell,
   Check,
+  ChevronRight,
   Loader2,
 } from "lucide-react";
 
@@ -25,13 +25,14 @@ import { useAuthStore } from "@/src/features/auth/store";
 import {
   useGroupDetails,
   useGroupBalances,
+  useGroupExpenses,
   useSimplifyDebts,
   useRemoveMember,
   useUpdateMemberRole,
   OptimizedPayment,
 } from "@/src/features/groups/api/group-details-query";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
-import { useRemindFriend } from "@/src/features/friends/api/friend-queries"; // Import Remind Hook
+import { useRemindFriend } from "@/src/features/friends/api/friend-queries";
 
 import { SimplifyDebtDialog } from "@/src/features/groups/components/SimplifyDebtDialog";
 import { AddMemberDialog } from "@/src/features/groups/components/AddMemberDialog";
@@ -71,6 +72,8 @@ export default function GroupDetailsPage() {
   const { data: group, isLoading: loadingGroup } = useGroupDetails(groupId);
   const { data: balances, isLoading: loadingBalances } =
     useGroupBalances(groupId);
+  const { data: expenses, isLoading: loadingExpenses } =
+    useGroupExpenses(groupId);
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     group_id: groupId,
   });
@@ -131,7 +134,7 @@ export default function GroupDetailsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Back Button */}
+      {/* RESTORED: Back Button */}
       <div className="mb-2">
         <Button
           variant="ghost"
@@ -145,130 +148,204 @@ export default function GroupDetailsPage() {
         </Button>
       </div>
 
-      {/* --- HEADER --- */}
-      <div className="flex flex-col justify-between gap-6 border-b border-slate-100 pb-8 md:flex-row md:items-start">
-        {/* Left Side: Avatar + Details */}
-        <div className="flex items-start gap-6">
-          <div
-            className={cn(
-              "h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm flex items-center justify-center",
-              !group.avatar
-                ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
-                : "bg-white"
-            )}
-          >
-            {group.avatar ? (
-              <img
-                src={group.avatar}
-                alt={group.name}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <span className="text-3xl font-bold">
-                {group.name[0].toUpperCase()}
-              </span>
-            )}
-          </div>
+      {/* HEADER SECTION */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6 md:items-start">
+          <div className="flex gap-5">
+            <div
+              className={cn(
+                "h-24 w-24 flex-shrink-0 rounded-2xl overflow-hidden border-4 border-white shadow-md flex items-center justify-center",
+                !group.avatar
+                  ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
+                  : "bg-white"
+              )}
+            >
+              {group.avatar ? (
+                <img
+                  src={group.avatar}
+                  alt={group.name}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <span className="text-3xl font-bold">
+                  {group.name[0].toUpperCase()}
+                </span>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
-              {group.name}
-            </h1>
-            <p className="text-slate-500 text-lg max-w-2xl">
-              {group.description || "No description provided."}
-            </p>
-            <div className="flex items-center gap-3 pt-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
-                <Users className="h-3.5 w-3.5" />{" "}
-                <span>{group.members.length} members</span>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                {group.name}
+              </h1>
+              <p className="text-slate-500 text-lg max-w-xl line-clamp-2">
+                {group.description || "No description provided."}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold uppercase tracking-wide">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>{group.members.length} Members</span>
+                </div>
+                <div className="text-xs text-slate-400 font-medium">
+                  Created by {group.owner.name}
+                </div>
               </div>
-              <span className="text-sm text-slate-400">
-                Created by {group.owner.name}
-              </span>
             </div>
           </div>
-        </div>
 
-        {/* Right Side: Actions */}
-        <div className="flex flex-wrap gap-3 items-center">
-          <Button
-            variant="outline"
-            onClick={handleSimplify}
-            className="h-11 px-4 border-slate-200"
-          >
-            <ArrowRightLeft className="mr-2 h-4 w-4 text-slate-500" /> Simplify
-            Debts
-          </Button>
-          <Button asChild className="h-11 px-6 shadow-lg shadow-primary/20">
-            <Link href={`/dashboard/expenses/new?groupId=${groupId}`}>
-              Add Expense
-            </Link>
-          </Button>
-          {isAdmin && (
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2 items-center md:self-center">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowEditGroup(true)}
-              className="h-11 w-11 rounded-full border border-slate-200"
+              variant="outline"
+              onClick={handleSimplify}
+              className="h-10 border-slate-200 hover:bg-slate-50"
             >
-              <Settings className="h-5 w-5 text-slate-500" />
+              <ArrowRightLeft className="mr-2 h-4 w-4 text-slate-500" />{" "}
+              Simplify
             </Button>
-          )}
+            <Button asChild className="h-10 px-6 shadow-lg shadow-primary/20">
+              <Link href={`/dashboard/expenses/new?groupId=${groupId}`}>
+                <Receipt className="mr-2 h-4 w-4" /> Add Expense
+              </Link>
+            </Button>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEditGroup(true)}
+                className="h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100"
+              >
+                <Settings className="h-5 w-5 text-slate-500" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* --- LEFT COLUMN: MAIN CONTENT --- */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Net Balance Banner */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-xl">
-            <div className="relative z-10">
-              <p className="text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+        {/* --- LEFT COLUMN: TABS (Expenses, Balances, History) --- */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* NET BALANCE CARD */}
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
                 Your Net Balance
               </p>
-              <div className="text-5xl font-bold font-mono tracking-tight">
+              <div
+                className={cn(
+                  "text-3xl font-mono font-bold",
+                  netBalance > 0
+                    ? "text-emerald-400"
+                    : netBalance < 0
+                    ? "text-rose-400"
+                    : "text-white"
+                )}
+              >
                 {netBalance > 0 ? "+" : ""}
                 {formatCurrency(
                   String(netBalance),
                   balances?.currency || "INR"
                 )}
               </div>
-              <p className="mt-3 text-sm text-slate-300 font-medium">
-                {netBalance > 0
-                  ? "You are owed in total."
-                  : netBalance < 0
-                  ? "You owe in total."
-                  : "You are settled up."}
-              </p>
             </div>
-            <div className="absolute right-0 top-0 h-64 w-64 bg-primary/20 blur-3xl rounded-full translate-x-1/4 -translate-y-1/4 pointer-events-none" />
+            <div className="text-right text-sm text-slate-300 font-medium">
+              {netBalance > 0
+                ? "You get back"
+                : netBalance < 0
+                ? "You owe"
+                : "Settled up"}
+            </div>
           </div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="balances" className="w-full">
+          <Tabs defaultValue="expenses" className="w-full">
             <TabsList className="bg-slate-100 p-1 rounded-xl w-full sm:w-auto h-12 mb-6">
-              <TabsTrigger
-                value="balances"
-                className="rounded-lg h-10 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-              >
-                Current Balances
+              <TabsTrigger value="expenses" className="rounded-lg h-10 px-6">
+                Expenses
               </TabsTrigger>
-              <TabsTrigger
-                value="history"
-                className="rounded-lg h-10 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-              >
-                Settlement History
+              <TabsTrigger value="balances" className="rounded-lg h-10 px-6">
+                Balances
+              </TabsTrigger>
+              <TabsTrigger value="history" className="rounded-lg h-10 px-6">
+                Activity
               </TabsTrigger>
             </TabsList>
 
+            {/* TAB 1: EXPENSES LIST */}
+            <TabsContent value="expenses" className="space-y-4">
+              {loadingExpenses ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                  ))}
+                </div>
+              ) : expenses?.length === 0 ? (
+                <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <Receipt className="h-10 w-10 mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500">No expenses added yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {expenses?.map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all hover:border-primary/20"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex flex-col items-center justify-center h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 text-slate-500">
+                          <span className="text-xs font-bold uppercase">
+                            {new Date(expense.date).toLocaleString("default", {
+                              month: "short",
+                            })}
+                          </span>
+                          <span className="text-lg font-bold text-slate-900">
+                            {new Date(expense.date).getDate()}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-lg group-hover:text-primary transition-colors">
+                            {expense.description}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage
+                                src={
+                                  expense.payers[0]?.user.avatar || undefined
+                                }
+                              />
+                              <AvatarFallback className="text-[9px]">
+                                {expense.payers[0]?.user.name[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>
+                              <span className="font-semibold text-slate-700">
+                                {expense.payers[0]?.user.name}
+                              </span>{" "}
+                              paid {formatCurrency(expense.amount, "INR")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 sm:mt-0 flex items-center justify-between sm:flex-col sm:items-end gap-1">
+                        <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">
+                          Total
+                        </span>
+                        <span className="font-mono font-bold text-lg text-slate-900">
+                          {formatCurrency(expense.amount, "INR")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* TAB 2: BALANCES */}
             <TabsContent value="balances" className="space-y-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-primary" /> Detailed Breakdown
-              </h2>
-              {/* Balances List with Remind Feature */}
               <BalancesList
                 balances={balances}
                 groupName={group.name}
@@ -276,74 +353,61 @@ export default function GroupDetailsPage() {
               />
             </TabsContent>
 
-            <TabsContent value="history" className="space-y-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" /> Payment Log
-              </h2>
-
+            {/* TAB 3: SETTLEMENT HISTORY */}
+            <TabsContent value="history" className="space-y-4">
               {loadingSettlements ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-xl" />
-                  ))}
-                </div>
+                <Skeleton className="h-40 w-full rounded-2xl" />
               ) : settlements?.length === 0 ? (
-                <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                  <Receipt className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500">
-                    No payments recorded in this group yet.
-                  </p>
+                <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <ArrowRightLeft className="h-10 w-10 mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500">No settlement history.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {settlements.map((s: any) => {
-                    const isPayer = s.payer.id === user?.id;
-                    const isReceiver = s.receiver.id === user?.id;
-
-                    return (
-                      <div
-                        key={s.id}
-                        className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`h-10 w-10 rounded-full flex items-center justify-center text-lg ${
-                              isPayer
-                                ? "bg-rose-100 text-rose-600"
-                                : "bg-emerald-100 text-emerald-600"
-                            }`}
-                          >
-                            {isPayer ? "↑" : "↓"}
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-900">
-                              <span className="font-bold">
-                                {isPayer ? "You" : s.payer.name}
-                              </span>{" "}
-                              paid{" "}
-                              <span className="font-bold">
-                                {isReceiver ? "You" : s.receiver.name}
-                              </span>
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {new Date(s.date).toLocaleDateString(undefined, {
-                                dateStyle: "medium",
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <span
-                          className={`font-bold font-mono ${
-                            isPayer ? "text-rose-600" : "text-emerald-600"
+                settlements.map((s: any) => {
+                  const isPayer = s.payer.id === user?.id;
+                  const isReceiver = s.receiver.id === user?.id;
+                  return (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`h-10 w-10 rounded-full flex items-center justify-center text-lg ${
+                            isPayer
+                              ? "bg-rose-100 text-rose-600"
+                              : "bg-emerald-100 text-emerald-600"
                           }`}
                         >
-                          {isPayer ? "-" : "+"}
-                          {formatCurrency(s.amount, s.currency)}
-                        </span>
+                          {isPayer ? "↑" : "↓"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {isPayer ? "You paid" : `${s.payer.name} paid`}
+                            <span className="font-normal text-slate-500">
+                              {" "}
+                              to{" "}
+                            </span>
+                            {isReceiver ? "You" : s.receiver.name}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {new Date(s.date).toLocaleDateString(undefined, {
+                              dateStyle: "medium",
+                            })}
+                          </p>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <span
+                        className={`font-mono font-bold ${
+                          isPayer ? "text-rose-600" : "text-emerald-600"
+                        }`}
+                      >
+                        {isPayer ? "-" : "+"}
+                        {formatCurrency(s.amount, s.currency)}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </TabsContent>
           </Tabs>
@@ -358,11 +422,12 @@ export default function GroupDetailsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAddMember(true)}
-                className="text-primary rounded-full px-3"
+                className="text-primary rounded-full px-3 hover:bg-primary/5"
               >
                 <UserPlus className="h-4 w-4 mr-1" /> Add
               </Button>
             </div>
+
             <div className="space-y-1">
               {group.members.map((member) => (
                 <div
@@ -396,7 +461,7 @@ export default function GroupDetailsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100"
                         >
                           <MoreVertical className="h-4 w-4 text-slate-400" />
                         </Button>
@@ -405,12 +470,12 @@ export default function GroupDetailsPage() {
                         align="end"
                         className="bg-white border border-slate-100 shadow-xl rounded-xl z-50 min-w-[160px] p-1"
                       >
-                        <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Manage Member
+                        <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase">
+                          Manage
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator className="-mx-1 my-1 h-px bg-slate-100" />
                         <DropdownMenuItem
-                          className="flex items-center px-2 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
+                          className="cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-2"
                           onClick={() =>
                             updateRole({
                               userId: member.user.id,
@@ -419,11 +484,11 @@ export default function GroupDetailsPage() {
                             })
                           }
                         >
-                          <Shield className="mr-2 h-4 w-4 text-slate-400" />{" "}
+                          <Shield className="mr-2 h-4 w-4" />{" "}
                           {member.role === "ADMIN" ? "Demote" : "Promote"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="flex items-center px-2 py-2 text-sm text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                          className="text-rose-600 focus:text-rose-600 cursor-pointer hover:bg-rose-50 rounded-lg px-2 py-2"
                           onClick={() => removeMember(member.user.id)}
                         >
                           <UserMinus className="mr-2 h-4 w-4" /> Remove
@@ -463,7 +528,6 @@ export default function GroupDetailsPage() {
         }}
       />
 
-      {/* Settle Up Modal */}
       {settlementTarget && user && (
         <SettlementModal
           isOpen={!!settlementTarget}
@@ -486,7 +550,7 @@ export default function GroupDetailsPage() {
   );
 }
 
-// --- SUB-COMPONENT: BALANCES LIST ---
+// --- BALANCES LIST (Reused) ---
 function BalancesList({
   balances,
   onSettleClick,
@@ -498,27 +562,20 @@ function BalancesList({
 }) {
   if (!balances) return null;
   const router = useRouter();
-
-  // Logic for reminders
   const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
   const [remindedSet, setRemindedSet] = useState<Set<string>>(new Set());
 
   const handleRemind = (userId: string, amount: string) => {
     if (remindedSet.has(userId)) return;
-
     const formattedAmount = formatCurrency(amount, balances.currency);
 
     remindFriend(
       {
         friendId: userId,
         amount: formattedAmount,
-        message: `Friendly reminder: You owe ${formattedAmount} in group "${groupName}".`,
+        message: `Reminder: You owe ${formattedAmount} in group "${groupName}".`,
       },
-      {
-        onSuccess: () => {
-          setRemindedSet((prev) => new Set(prev).add(userId));
-        },
-      }
+      { onSuccess: () => setRemindedSet((prev) => new Set(prev).add(userId)) }
     );
   };
 
@@ -549,7 +606,6 @@ function BalancesList({
                     {item.name[0]}
                   </AvatarFallback>
                 </Avatar>
-
                 <div className="flex flex-col">
                   <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors flex items-center gap-1">
                     {item.name}{" "}
@@ -597,7 +653,6 @@ function BalancesList({
         ) : (
           balances.you_are_owed.map((item: any) => {
             const isReminded = remindedSet.has(item.id);
-
             return (
               <div
                 key={item.id}
@@ -613,18 +668,14 @@ function BalancesList({
                       {item.name[0]}
                     </AvatarFallback>
                   </Avatar>
-
                   <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors">
                     {item.name}
                   </span>
                 </div>
-
                 <div className="flex flex-col items-end gap-2">
                   <span className="font-bold text-emerald-600 font-mono text-lg">
                     {formatCurrency(item.amount, balances.currency)}
                   </span>
-
-                  {/* Remind Button */}
                   <Button
                     size="sm"
                     className={`h-7 text-xs transition-colors ${
@@ -635,7 +686,13 @@ function BalancesList({
                     onClick={() => handleRemind(item.id, item.amount)}
                     disabled={isReminding || isReminded}
                   >
-                    {isReminded ? "Reminded" : "Remind"}
+                    {isReminding ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isReminded ? (
+                      "Reminded"
+                    ) : (
+                      "Remind"
+                    )}
                   </Button>
                 </div>
               </div>
