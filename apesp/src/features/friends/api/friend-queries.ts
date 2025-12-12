@@ -17,6 +17,35 @@ interface RemindPayload {
   message?: string;
 }
 
+export interface FriendDetails {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  net_balance: string;
+  status: "settled" | "owe" | "owed";
+  currency: string;
+  expenses: {
+    friend_expenses: ExpenseItem[];
+    group_expenses: GroupExpenseItem[];
+  };
+}
+
+export interface ExpenseItem {
+  id: string;
+  description: string;
+  amount: string;
+  category: string;
+  date: string;
+  status: string;
+  created_by: { id: string; name: string; avatar: string | null };
+}
+
+export interface GroupExpenseItem extends ExpenseItem {
+  group_id: string;
+  group: { id: string; name: string; avatar: string | null };
+}
+
 // --- QUERIES ---
 
 // Fetch Accepted Friends
@@ -29,6 +58,19 @@ export const useFriends = () => {
       );
       return data.data!.friends;
     },
+  });
+};
+
+export const useFriendDetails = (friendId: string) => {
+  return useQuery({
+    queryKey: ["friend", friendId],
+    queryFn: async () => {
+      const { data } = await api.get<ApiResponse<FriendDetails>>(
+        `/friends/${friendId}`
+      );
+      return data.data!;
+    },
+    enabled: !!friendId,
   });
 };
 

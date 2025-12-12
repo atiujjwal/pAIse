@@ -24,19 +24,40 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Ban,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
 } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/Skeleton";
-import { cn } from "@/src/lib/utils";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/Avatar";
+import { cn, formatCurrency } from "@/src/lib/utils";
+
+// Define the interface based on your new API response
+interface FriendListItem {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  net_balance: string;
+  status: "settled" | "owe" | "owed";
+  currency: string;
+}
 
 export default function FriendsPage() {
   const [requestType, setRequestType] = useState<"incoming" | "outgoing">(
     "incoming"
   );
 
-  const { data: friends, isLoading: loadingFriends } = useFriends();
+  // Cast response to the new interface
+  const { data: friendsData, isLoading: loadingFriends } = useFriends();
+  const friends = friendsData as unknown as FriendListItem[];
+
   const { data: requests, isLoading: loadingRequests } =
     useFriendRequests(requestType);
-
   const { acceptRequest, rejectRequest, cancelRequest } = useFriendActions();
 
   return (
@@ -68,7 +89,6 @@ export default function FriendsPage() {
                 className="rounded-lg h-10 px-6 transition-all"
               >
                 Requests
-                {/* Badge: Only show count for incoming requests */}
                 {requestType === "incoming" &&
                   requests &&
                   requests.length > 0 && (
@@ -110,41 +130,96 @@ export default function FriendsPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {friends?.map((friend) => (
-                    <Link
-                      key={friend.id}
-                      href={`/dashboard/friends/${friend.id}`}
-                      className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-primary/30 hover:shadow-md transition-all group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-purple-100 text-lg font-bold text-primary border-2 border-white shadow-sm overflow-hidden">
-                          {friend.avatar ? (
-                            <img
-                              src={friend.avatar}
-                              alt={friend.name}
-                              className="h-full w-full object-cover"
+                  {friends?.map((friend) => {
+                    const isOwe = friend.status === "owe";
+                    const isOwed = friend.status === "owed";
+                    const isSettled = friend.status === "settled";
+
+                    return (
+                      <Link
+                        key={friend.id}
+                        href={`/dashboard/friends/${friend.id}`}
+                        className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/20"
+                      >
+                        {/* Top: Info */}
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 border border-slate-100 shadow-sm">
+                            <AvatarImage
+                              src={friend.avatar || undefined}
+                              className="object-cover"
                             />
-                          ) : (
-                            friend.name[0]
+                            <AvatarFallback className="bg-gradient-to-br from-primary/10 to-purple-100 text-primary font-bold">
+                              {friend.name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-slate-900 truncate group-hover:text-primary transition-colors">
+                              {friend.name}
+                            </p>
+                            <p className="text-xs text-slate-500 font-mono truncate">
+                              {friend.email}
+                            </p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0" />
+                        </div>
+
+                        {/* Bottom: Balance Status */}
+                        <div className="mt-5 pt-3 border-t border-slate-50 flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                              Net Balance
+                            </span>
+                            <div
+                              className={cn(
+                                "flex items-center gap-1.5 mt-0.5 font-bold",
+                                isOwe
+                                  ? "text-rose-600"
+                                  : isOwed
+                                  ? "text-emerald-600"
+                                  : "text-slate-400"
+                              )}
+                            >
+                              {isOwe && (
+                                <TrendingDown className="h-3.5 w-3.5" />
+                              )}
+                              {isOwed && <TrendingUp className="h-3.5 w-3.5" />}
+                              {isSettled && (
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                              )}
+
+                              <span className="font-mono text-base">
+                                {isSettled
+                                  ? "Settled"
+                                  : formatCurrency(
+                                      friend.net_balance,
+                                      friend.currency
+                                    )}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Visual Tag */}
+                          {!isSettled && (
+                            <div
+                              className={cn(
+                                "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide",
+                                isOwe
+                                  ? "bg-rose-50 text-rose-600"
+                                  : "bg-emerald-50 text-emerald-600"
+                              )}
+                            >
+                              {isOwe ? "You Owe" : "Owes You"}
+                            </div>
                           )}
                         </div>
-                        <div>
-                          <p className="font-semibold text-slate-900 group-hover:text-primary transition-colors">
-                            {friend.name}
-                          </p>
-                          <p className="text-xs text-slate-500 font-mono">
-                            {friend.email}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
 
-            {/* --- TAB: REQUESTS --- */}
+            {/* --- TAB: REQUESTS (Existing) --- */}
             <TabsContent value="requests" className="mt-6 space-y-6">
               {/* Sub-Tabs Toggle */}
               <div className="flex p-1 bg-slate-100 rounded-lg w-fit">
@@ -185,7 +260,6 @@ export default function FriendsPage() {
                   </div>
                 ) : (
                   requests?.map((req) => {
-                    // Logic: If outgoing, display 'addressee'. If incoming, display 'requester'.
                     const displayUser =
                       requestType === "outgoing"
                         ? req.addressee
@@ -204,7 +278,6 @@ export default function FriendsPage() {
                         )}
                       >
                         <div className="flex items-center gap-4">
-                          {/* UPDATED: Avatar with Status Badge */}
                           <div className="relative">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border-2 border-white shadow-sm overflow-hidden text-lg font-bold text-slate-600 bg-slate-100">
                               {displayUser?.avatar ? (
@@ -217,8 +290,6 @@ export default function FriendsPage() {
                                 userName[0]
                               )}
                             </div>
-
-                            {/* Status Icon Overlay */}
                             <div
                               className={cn(
                                 "absolute -bottom-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm",
