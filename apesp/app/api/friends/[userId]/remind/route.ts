@@ -67,13 +67,13 @@ const postHandler = async (
 
     // Send Email 
     //TODO: add rate limiter
-    await sendEmail({
+    sendEmail({
     //   to: friend.email,
       to: "anujhatiya900@gmail.com",
       templateId: 6, 
       data: {
-        friendName: sender.name,
-        recipientName: friend.name,
+        friendName: sender.name.trim().split(" ")[0],
+        recipientName: friend.name.trim().split(" ")[0],
         amount: amount,
         customMessage: message || "Please settle up when you get a chance.",
         dashboardLink: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/friends/${userId}`,

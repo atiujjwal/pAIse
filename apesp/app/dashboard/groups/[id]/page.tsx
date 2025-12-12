@@ -16,6 +16,9 @@ import {
   History,
   ChevronRight,
   Receipt,
+  Bell,
+  Check,
+  Loader2,
 } from "lucide-react";
 
 import { useAuthStore } from "@/src/features/auth/store";
@@ -28,6 +31,7 @@ import {
   OptimizedPayment,
 } from "@/src/features/groups/api/group-details-query";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
+import { useRemindFriend } from "@/src/features/friends/api/friend-queries"; // NEW IMPORT
 
 import { SimplifyDebtDialog } from "@/src/features/groups/components/SimplifyDebtDialog";
 import { AddMemberDialog } from "@/src/features/groups/components/AddMemberDialog";
@@ -91,7 +95,7 @@ export default function GroupDetailsPage() {
 
   const userAvatar = useMemo(() => {
     if (user?.avatar) return user.avatar;
-    
+
     if (accessToken) {
       try {
         const base64Url = accessToken.split(".")[1];
@@ -104,7 +108,7 @@ export default function GroupDetailsPage() {
             .join("")
         );
         const payload = JSON.parse(jsonPayload);
-        return payload.avatar || payload.avatar_url || null;
+        return payload.avatar || null;
       } catch (e) {
         return null;
       }
@@ -264,9 +268,10 @@ export default function GroupDetailsPage() {
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-primary" /> Detailed Breakdown
               </h2>
-              {/* Balances List with Avatar Support */}
+              {/* Balances List with Remind Feature */}
               <BalancesList
                 balances={balances}
+                groupName={group.name}
                 onSettleClick={(target) => setSettlementTarget(target)}
               />
             </TabsContent>
@@ -479,12 +484,37 @@ export default function GroupDetailsPage() {
 function BalancesList({
   balances,
   onSettleClick,
+  groupName, // New Prop
 }: {
   balances: any;
   onSettleClick: (t: any) => void;
+  groupName: string;
 }) {
   if (!balances) return null;
   const router = useRouter();
+
+  // NEW: Hooks for Reminder Logic
+  const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
+  const [remindedSet, setRemindedSet] = useState<Set<string>>(new Set());
+
+  const handleRemind = (userId: string, amount: string) => {
+    if (remindedSet.has(userId)) return;
+
+    const formattedAmount = formatCurrency(amount, balances.currency);
+
+    remindFriend(
+      {
+        friendId: userId,
+        amount: formattedAmount,
+        message: `Reminder: You owe ${formattedAmount} in group "${groupName}".`,
+      },
+      {
+        onSuccess: () => {
+          setRemindedSet((prev) => new Set(prev).add(userId));
+        },
+      }
+    );
+  };
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -507,7 +537,6 @@ function BalancesList({
                 className="flex items-center gap-3 cursor-pointer flex-1"
                 onClick={() => router.push(`/dashboard/friends/${item.id}`)}
               >
-                {/* User Avatar with Red tint fallback */}
                 <Avatar className="h-10 w-10 border border-white shadow-sm">
                   <AvatarImage src={item.avatar} />
                   <AvatarFallback className="bg-rose-50 text-rose-600 font-bold">
@@ -560,30 +589,52 @@ function BalancesList({
             <p className="text-slate-400 text-sm">No one owes you.</p>
           </div>
         ) : (
-          balances.you_are_owed.map((item: any) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-white shadow-sm hover:shadow-md transition-all group cursor-pointer"
-              onClick={() => router.push(`/dashboard/friends/${item.id}`)}
-            >
-              <div className="flex items-center gap-3">
-                {/* User Avatar with Green tint fallback */}
-                <Avatar className="h-10 w-10 border border-white shadow-sm">
-                  <AvatarImage src={item.avatar} />
-                  <AvatarFallback className="bg-emerald-50 text-emerald-600 font-bold">
-                    {item.name[0]}
-                  </AvatarFallback>
-                </Avatar>
+          balances.you_are_owed.map((item: any) => {
+            const isReminded = remindedSet.has(item.id);
 
-                <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors">
-                  {item.name}
-                </span>
+            return (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-white shadow-sm hover:shadow-md transition-all group"
+              >
+                <div
+                  className="flex items-center gap-3 cursor-pointer flex-1"
+                  onClick={() => router.push(`/dashboard/friends/${item.id}`)}
+                >
+                  <Avatar className="h-10 w-10 border border-white shadow-sm">
+                    <AvatarImage src={item.avatar} />
+                    <AvatarFallback className="bg-emerald-50 text-emerald-600 font-bold">
+                      {item.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <span className="font-semibold text-slate-700 group-hover:text-primary transition-colors">
+                    {item.name}
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <span className="font-bold text-emerald-600 font-mono text-lg">
+                    {formatCurrency(item.amount, balances.currency)}
+                  </span>
+
+                  {/* NEW: Remind Button */}
+                  <Button
+                    size="sm"
+                    className={`h-7 text-xs ${
+                      isReminded
+                        ? "bg-slate-100 text-slate-400 hover:bg-slate-100 cursor-default"
+                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    }`}
+                    onClick={() => handleRemind(item.id, item.amount)}
+                    disabled={isReminding || isReminded}
+                  >
+                    {isReminded ? "Reminded" : "Remind"}
+                  </Button>
+                </div>
               </div>
-              <span className="font-bold text-emerald-600 font-mono text-lg">
-                {formatCurrency(item.amount, balances.currency)}
-              </span>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Create user (convert date_of_birth to Date)
     const user = await prisma.user.create({
       data: {
-        name: data.name,
+        name: data.name.trim(),
         email: data.email,
         phone: data.phone,
         password: hashedPassword,
