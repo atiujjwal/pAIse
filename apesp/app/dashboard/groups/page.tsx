@@ -3,21 +3,52 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Users, ArrowRight, Layers, Search } from "lucide-react";
+import {
+  Plus,
+  Users,
+  ArrowRight,
+  Layers,
+  Search,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+} from "lucide-react";
 
 import { useGroupsList } from "@/src/features/groups/api/group-list-query";
 import { CreateGroupDialog } from "@/src/features/groups/components/CreateGroupDialog";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Skeleton } from "@/src/components/ui/Skeleton";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/Avatar";
 import { useDebounce } from "@/src/hooks/use-debounce";
-import { cn } from "@/src/lib/utils"; // Ensure cn is imported
+import { cn, formatCurrency } from "@/src/lib/utils";
+
+// Interface matching the updated API response
+interface GroupListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  avatar: string | null;
+  owner_id: string;
+  created_at: string;
+  member_count: number;
+  user_balance: string;
+  user_status: "settled" | "owe" | "owed";
+  has_debts: boolean;
+  has_credits: boolean;
+}
 
 export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  const { data: groups, isLoading } = useGroupsList(debouncedSearch);
+  // Cast the data to our new interface
+  const { data: groupsData, isLoading } = useGroupsList(debouncedSearch);
+  const groups = groupsData as unknown as GroupListItem[];
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -85,67 +116,82 @@ export default function GroupsPage() {
           </div>
         ) : groups && groups.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {groups.map((group) => (
-              <Link
-                key={group.id}
-                href={`/dashboard/groups/${group.id}`}
-                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
-              >
-                <div>
-                  <div className="flex items-start justify-between">
-                    {/* FIXED: Show Avatar Image if available, else show Initial */}
-                    <div
-                      className={cn(
-                        "flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden font-bold text-lg",
-                        !group.avatar
-                          ? "bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary"
-                          : "bg-slate-50"
-                      )}
-                    >
-                      {group.avatar ? (
-                        <img
-                          src={group.avatar}
-                          alt={group.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            // Fallback to initial if image fails to load
-                            e.currentTarget.style.display = "none";
-                            e.currentTarget.parentElement!.classList.add(
-                              "bg-gradient-to-br",
-                              "from-primary/10",
-                              "to-purple-500/10",
-                              "text-primary"
-                            );
-                            e.currentTarget.parentElement!.innerText =
-                              group.name[0].toUpperCase();
-                          }}
+            {groups.map((group) => {
+              const isOwe = group.user_status === "owe";
+              const isOwed = group.user_status === "owed";
+              const isSettled = group.user_status === "settled";
+
+              return (
+                <Link
+                  key={group.id}
+                  href={`/dashboard/groups/${group.id}`}
+                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20"
+                >
+                  <div>
+                    {/* Header: Avatar & Member Count */}
+                    <div className="flex items-start justify-between">
+                      <Avatar className="h-14 w-14 rounded-2xl border-2 border-white shadow-sm">
+                        <AvatarImage
+                          src={group.avatar || undefined}
+                          className="object-cover"
                         />
-                      ) : (
-                        group.name[0].toUpperCase()
-                      )}
+                        <AvatarFallback className="rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-bold text-lg">
+                          {group.name[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500 border border-slate-100">
+                        <Users className="h-3.5 w-3.5" />
+                        {group.member_count}
+                      </div>
                     </div>
 
-                    {/* Dynamic Member Count */}
-                    <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
-                      <Users className="h-3 w-3" />
-                      {group.member_count}
+                    {/* Group Info */}
+                    <div className="mt-4 space-y-1">
+                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors line-clamp-1">
+                        {group.name}
+                      </h3>
+                      <p className="text-sm text-slate-500 line-clamp-2 h-10 leading-relaxed">
+                        {group.description || "No description provided."}
+                      </p>
                     </div>
                   </div>
 
-                  <h3 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
-                    {group.name}
-                  </h3>
+                  {/* Footer: Balance Status */}
+                  <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                        Your Balance
+                      </span>
+                      <div
+                        className={cn(
+                          "flex items-center gap-1.5 mt-0.5",
+                          isOwe
+                            ? "text-rose-600"
+                            : isOwed
+                            ? "text-emerald-600"
+                            : "text-slate-400"
+                        )}
+                      >
+                        {isOwe && <TrendingDown className="h-4 w-4" />}
+                        {isOwed && <TrendingUp className="h-4 w-4" />}
+                        {isSettled && <CheckCircle2 className="h-4 w-4" />}
 
-                  <p className="mt-2 text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                    {group.description || "No description provided."}
-                  </p>
-                </div>
+                        <span className="font-mono font-bold text-lg">
+                          {isSettled
+                            ? "Settled"
+                            : formatCurrency(group.user_balance)}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="mt-6 flex items-center text-sm font-medium text-primary opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0">
-                  View Details <ArrowRight className="ml-1 h-4 w-4" />
-                </div>
-              </Link>
-            ))}
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-50 group-hover:bg-primary group-hover:text-white transition-colors">
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         ) : (
           /* EMPTY STATE */
