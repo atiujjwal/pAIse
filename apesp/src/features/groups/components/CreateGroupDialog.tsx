@@ -15,17 +15,8 @@ import {
   DialogTitle,
 } from "@/src/components/ui/Dialog";
 import { cn } from "@/src/lib/utils";
+import { GROUP_AVATARS } from "@/src/lib/mediaUrls";
 
-// Predefined Avatars
-const AVATAR_OPTIONS = [
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296580/samples/smile.jpg",
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296573/samples/people/boy-snow-hoodie.jpg",
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296572/samples/people/smiling-man.jpg",
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296571/samples/animals/cat.jpg",
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296570/sample.jpg",
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296572/samples/food/pot-mussels.jpg",
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1753296582/samples/dessert-on-a-plate.jpg",
-];
 
 const createGroupSchema = z.object({
   name: z.string().min(1, "Group name is required"),
@@ -100,7 +91,7 @@ export function CreateGroupDialog({
               </button>
 
               {/* Image Options */}
-              {AVATAR_OPTIONS.map((url, index) => (
+              {GROUP_AVATARS.map((url, index) => (
                 <button
                   key={index}
                   type="button"

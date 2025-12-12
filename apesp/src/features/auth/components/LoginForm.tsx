@@ -199,7 +199,7 @@ export function LoginForm() {
                   </button>
                   {timer > 0 ? (
                     <span className="text-xs text-slate-400 flex items-center">
-                      <RefreshCw className="mr-1 h-3 w-3 animate-spin duration-[3000ms]" />
+                      <RefreshCw className="mr-1 h-3 w-3 animate-spin duration-&lsqb;3000ms&rsqb;" />
                       Resend in {timer}s
                     </span>
                   ) : (

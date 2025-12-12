@@ -7,20 +7,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/src/components/ui/Dialog";
+} from "@/src/components/ui/Dialog"; // Fixed import case (Dialog vs dialog)
 import { Button } from "@/src/components/ui/Button";
 import { Skeleton } from "@/src/components/ui/Skeleton";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/Avatar"; // New Import
 import { Check, ArrowRight, Wallet } from "lucide-react";
 import { formatCurrency } from "@/src/lib/utils";
-import { OptimizedPayment } from "../api/group-details-query"; // Ensure this import exists
-import { useCreateSettlement } from "@/src/features/settlements/api/settlement-queries"; // Import your settlement mutation
+import { OptimizedPayment } from "../api/group-details-query";
+import { useCreateSettlement } from "@/src/features/settlements/api/settlement-queries";
 
 interface SimplifyDebtDialogProps {
   isOpen: boolean;
   onClose: () => void;
   payments: OptimizedPayment[];
   isLoading: boolean;
-  groupId: string; // Needed for settlement context
+  groupId: string;
 }
 
 export function SimplifyDebtDialog({
@@ -75,31 +80,39 @@ export function SimplifyDebtDialog({
                 >
                   {/* Left: Avatar Flow */}
                   <div className="flex items-center gap-3 flex-1">
+                    {/* PAYER AVATAR */}
                     <div className="flex flex-col items-center">
-                      <div className="h-8 w-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">
-                        {payment.from.name[0]}
-                      </div>
-                      <span className="text-[10px] text-slate-400 mt-1">
-                        Payer
+                      <Avatar className="h-9 w-9 border border-white shadow-sm">
+                        <AvatarImage src={payment.from.avatar} />
+                        <AvatarFallback className="bg-rose-100 text-rose-600 font-bold text-xs">
+                          {payment.from.name.trim().split(" ")[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-[10px] text-slate-400 mt-1 font-medium">
+                        {payment.from.name.trim().split(" ")[0]}
                       </span>
                     </div>
 
                     <ArrowRight className="h-4 w-4 text-slate-300" />
 
+                    {/* RECEIVER AVATAR */}
                     <div className="flex flex-col items-center">
-                      <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">
-                        {payment.to.name[0]}
-                      </div>
-                      <span className="text-[10px] text-slate-400 mt-1">
-                        Receiver
+                      <Avatar className="h-9 w-9 border border-white shadow-sm">
+                        <AvatarImage src={payment.to.avatar} />
+                        <AvatarFallback className="bg-emerald-100 text-emerald-600 font-bold text-xs">
+                          {payment.to.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-[10px] text-slate-400 mt-1 font-medium">
+                        {payment.to.name.trim().split(" ")[0]}
                       </span>
                     </div>
 
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-slate-900">
+                    <div className="ml-2">
+                      <p className="text-sm font-medium text-slate-900 leading-tight">
                         {isPayer ? "You owe" : `${payment.from.name} owes`}
-                        <span className="block font-bold">
-                          {payment.to.name.split(" ")[0]}
+                        <span className="block font-bold text-slate-700">
+                          {payment.to.name.trim().split(" ")[0]}
                         </span>
                       </p>
                     </div>
@@ -115,7 +128,7 @@ export function SimplifyDebtDialog({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                        className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors"
                         onClick={() => handleSettle(payment)}
                         disabled={isPending}
                       >
