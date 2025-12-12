@@ -3,7 +3,15 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Plus, Receipt, Layers, User, Calendar } from "lucide-react";
+import {
+  Plus,
+  Receipt,
+  Layers,
+  User,
+  Calendar,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 
 import { Button } from "@/src/components/ui/Button";
 import { FilterBar } from "@/src/components/expenses/FilterBar";
@@ -17,6 +25,7 @@ import {
 import { formatCurrency, cn } from "@/src/lib/utils";
 import { useAuthStore } from "@/src/features/auth/store";
 
+// --- Local Component: Expense Card ---
 const ExpenseCard = ({ expense }: { expense: any }) => {
   const { user } = useAuthStore();
 
@@ -137,60 +146,96 @@ export default function ExpensesPage() {
   const expenses = data?.data || [];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* --- HEADER SECTION --- */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
             Expenses
           </h1>
-          <p className="text-slate-500 mt-1">
-            Track and filter all your transactions.
+          <p className="text-slate-500 mt-2 text-sm leading-relaxed max-w-md">
+            Manage your shared expenses, track balances, and settle up with
+            friends and groups.
           </p>
         </div>
-        <Button asChild className="shadow-lg shadow-primary/20">
+        <Button
+          asChild
+          size="lg"
+          className="shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all"
+        >
           <Link href="/dashboard/expenses/new">
-            <Plus className="mr-2 h-4 w-4" /> Add Expense
+            <Plus className="mr-2 h-5 w-5" /> Add Expense
           </Link>
         </Button>
       </div>
 
-      {/* Filter Bar */}
-      <FilterBar />
+      {/* --- BEAUTIFIED FILTER & SEARCH SECTION --- */}
+      {/* Wrapped in a sticky, polished container for a 'Control Panel' feel */}
+      <div className="sticky top-4 z-20">
+        <div className="bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200/60 shadow-sm ring-1 ring-slate-200/50 transition-all hover:shadow-md hover:border-slate-300/60">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            {/* Visual Label (Optional, adds structure) */}
+            <div className="hidden md:flex items-center gap-2 text-slate-400 text-sm font-medium pr-4 border-r border-slate-200 h-10">
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>Filters</span>
+            </div>
 
-      {/* Content List */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm min-h-[400px] overflow-hidden">
+            {/* The Actual Filter Bar Component */}
+            <div className="flex-1 w-full">
+              <FilterBar />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- CONTENT LIST --- */}
+      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[400px]">
         {isLoading ? (
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-6">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-4 w-1/3" />
                   <Skeleton className="h-3 w-1/4" />
                 </div>
-                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-24 rounded-lg" />
               </div>
             ))}
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="text-red-500 mb-2">Error loading expenses</div>
+            <div className="p-3 bg-red-50 rounded-full mb-3">
+              <Receipt className="h-6 w-6 text-red-400" />
+            </div>
+            <h3 className="text-slate-900 font-semibold mb-1">
+              Unable to load expenses
+            </h3>
+            <p className="text-slate-500 text-sm mb-4">
+              Something went wrong while fetching data.
+            </p>
             <Button variant="outline" onClick={() => window.location.reload()}>
               Retry
             </Button>
           </div>
         ) : expenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <Receipt className="h-8 w-8 text-slate-300" />
+          <div className="flex flex-col items-center justify-center py-24 text-center px-4">
+            <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-slate-100 transform rotate-3">
+              <Receipt className="h-10 w-10 text-slate-300" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 className="text-xl font-bold text-slate-900">
               No expenses found
             </h3>
-            <p className="text-slate-500 max-w-xs mt-1">
-              Try adjusting your filters or create a new expense to get started.
+            <p className="text-slate-500 max-w-sm mt-2 mb-6">
+              We couldn't find any expenses matching your filters. Try adjusting
+              them or create a new one.
             </p>
+            <Button
+              variant="secondary"
+              onClick={() => window.location.reload()}
+            >
+              Clear Filters
+            </Button>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -200,7 +245,6 @@ export default function ExpensesPage() {
                 href={`/dashboard/expenses/${expense.id}`}
                 className="block hover:bg-slate-50/80 transition-colors"
               >
-                {/* Using the new Local ExpenseCard Logic */}
                 <ExpenseCard expense={expense} />
               </Link>
             ))}

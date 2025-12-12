@@ -1,223 +1,233 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, ArrowUpDown, X } from "lucide-react";
-import { useDebounce } from "@/src/hooks/use-debounce";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+} from "lucide-react";
+
 import { Button } from "@/src/components/ui/Button";
-import { Input } from "@/src/components/ui/Input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/Select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/Popover";
-import { Label } from "@/src/components/ui/label";
+import { cn } from "@/src/lib/utils";
+
+// --- Configuration ---
+const CATEGORIES = [
+  "Food",
+  "Travel",
+  "Entertainment",
+  "Shopping",
+  "Bills",
+  "General",
+  "Pooja",
+];
+
+const SORT_OPTIONS = [
+  { label: "Newest First", by: "created_at", order: "desc" },
+  { label: "Oldest First", by: "created_at", order: "asc" },
+  { label: "Amount: High to Low", by: "amount", order: "desc" },
+  { label: "Amount: Low to High", by: "amount", order: "asc" },
+];
+
+// --- Helper Components ---
+
+/**
+ * A custom stylized dropdown meant to look like a popover filter.
+ * Uses native select for maximum accessibility and reliability without
+ * requiring complex third-party UI libraries.
+ */
+const FilterDropdown = ({
+  label,
+  value,
+  options,
+  onChange,
+  active,
+}: {
+  label: string;
+  value: string;
+  options: { label: string; value: string }[];
+  onChange: (val: string) => void;
+  active: boolean;
+}) => {
+  return (
+    <div className="relative group">
+      {/* Visual Button */}
+      <div
+        className={cn(
+          "flex items-center gap-2 h-10 px-4 rounded-full border text-sm font-medium transition-all duration-200 cursor-pointer",
+          active
+            ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm hover:bg-indigo-100"
+            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+        )}
+      >
+        {active ? (
+          <Check className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+        )}
+        <span>
+          {active
+            ? options.find((o) => o.value === value)?.label || value
+            : label}
+        </span>
+      </div>
+
+      {/* Invisible Native Select Overlay for Interaction */}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+      >
+        <option value="">All</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
 
 export function FilterBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Initialize state from URL once
+  // --- Local State for Inputs ---
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
-  const [category, setCategory] = useState(
-    searchParams.get("category") || "all"
-  );
-  const [sortBy, setSortBy] = useState(
-    searchParams.get("sort_by") || "created_at"
-  );
-  const [sortOrder, setSortOrder] = useState(
-    searchParams.get("sort_order") || "desc"
+
+  // --- Helpers ---
+
+  // Create a new query string by merging current params with new ones
+  const createQueryString = useCallback(
+    (name: string, value: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set(name, value);
+      } else {
+        params.delete(name);
+      }
+      // Reset page on filter change
+      if (name !== "page") {
+        params.set("page", "1");
+      }
+      return params.toString();
+    },
+    [searchParams]
   );
 
-  const [minAmount, setMinAmount] = useState(
-    searchParams.get("min_amount") || ""
-  );
-  const [maxAmount, setMaxAmount] = useState(
-    searchParams.get("max_amount") || ""
-  );
-  const [dateFrom, setDateFrom] = useState(searchParams.get("from_date") || "");
-  const [dateTo, setDateTo] = useState(searchParams.get("to_date") || "");
+  // --- Handlers ---
 
-  const debouncedSearch = useDebounce(searchTerm, 500);
-
-  // Effect to update URL
+  // Handle Search Debounce
   useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentSearch = searchParams.get("search") || "";
+      if (searchTerm !== currentSearch) {
+        router.replace(
+          `${pathname}?${createQueryString("search", searchTerm || null)}`,
+          { scroll: false }
+        );
+      }
+    }, 400); // 400ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, searchParams, router, pathname, createQueryString]);
+
+  const handleSortChange = (value: string) => {
+    // Value format: "by_order" e.g., "created_at_desc"
     const params = new URLSearchParams(searchParams.toString());
 
-    // Helper to set/delete
-    const updateParam = (key: string, value: string) => {
-      if (value && value !== "all") params.set(key, value);
-      else params.delete(key);
-    };
-
-    updateParam("search", debouncedSearch);
-    updateParam("category", category);
-    params.set("sort_by", sortBy);
-    params.set("sort_order", sortOrder);
-    updateParam("min_amount", minAmount);
-    updateParam("max_amount", maxAmount);
-    updateParam("from_date", dateFrom);
-    updateParam("to_date", dateTo);
-
-    // Reset page if filters change (but not on initial load if params match)
-    // We check if the new string is different from current URL
-    const currentString = searchParams.toString();
-    const newString = params.toString();
-
-    if (currentString !== newString) {
-      params.set("page", "1"); // Reset pagination on filter change
-      router.push(`?${params.toString()}`);
+    if (!value) {
+      params.delete("sort_by");
+      params.delete("sort_order");
+    } else {
+      const [by, order] = value.split("__"); // using double underscore separator
+      params.set("sort_by", by);
+      params.set("sort_order", order);
     }
-  }, [
-    debouncedSearch,
-    category,
-    sortBy,
-    sortOrder,
-    minAmount,
-    maxAmount,
-    dateFrom,
-    dateTo,
-    router,
-    searchParams,
-  ]);
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setCategory("all");
-    setMinAmount("");
-    setMaxAmount("");
-    setDateFrom("");
-    setDateTo("");
-    router.push("?"); // Clear URL
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const hasActiveFilters =
-    category !== "all" ||
-    minAmount ||
-    maxAmount ||
-    dateFrom ||
-    dateTo ||
-    searchTerm;
+  const clearAllFilters = () => {
+    router.replace(pathname, { scroll: false });
+    setSearchTerm("");
+  };
+
+  // --- Derived State for UI ---
+  const activeCategory = searchParams.get("category");
+  const activeSortBy = searchParams.get("sort_by");
+  const activeSortOrder = searchParams.get("sort_order");
+  const activeSortValue =
+    activeSortBy && activeSortOrder
+      ? `${activeSortBy}__${activeSortOrder}`
+      : "";
+
+  const isFiltered =
+    !!activeCategory || !!activeSortBy || !!searchParams.get("search");
 
   return (
-    <div className="space-y-4 mb-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-          <Input
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex flex-col md:flex-row gap-3 items-center w-full">
+        {/* 1. Search Bar (Fluid Width) */}
+        <div className="relative flex-1 w-full md:max-w-md">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <Search className="h-4 w-4" />
+          </div>
+          <input
+            type="text"
             placeholder="Search expenses..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-11 bg-white"
+            className="w-full h-10 pl-9 pr-4 rounded-full border border-slate-200 bg-slate-50/50 text-sm outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-          {/* Category */}
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-[160px] h-11 bg-white">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="General">General</SelectItem>
-              <SelectItem value="Food">Food</SelectItem>
-              <SelectItem value="Travel">Travel</SelectItem>
-              <SelectItem value="Entertainment">Entertainment</SelectItem>
-              <SelectItem value="Utilities">Utilities</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* 2. Filter Actions (Horizontal Scroll on Mobile, Flex on Desktop) */}
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+          {/* Category Filter */}
+          <FilterDropdown
+            label="Category"
+            active={!!activeCategory}
+            value={activeCategory || ""}
+            options={CATEGORIES.map((c) => ({ label: c, value: c }))}
+            onChange={(val) =>
+              router.replace(
+                `${pathname}?${createQueryString("category", val)}`
+              )
+            }
+          />
 
-          {/* Sort */}
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[160px] h-11 bg-white">
-              <span className="flex items-center gap-2">
-                <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                <SelectValue placeholder="Sort by" />
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at">Date Created</SelectItem>
-              <SelectItem value="date">Expense Date</SelectItem>
-              <SelectItem value="amount">Amount</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Sort Filter */}
+          <FilterDropdown
+            label="Sort"
+            active={!!activeSortValue}
+            value={activeSortValue}
+            options={SORT_OPTIONS.map((s) => ({
+              label: s.label,
+              value: `${s.by}__${s.order}`,
+            }))}
+            onChange={handleSortChange}
+          />
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 bg-white shrink-0"
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-          >
-            {sortOrder === "asc" ? "↑" : "↓"}
-          </Button>
-
-          {/* Advanced Filters */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-11 bg-white gap-2">
-                <Filter className="h-4 w-4" /> Filters
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
-              <div className="space-y-4">
-                <h4 className="font-medium text-sm">Advanced Filters</h4>
-                <div className="space-y-2">
-                  <Label>Date Range</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="text-xs"
-                    />
-                    <Input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Amount Range</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min"
-                      value={minAmount}
-                      onChange={(e) => setMinAmount(e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
-                      value={maxAmount}
-                      onChange={(e) => setMaxAmount(e.target.value)}
-                    />
-                  </div>
-                </div>
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    className="w-full text-red-600 hover:bg-red-50"
-                    onClick={clearFilters}
-                  >
-                    Clear All
-                  </Button>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Reset Button (Only visible when filtered) */}
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="h-10 px-3 rounded-full text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+            >
+              <X className="h-4 w-4 mr-1.5" />
+              Reset
+            </Button>
+          )}
         </div>
       </div>
     </div>
