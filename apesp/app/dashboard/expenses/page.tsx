@@ -17,22 +17,25 @@ export default function ExpensesPage() {
   const queryParams = useMemo(
     () => ({
       page: Number(searchParams.get("page")) || 1,
-      limit: 10,
+      limit: 20, // Increased limit for better scrolling
       search: searchParams.get("search") || undefined,
       category: searchParams.get("category") || undefined,
       sort_by: searchParams.get("sort_by") || "created_at",
       sort_order: searchParams.get("sort_order") || "desc",
       min_amount: searchParams.get("min_amount") || undefined,
       max_amount: searchParams.get("max_amount") || undefined,
-      from_date: searchParams.get("from_date") ? new Date(searchParams.get("from_date")!).toISOString() : undefined,
-      to_date: searchParams.get("to_date") ? new Date(searchParams.get("to_date")!).toISOString() : undefined,
+      from_date: searchParams.get("from_date")
+        ? new Date(searchParams.get("from_date")!).toISOString()
+        : undefined,
+      to_date: searchParams.get("to_date")
+        ? new Date(searchParams.get("to_date")!).toISOString()
+        : undefined,
     }),
     [searchParams]
   );
 
   const { data, isLoading, isError } = useExpenses(queryParams);
   const expenses = data?.data || [];
-  const meta = data?.meta;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -92,8 +95,14 @@ export default function ExpensesPage() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {expenses.map((expense) => (
-              <ExpenseList key={expense.id} expense={expense} />
+            {expenses.map((expense: any) => (
+              <Link
+                key={expense.id}
+                href={`/dashboard/expenses/${expense.id}`}
+                className="block hover:bg-slate-50/80 transition-colors"
+              >
+                <ExpenseList expense={expense} />
+              </Link>
             ))}
           </div>
         )}
