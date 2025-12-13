@@ -9,13 +9,13 @@ import {
   PieChart,
   Settings,
   LogOut,
-  Wallet,
 } from "lucide-react";
 import { useLogout } from "@/src/features/auth/api/auth-queries";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/Button";
 import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 import { UnsavedChangesDialog } from "@/src/components/common/UnsavedChangesDialog";
+import { pAIse_LOGO } from "@/src/lib/mediaUrls";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -58,25 +58,17 @@ export function Sidebar() {
     }
   };
 
-  // --- Brand Logo Variable ---
-  const pAIse_LOGO = (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200 ring-1 ring-black/5">
-        <Wallet className="h-5 w-5" />
-      </div>
-      <div>
-        <span className="block text-xl font-bold tracking-tight text-slate-900 leading-none">
-          pAIse
-        </span>
-      </div>
-    </div>
-  );
-
   return (
     <>
       <aside className="flex h-full flex-col bg-white border-r border-slate-100 shadow-[2px_0_24px_-12px_rgba(0,0,0,0.05)]">
         {/* --- Brand Header --- */}
-        <div className="flex h-20 items-center px-6">{pAIse_LOGO}</div>
+        <div className="flex h-20 items-center px-6">
+          <img
+            src={pAIse_LOGO}
+            alt="pAIse Logo"
+            className="h-10 w-auto object-contain"
+          />
+        </div>
 
         {/* --- Navigation --- */}
         <nav className="flex-1 space-y-1.5 px-4 py-6 overflow-y-auto custom-scrollbar">

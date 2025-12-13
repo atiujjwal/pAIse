@@ -139,7 +139,6 @@ export default function GroupDetailsPage() {
   // Note: expensesResponse will now contain { data: [...], meta: ... }
   const { data: expensesResponse, isLoading: loadingExpenses } =
     useGroupExpenses(groupId);
-    console.log("143: ", groupId, expensesResponse);
     
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     group_id: groupId,
@@ -147,9 +146,7 @@ export default function GroupDetailsPage() {
 
   // Extract the actual list from the new API structure
   // Handle both potential structures (array vs object) for safety during migration
-  const expensesList = Array.isArray(expensesResponse)
-    ? expensesResponse
-    : [];
+  const expensesList = Array.isArray(expensesResponse) ? expensesResponse : [];
 
   // --- MUTATIONS ---
   const { mutate: removeMember } = useRemoveMember(groupId);
@@ -319,20 +316,29 @@ export default function GroupDetailsPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="expenses" className="w-full">
+          <Tabs defaultValue="balances" className="w-full">
             <TabsList className="bg-slate-100 p-1 rounded-xl w-full sm:w-auto h-12 mb-6">
-              <TabsTrigger value="expenses" className="rounded-lg h-10 px-6">
-                Expenses
-              </TabsTrigger>
               <TabsTrigger value="balances" className="rounded-lg h-10 px-6">
                 Balances
+              </TabsTrigger>
+              <TabsTrigger value="expenses" className="rounded-lg h-10 px-6">
+                Expenses
               </TabsTrigger>
               <TabsTrigger value="history" className="rounded-lg h-10 px-6">
                 Activity
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: EXPENSES LIST (UPDATED UI) */}
+            {/* TAB 1: BALANCES */}
+            <TabsContent value="balances" className="space-y-6">
+              <BalancesList
+                balances={balances}
+                groupName={group.name}
+                onSettleClick={(target) => setSettlementTarget(target)}
+              />
+            </TabsContent>
+
+            {/* TAB 2: EXPENSES LIST (UPDATED UI) */}
             <TabsContent value="expenses" className="space-y-4">
               {loadingExpenses ? (
                 <div className="space-y-4">
@@ -359,15 +365,6 @@ export default function GroupDetailsPage() {
                   ))}
                 </div>
               )}
-            </TabsContent>
-
-            {/* TAB 2: BALANCES */}
-            <TabsContent value="balances" className="space-y-6">
-              <BalancesList
-                balances={balances}
-                groupName={group.name}
-                onSettleClick={(target) => setSettlementTarget(target)}
-              />
             </TabsContent>
 
             {/* TAB 3: SETTLEMENT HISTORY */}
@@ -598,65 +595,6 @@ function BalancesList({
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {/* YOU OWE */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-rose-600 uppercase tracking-wider flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-rose-500"></span> You Owe
-        </h3>
-        {balances.you_owe.length === 0 ? (
-          <div className="p-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-center">
-            <p className="text-slate-400 text-sm">You don't owe anyone.</p>
-          </div>
-        ) : (
-          balances.you_owe.map((item: any) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between p-4 rounded-2xl border border-rose-100 bg-white shadow-sm hover:shadow-md transition-all group"
-            >
-              <div
-                className="flex items-center gap-3 cursor-pointer flex-1"
-                onClick={() => router.push(`/dashboard/friends/${item.id}`)}
-              >
-                <Avatar className="h-10 w-10 border border-white shadow-sm">
-                  <AvatarImage src={item.avatar} />
-                  <AvatarFallback className="bg-rose-50 text-rose-600 font-bold">
-                    {item.name[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="font-semibold text-slate-700 group-hover:text-indigo-600 transition-colors flex items-center gap-1">
-                    {item.name}{" "}
-                    <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    Tap to see details
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="font-bold text-rose-600 font-mono text-lg">
-                  {formatCurrency(item.amount, balances.currency)}
-                </span>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs bg-rose-600 hover:bg-rose-700 text-white"
-                  onClick={() =>
-                    onSettleClick({
-                      id: item.id,
-                      name: item.name,
-                      amount: item.amount,
-                      avatar: item.avatar,
-                    })
-                  }
-                >
-                  Settle
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
       {/* OWED TO YOU */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2">
@@ -715,6 +653,65 @@ function BalancesList({
               </div>
             );
           })
+        )}
+      </div>
+
+      {/* YOU OWE */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold text-rose-600 uppercase tracking-wider flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-rose-500"></span> You Owe
+        </h3>
+        {balances.you_owe.length === 0 ? (
+          <div className="p-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-center">
+            <p className="text-slate-400 text-sm">You don't owe anyone.</p>
+          </div>
+        ) : (
+          balances.you_owe.map((item: any) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between p-4 rounded-2xl border border-rose-100 bg-white shadow-sm hover:shadow-md transition-all group"
+            >
+              <div
+                className="flex items-center gap-3 cursor-pointer flex-1"
+                onClick={() => router.push(`/dashboard/friends/${item.id}`)}
+              >
+                <Avatar className="h-10 w-10 border border-white shadow-sm">
+                  <AvatarImage src={item.avatar} />
+                  <AvatarFallback className="bg-rose-50 text-rose-600 font-bold">
+                    {item.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-slate-700 group-hover:text-indigo-600 transition-colors flex items-center gap-1">
+                    {item.name}{" "}
+                    <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Tap to see details
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <span className="font-bold text-rose-600 font-mono text-lg">
+                  {formatCurrency(item.amount, balances.currency)}
+                </span>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-rose-600 hover:bg-rose-700 text-white"
+                  onClick={() =>
+                    onSettleClick({
+                      id: item.id,
+                      name: item.name,
+                      amount: item.amount,
+                      avatar: item.avatar,
+                    })
+                  }
+                >
+                  Settle
+                </Button>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
