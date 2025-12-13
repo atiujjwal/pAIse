@@ -12,7 +12,7 @@ export function StatsCards() {
     return (
       <div className="grid gap-6 md:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-44 rounded-3xl" />
+          <Skeleton key={i} className="h-44 rounded-[2rem]" />
         ))}
       </div>
     );
@@ -26,69 +26,73 @@ export function StatsCards() {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
       {/* 1. Total Spent */}
-      <div className="group relative overflow-hidden rounded-3xl bg-card p-6 shadow-sm border border-border hover:shadow-md transition-all">
-        {/* Decorative Blur */}
-        <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary/10 blur-3xl transition-all group-hover:bg-primary/20" />
+      <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border hover:shadow-lg transition-all duration-300">
+        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+          <CreditCard className="h-24 w-24 text-primary" />
+        </div>
 
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Total Spent
-              </p>
-              <h3 className="text-3xl font-bold text-foreground tracking-tight">
-                {formatCurrency(String(totalSpent), currency)}
-              </h3>
+              </span>
             </div>
-            <div className="rounded-xl bg-primary/10 p-3 text-primary">
-              <CreditCard className="h-6 w-6" />
-            </div>
+            <h3 className="text-3xl font-bold text-foreground tracking-tight">
+              {formatCurrency(String(totalSpent), currency)}
+            </h3>
           </div>
-          <div className="mt-4">
+          <div className="mt-6 pt-4 border-t border-border/50">
             <p className="text-xs text-muted-foreground">
-              This month across all groups
+              Across all groups this month
             </p>
           </div>
         </div>
       </div>
 
       {/* 2. Net Balance */}
-      <div className="group relative overflow-hidden rounded-3xl bg-card p-6 shadow-sm border border-border hover:shadow-md transition-all">
+      <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border hover:shadow-lg transition-all duration-300">
         <div
           className={cn(
-            "absolute -right-6 -top-6 h-32 w-32 rounded-full blur-3xl transition-all",
-            isPositive ? "bg-secondary/20" : "bg-destructive/10"
+            "absolute top-0 right-0 p-6 opacity-10 transition-opacity",
+            isPositive ? "text-secondary" : "text-destructive"
           )}
-        />
+        >
+          <Wallet className="h-24 w-24" />
+        </div>
+
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Net Balance
-              </p>
-              <h3
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div
                 className={cn(
-                  "text-3xl font-bold tracking-tight",
-                  isPositive ? "text-secondary" : "text-destructive"
+                  "p-2.5 rounded-xl",
+                  isPositive
+                    ? "bg-secondary/10 text-secondary"
+                    : "bg-destructive/10 text-destructive"
                 )}
               >
-                {isPositive ? "+" : ""}
-                {formatCurrency(String(balance), currency)}
-              </h3>
+                <Wallet className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Net Balance
+              </span>
             </div>
-            <div
+            <h3
               className={cn(
-                "rounded-xl p-3",
-                isPositive
-                  ? "bg-secondary/10 text-secondary"
-                  : "bg-destructive/10 text-destructive"
+                "text-3xl font-bold tracking-tight",
+                isPositive ? "text-secondary" : "text-destructive"
               )}
             >
-              <Wallet className="h-6 w-6" />
-            </div>
+              {isPositive ? "+" : ""}
+              {formatCurrency(String(balance), currency)}
+            </h3>
           </div>
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground font-medium">
+          <div className="mt-6 pt-4 border-t border-border/50">
+            <p className="text-xs text-muted-foreground">
               {isPositive ? "You are owed in total" : "You owe in total"}
             </p>
           </div>
@@ -96,26 +100,24 @@ export function StatsCards() {
       </div>
 
       {/* 3. Budget Used */}
-      <div className="group relative overflow-hidden rounded-3xl bg-card p-6 shadow-sm border border-border hover:shadow-md transition-all">
-        <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-amber-500/10 blur-3xl" />
-
+      <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border hover:shadow-lg transition-all duration-300">
         <div className="relative z-10 flex flex-col justify-between h-full">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-500">
+                <PieChart className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Budget Used
-              </p>
-              <h3 className="text-3xl font-bold text-foreground tracking-tight">
-                {budgetUsed}%
-              </h3>
+              </span>
             </div>
-            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500">
-              <PieChart className="h-6 w-6" />
-            </div>
+            <h3 className="text-3xl font-bold text-foreground tracking-tight">
+              {budgetUsed}%
+            </h3>
           </div>
 
-          <div className="mt-4 space-y-2">
-            <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+          <div className="mt-6 space-y-2">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-1000",

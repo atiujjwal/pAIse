@@ -45,16 +45,16 @@ export function AddMemberDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-3xl p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl">Add Members</DialogTitle>
+      <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-card border-border">
+        <DialogHeader>
+          <DialogTitle>Add Members</DialogTitle>
         </DialogHeader>
 
-        <div className="relative mb-6">
+        <div className="relative mb-4 mt-2">
           <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
           <Input
             placeholder="Search friends..."
-            className="pl-11 h-12 rounded-xl bg-muted/30 border-border"
+            className="pl-11 h-12 rounded-xl bg-muted/30"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -62,21 +62,20 @@ export function AddMemberDialog({
 
         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Loading friends...
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Loading...
             </p>
           ) : filteredFriends?.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-border rounded-xl bg-muted/10">
-              <p>No friends found.</p>
-              <p className="text-xs mt-1 opacity-70">
-                They might already be in this group.
+            <div className="text-center py-8 bg-muted/10 rounded-2xl border-2 border-dashed border-border">
+              <p className="text-sm text-muted-foreground">
+                No matching friends found.
               </p>
             </div>
           ) : (
             filteredFriends?.map((friend) => (
               <div
                 key={friend.id}
-                className="flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-border hover:bg-muted/30 transition-all group"
+                className="flex items-center justify-between p-3 rounded-2xl hover:bg-muted/40 transition-colors group border border-transparent hover:border-border"
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
@@ -97,7 +96,7 @@ export function AddMemberDialog({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-9 w-9 rounded-full bg-muted/50 hover:bg-primary/10 hover:text-primary transition-colors"
+                  className="h-9 w-9 rounded-full bg-muted/50 hover:bg-primary hover:text-primary-foreground"
                   disabled={isPending}
                   onClick={() => addMember(friend.id)}
                 >

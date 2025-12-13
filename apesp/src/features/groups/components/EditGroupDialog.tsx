@@ -29,7 +29,7 @@ import { cn } from "@/src/lib/utils";
 import { GROUP_AVATARS } from "@/src/lib/mediaUrls";
 
 const updateGroupSchema = z.object({
-  name: z.string().min(1, "Group name is required"),
+  name: z.string().min(1, "Required"),
   description: z.string().optional(),
   avatar: z.string().optional().nullable(),
 });
@@ -38,11 +38,7 @@ interface EditGroupDialogProps {
   isOpen: boolean;
   onClose: () => void;
   groupId: string;
-  initialData: {
-    name: string;
-    description?: string;
-    avatar?: string | null;
-  };
+  initialData: { name: string; description?: string; avatar?: string | null };
 }
 
 export function EditGroupDialog({
@@ -55,13 +51,12 @@ export function EditGroupDialog({
     useUpdateGroupDetails(groupId);
   const { mutate: deleteGroup, isPending: isDeleting } =
     useDeleteGroup(groupId);
-
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch } = useForm({
     resolver: zodResolver(updateGroupSchema),
     defaultValues: {
-      name: initialData.name,
+      ...initialData,
       description: initialData.description || "",
       avatar: initialData.avatar || "",
     },
@@ -72,7 +67,7 @@ export function EditGroupDialog({
   useEffect(() => {
     if (isOpen) {
       reset({
-        name: initialData.name,
+        ...initialData,
         description: initialData.description || "",
         avatar: initialData.avatar || "",
       });
@@ -80,101 +75,67 @@ export function EditGroupDialog({
     }
   }, [isOpen, initialData, reset]);
 
-  const onSubmit = (data: any) => {
-    updateGroup(data, { onSuccess: onClose });
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md rounded-3xl p-6 bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">Group Settings</DialogTitle>
+          <DialogTitle>Group Settings</DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Avatar Preview Section */}
+        <form
+          onSubmit={handleSubmit((data) =>
+            updateGroup(data, { onSuccess: onClose })
+          )}
+          className="space-y-6"
+        >
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="relative group">
-              <div
-                className={cn(
-                  "h-28 w-28 rounded-3xl overflow-hidden border-4 border-card shadow-lg flex items-center justify-center bg-muted transition-all",
-                  !currentAvatar && "bg-muted text-muted-foreground"
-                )}
-              >
+              <div className="h-28 w-28 rounded-3xl overflow-hidden border-4 border-card shadow-lg bg-muted flex items-center justify-center">
                 {currentAvatar ? (
                   <img
                     src={currentAvatar}
-                    alt="Group Avatar"
                     className="h-full w-full object-cover"
                   />
                 ) : (
                   <ImageIcon className="h-10 w-10 opacity-50" />
                 )}
               </div>
-
               <Button
                 type="button"
                 size="icon"
                 variant="secondary"
-                className="absolute -bottom-2 -right-2 h-10 w-10 rounded-full shadow-lg border-2 border-card hover:scale-110 transition-transform"
+                className="absolute -bottom-2 -right-2 rounded-full shadow-lg"
                 onClick={() => setShowAvatarGrid(!showAvatarGrid)}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Conditional Avatar Grid */}
             {showAvatarGrid && (
-              <div className="w-full space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 bg-muted/30 p-4 rounded-2xl border border-border">
-                <div className="flex justify-between items-center">
-                  <Label className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                    Select Avatar
-                  </Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAvatarGrid(false)}
-                    className="h-6 text-[10px] text-muted-foreground"
-                  >
-                    Close
-                  </Button>
-                </div>
-
+              <div className="w-full bg-muted/30 p-4 rounded-2xl border border-border animate-in fade-in slide-in-from-top-2">
                 <div className="grid grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() => setValue("avatar", "")}
-                    className={cn(
-                      "aspect-square rounded-xl border-2 flex items-center justify-center transition-all",
-                      !currentAvatar
-                        ? "border-primary bg-background text-primary"
-                        : "border-transparent bg-background/50 text-muted-foreground hover:bg-background"
-                    )}
-                    title="Remove Avatar"
+                    className="aspect-square rounded-xl border-2 border-border flex items-center justify-center hover:bg-muted"
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-5 w-5 text-muted-foreground" />
                   </button>
-
-                  {GROUP_AVATARS.map((url, index) => (
+                  {GROUP_AVATARS.map((url, idx) => (
                     <button
-                      key={index}
+                      key={idx}
                       type="button"
                       onClick={() => setValue("avatar", url)}
                       className={cn(
-                        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
+                        "aspect-square rounded-xl overflow-hidden border-2 relative",
                         currentAvatar === url
-                          ? "border-primary ring-2 ring-primary ring-offset-1"
-                          : "border-transparent opacity-80 hover:opacity-100"
+                          ? "border-primary"
+                          : "border-transparent"
                       )}
                     >
-                      <img
-                        src={url}
-                        alt={`Option ${index}`}
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={url} className="h-full w-full object-cover" />
                       {currentAvatar === url && (
                         <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                          <Check className="h-4 w-4 text-white drop-shadow-md" />
+                          <Check className="h-4 w-4 text-white" />
                         </div>
                       )}
                     </button>
@@ -186,7 +147,7 @@ export function EditGroupDialog({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Group Name</Label>
+              <Label>Name</Label>
               <Input {...register("name")} className="h-12 rounded-xl" />
             </div>
             <div className="space-y-2">
@@ -195,35 +156,31 @@ export function EditGroupDialog({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="h-12 px-6 rounded-xl"
+              className="h-12 rounded-xl"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isUpdating}
-              className="h-12 px-6 rounded-xl min-w-[140px]"
+              className="h-12 rounded-xl shadow-lg"
             >
-              {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{" "}
+              Save
             </Button>
           </div>
         </form>
 
-        <div className="border-t border-border pt-6 mt-4">
+        <div className="border-t border-border pt-6 mt-2">
           <div className="rounded-2xl bg-destructive/5 p-5 border border-destructive/10">
-            <div className="flex items-center gap-2 text-destructive font-bold mb-1">
+            <div className="flex items-center gap-2 text-destructive font-bold mb-2">
               <AlertTriangle className="h-4 w-4" /> Danger Zone
             </div>
-            <p className="text-xs text-destructive/80 mb-4 font-medium leading-relaxed">
-              Deleting this group will remove all expenses and settlement
-              history permanently.
-            </p>
             <Button
               variant="destructive"
               className="w-full h-11 rounded-xl shadow-sm"

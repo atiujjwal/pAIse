@@ -54,17 +54,17 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
   return (
     <Link
       href={`/dashboard/expenses/${expense.id}`}
-      className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:border-indigo-100 hover:shadow-md transition-all group"
+      className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 hover:shadow-md transition-all group"
     >
       {/* Avatar Section */}
-      <Avatar className="h-10 w-10 border border-slate-100 shadow-sm group-hover:border-indigo-100 transition-colors">
+      <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
         <AvatarImage src={avatarUrl || undefined} className="object-cover" />
         <AvatarFallback
           className={cn(
             "text-xs font-bold",
             isGroup
-              ? "bg-indigo-50 text-indigo-600"
-              : "bg-slate-100 text-slate-600"
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground"
           )}
         >
           {name?.[0]?.toUpperCase()}
@@ -73,19 +73,19 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
 
       {/* Main Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <h4 className="font-semibold text-sm text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+        <div className="flex items-center gap-2 mb-1">
+          <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
             {expense.description}
           </h4>
           {/* Badge for Context */}
           {isGroup && (
-            <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-indigo-50 text-indigo-600">
+            <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
               Group
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span>
@@ -95,9 +95,9 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
               })}
             </span>
           </div>
-          <span className="text-slate-300">•</span>
+          <span className="text-border">•</span>
           <span className="capitalize">{expense.category}</span>
-          <span className="text-slate-300">•</span>
+          <span className="text-border">•</span>
           <span className="truncate max-w-[100px]">
             {isGroup
               ? "Group Expense"
@@ -108,10 +108,10 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
 
       {/* Amount Section */}
       <div className="text-right">
-        <span className="block font-bold text-slate-900 font-mono text-sm">
+        <span className="block font-bold text-foreground font-mono text-base">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
-        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide bg-muted/50 px-2 py-0.5 rounded-md mt-1 inline-block">
           {expense.split_type}
         </span>
       </div>
@@ -166,12 +166,12 @@ export default function FriendDetailsPage() {
 
   if (loadingFriend) {
     return (
-      <div className="space-y-6 animate-pulse p-6">
+      <div className="space-y-6 animate-pulse p-4 max-w-7xl mx-auto">
         <Skeleton className="h-10 w-32 rounded-lg" />
         <Skeleton className="h-64 w-full rounded-3xl" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            <Skeleton className="h-12 w-64 rounded-xl" />
+            <Skeleton className="h-14 w-full rounded-2xl" />
             <Skeleton className="h-40 w-full rounded-2xl" />
           </div>
         </div>
@@ -181,13 +181,15 @@ export default function FriendDetailsPage() {
 
   if (!friend || !currentUser) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-        <h2 className="text-xl font-semibold text-slate-900">
-          Friend not found
-        </h2>
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+        <div className="p-6 bg-muted/30 rounded-full">
+          <User className="h-12 w-12 text-muted-foreground" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Friend not found</h2>
         <Button
-          variant="link"
+          variant="outline"
           onClick={() => router.push("/dashboard/friends")}
+          className="rounded-xl"
         >
           Back to Friends
         </Button>
@@ -196,20 +198,20 @@ export default function FriendDetailsPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* --- HEADER SECTION --- */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 relative overflow-hidden">
-        {/* Background Decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-bl-full -mr-16 -mt-16 z-0" />
+      <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 relative overflow-hidden">
+        {/* Decorative Background */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 z-0 pointer-events-none" />
 
         <div className="relative z-10">
           {/* Back Button */}
-          <div className="mb-6">
+          <div className="mb-8">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.back()}
-              className="text-slate-500 hover:text-slate-900 -ml-2 hover:bg-slate-100"
+              className="text-muted-foreground hover:text-foreground -ml-2 hover:bg-muted rounded-xl"
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back to Friends
             </Button>
@@ -218,36 +220,38 @@ export default function FriendDetailsPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
             {/* Profile Info */}
             <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24 border-4 border-white shadow-md bg-white">
+              <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                 <AvatarImage
                   src={friend.avatar || undefined}
                   className="object-cover"
                 />
-                <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-indigo-50 to-slate-100 text-slate-400">
+                <AvatarFallback className="text-3xl font-bold bg-primary/10 text-primary">
                   {friend.name[0]}
                 </AvatarFallback>
               </Avatar>
 
               <div className="space-y-1">
-                <h1 className="text-3xl font-extrabold text-slate-900">
+                <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
                   {friend.name}
                 </h1>
-                <p className="text-slate-500 font-medium">{friend.email}</p>
+                <p className="text-muted-foreground font-medium">
+                  {friend.email}
+                </p>
 
                 {/* Status Badge */}
                 <div
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mt-2",
+                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mt-2 shadow-sm border",
                     isOwe
-                      ? "bg-rose-100 text-rose-700"
+                      ? "bg-destructive/10 text-destructive border-destructive/20"
                       : isOwed
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-100 text-slate-600"
+                      ? "bg-secondary/10 text-secondary border-secondary/20"
+                      : "bg-muted text-muted-foreground border-border"
                   )}
                 >
-                  {isOwe && <TrendingDown className="h-3 w-3" />}
-                  {isOwed && <TrendingUp className="h-3 w-3" />}
-                  {isSettled && <CheckCircle2 className="h-3 w-3" />}
+                  {isOwe && <TrendingDown className="h-3.5 w-3.5" />}
+                  {isOwed && <TrendingUp className="h-3.5 w-3.5" />}
+                  {isSettled && <CheckCircle2 className="h-3.5 w-3.5" />}
                   <span>
                     {isOwe ? "You Owe" : isOwed ? "Owes You" : "Settled"}
                   </span>
@@ -256,19 +260,19 @@ export default function FriendDetailsPage() {
             </div>
 
             {/* Net Balance & Actions */}
-            <div className="flex flex-col items-start md:items-end gap-4 w-full md:w-auto bg-slate-50/50 md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none">
+            <div className="flex flex-col items-start md:items-end gap-6 w-full md:w-auto bg-muted/20 md:bg-transparent p-6 md:p-0 rounded-3xl md:rounded-none border border-border md:border-none">
               <div className="text-left md:text-right">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
                   Net Balance
                 </p>
                 <div
                   className={cn(
-                    "text-4xl font-mono font-bold tracking-tight",
+                    "text-5xl font-mono font-bold tracking-tighter",
                     isOwe
-                      ? "text-rose-600"
+                      ? "text-destructive"
                       : isOwed
-                      ? "text-emerald-600"
-                      : "text-slate-400"
+                      ? "text-secondary"
+                      : "text-muted-foreground"
                   )}
                 >
                   {formatCurrency(balanceValue, friend.currency)}
@@ -279,7 +283,7 @@ export default function FriendDetailsPage() {
                 {isOwe && (
                   <Button
                     onClick={() => setShowSettlement(true)}
-                    className="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-100"
+                    className="flex-1 md:flex-none h-12 px-6 rounded-xl bg-destructive hover:bg-destructive/90 text-white shadow-lg shadow-destructive/20"
                   >
                     <Wallet className="h-4 w-4 mr-2" /> Settle Up
                   </Button>
@@ -290,10 +294,10 @@ export default function FriendDetailsPage() {
                     onClick={handleRemind}
                     disabled={isReminding || isReminded}
                     className={cn(
-                      "flex-1 md:flex-none shadow-lg transition-all",
+                      "flex-1 md:flex-none h-12 px-6 rounded-xl shadow-lg transition-all",
                       isReminded
-                        ? "bg-slate-100 text-slate-400 hover:bg-slate-100 shadow-none cursor-default"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100"
+                        ? "bg-muted text-muted-foreground hover:bg-muted shadow-none cursor-default"
+                        : "bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-secondary/20"
                     )}
                   >
                     {isReminding ? (
@@ -314,22 +318,34 @@ export default function FriendDetailsPage() {
 
       {/* --- CONTENT TABS --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="direct" className="w-full">
-            <TabsList className="bg-slate-100 p-1 rounded-xl w-full sm:w-auto h-12 mb-6">
-              <TabsTrigger value="direct" className="rounded-lg h-10 px-6">
+            <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14 mb-8">
+              <TabsTrigger
+                value="direct"
+                className="rounded-xl h-full px-6 text-sm font-bold"
+              >
                 Direct Expenses
               </TabsTrigger>
-              <TabsTrigger value="groups" className="rounded-lg h-10 px-6">
+              <TabsTrigger
+                value="groups"
+                className="rounded-xl h-full px-6 text-sm font-bold"
+              >
                 Group Expenses
               </TabsTrigger>
-              <TabsTrigger value="history" className="rounded-lg h-10 px-6">
-                Settlement History
+              <TabsTrigger
+                value="history"
+                className="rounded-xl h-full px-6 text-sm font-bold"
+              >
+                Payment History
               </TabsTrigger>
             </TabsList>
 
             {/* 1. DIRECT EXPENSES */}
-            <TabsContent value="direct" className="space-y-4">
+            <TabsContent
+              value="direct"
+              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+            >
               {friend.expenses.friend_expenses.length === 0 ? (
                 <EmptyState
                   icon={Receipt}
@@ -345,7 +361,10 @@ export default function FriendDetailsPage() {
             </TabsContent>
 
             {/* 2. GROUP EXPENSES */}
-            <TabsContent value="groups" className="space-y-4">
+            <TabsContent
+              value="groups"
+              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+            >
               {friend.expenses.group_expenses.length === 0 ? (
                 <EmptyState
                   icon={Layers}
@@ -361,11 +380,14 @@ export default function FriendDetailsPage() {
             </TabsContent>
 
             {/* 3. SETTLEMENT HISTORY */}
-            <TabsContent value="history" className="space-y-4">
+            <TabsContent
+              value="history"
+              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+            >
               {loadingSettlements ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                    <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                   ))}
                 </div>
               ) : settlements?.length === 0 ? (
@@ -391,26 +413,30 @@ export default function FriendDetailsPage() {
 
         {/* --- RIGHT SIDEBAR (Stats / Info) --- */}
         <div className="lg:col-span-1">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sticky top-6">
-            <h3 className="font-bold text-lg text-slate-800 mb-4">Summary</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm text-slate-500">Direct Shared</span>
-                <span className="font-bold text-slate-900">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sticky top-6">
+            <h3 className="font-bold text-lg text-foreground mb-6">Summary</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-4 bg-muted/30 rounded-2xl border border-border">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Direct Shared
+                </span>
+                <span className="font-bold text-foreground text-lg">
                   {friend.expenses.friend_expenses.length}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm text-slate-500">Group Shared</span>
-                <span className="font-bold text-slate-900">
+              <div className="flex justify-between items-center p-4 bg-muted/30 rounded-2xl border border-border">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Group Shared
+                </span>
+                <span className="font-bold text-foreground text-lg">
                   {friend.expenses.group_expenses.length}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm text-slate-500">
+              <div className="flex justify-between items-center p-4 bg-muted/30 rounded-2xl border border-border">
+                <span className="text-sm font-medium text-muted-foreground">
                   Total Transactions
                 </span>
-                <span className="font-bold text-slate-900">
+                <span className="font-bold text-foreground text-lg">
                   {settlements?.length || 0}
                 </span>
               </div>
@@ -455,25 +481,25 @@ function SettlementItem({
 }) {
   const isPayer = settlement.payer.id === currentUserId;
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm">
+    <div className="flex items-center justify-between p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 transition-all">
       <div className="flex items-center gap-4">
         <div
           className={cn(
-            "h-10 w-10 rounded-full flex items-center justify-center text-lg",
+            "h-12 w-12 rounded-full flex items-center justify-center text-xl shadow-sm",
             isPayer
-              ? "bg-rose-100 text-rose-600"
-              : "bg-emerald-100 text-emerald-600"
+              ? "bg-destructive/10 text-destructive"
+              : "bg-secondary/10 text-secondary"
           )}
         >
           {isPayer ? "↑" : "↓"}
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-900">
+          <p className="text-sm font-semibold text-foreground">
             {isPayer ? "You paid" : `${friendName} paid`}
-            <span className="font-normal text-slate-500"> to </span>
+            <span className="font-normal text-muted-foreground"> to </span>
             {isPayer ? friendName : "You"}
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {new Date(settlement.date).toLocaleDateString(undefined, {
               dateStyle: "medium",
             })}
@@ -482,8 +508,8 @@ function SettlementItem({
       </div>
       <span
         className={cn(
-          "font-mono font-bold",
-          isPayer ? "text-rose-600" : "text-emerald-600"
+          "font-mono font-bold text-lg",
+          isPayer ? "text-destructive" : "text-secondary"
         )}
       >
         {isPayer ? "-" : "+"}
@@ -495,9 +521,9 @@ function SettlementItem({
 
 function EmptyState({ icon: Icon, message }: { icon: any; message: string }) {
   return (
-    <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-      <Icon className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-      <p className="text-slate-500">{message}</p>
+    <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-muted/10">
+      <Icon className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+      <p className="text-muted-foreground font-medium">{message}</p>
     </div>
   );
 }

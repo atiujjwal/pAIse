@@ -13,7 +13,7 @@ export function Step1Details() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="grid grid-cols-2 gap-4">
         <VoiceExpenseInput />
-        <div className="flex items-center justify-center rounded-2xl border-2 border-dashed border-border p-2 text-sm text-muted-foreground bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer">
+        <div className="flex items-center justify-center rounded-2xl border-2 border-dashed border-border p-2 text-sm font-medium text-muted-foreground bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer">
           Receipt Upload (Coming Soon)
         </div>
       </div>
@@ -24,7 +24,7 @@ export function Step1Details() {
           value={description || ""}
           onChange={(e) => updateDraft({ description: e.target.value })}
           placeholder="e.g., Dinner at Pizza Palace"
-          className="h-12 rounded-xl"
+          className="h-12 rounded-xl text-base"
         />
       </div>
 
@@ -32,7 +32,7 @@ export function Step1Details() {
         <div className="space-y-2">
           <Label>Amount</Label>
           <div className="relative">
-            <span className="absolute left-3 top-3 text-muted-foreground font-bold">
+            <span className="absolute left-4 top-3 text-muted-foreground font-bold">
               ₹
             </span>
             <Input
@@ -41,7 +41,7 @@ export function Step1Details() {
               value={amount || ""}
               onChange={(e) => updateDraft({ amount: e.target.value })}
               placeholder="0.00"
-              className="h-12 pl-8 rounded-xl text-lg font-bold"
+              className="h-12 pl-10 rounded-xl text-lg font-bold"
             />
           </div>
         </div>
@@ -50,7 +50,7 @@ export function Step1Details() {
           <Input
             value="INR"
             disabled
-            className="h-12 rounded-xl bg-muted/50 text-muted-foreground"
+            className="h-12 rounded-xl bg-muted/30 text-muted-foreground"
           />
         </div>
       </div>

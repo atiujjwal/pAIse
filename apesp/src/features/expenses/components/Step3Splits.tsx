@@ -49,7 +49,7 @@ export function Step3Splits({ members }: Step3Props) {
               setInputs({});
             }}
             className={cn(
-              "flex-1 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200",
+              "flex-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-200",
               split_type === type
                 ? "bg-background shadow-sm text-primary"
                 : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
@@ -67,7 +67,7 @@ export function Step3Splits({ members }: Step3Props) {
           return (
             <div
               key={user.id}
-              className="flex items-center justify-between rounded-2xl border border-border p-4 bg-card"
+              className="flex items-center justify-between rounded-2xl border border-border p-4 bg-card hover:border-primary/20 transition-colors"
             >
               <div className="flex items-center gap-4">
                 <Avatar className="h-10 w-10">
@@ -85,7 +85,7 @@ export function Step3Splits({ members }: Step3Props) {
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
-                      className="h-10 w-24 text-right rounded-lg bg-muted/30"
+                      className="h-10 w-20 text-right rounded-lg bg-muted/30 border-transparent focus:bg-background"
                       placeholder="0"
                       onChange={(e) =>
                         setInputs((prev) => ({
@@ -94,17 +94,17 @@ export function Step3Splits({ members }: Step3Props) {
                         }))
                       }
                     />
-                    <span className="text-xs font-medium text-muted-foreground w-8">
+                    <span className="text-xs font-bold text-muted-foreground w-8 uppercase">
                       {split_type === "PERCENTAGE"
                         ? "%"
                         : split_type === "SHARE"
-                        ? "share"
+                        ? "shr"
                         : "INR"}
                     </span>
                   </div>
                 )}
 
-                <div className="w-28 text-right">
+                <div className="w-24 text-right">
                   <span
                     className={cn(
                       "font-mono font-bold text-lg",

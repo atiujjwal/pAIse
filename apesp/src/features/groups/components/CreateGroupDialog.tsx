@@ -33,7 +33,6 @@ export function CreateGroupDialog({
   onClose: () => void;
 }) {
   const { mutate: createGroup, isPending } = useCreateGroup();
-
   const {
     register,
     handleSubmit,
@@ -43,15 +42,10 @@ export function CreateGroupDialog({
     formState: { errors },
   } = useForm<CreateGroupFormValues>({
     resolver: zodResolver(createGroupSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      avatar: "",
-    },
+    defaultValues: { name: "", description: "", avatar: "" },
   });
 
   const selectedAvatar = watch("avatar");
-
   const onSubmit = (data: CreateGroupFormValues) => {
     createGroup(data, {
       onSuccess: () => {
@@ -63,16 +57,14 @@ export function CreateGroupDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg rounded-3xl p-8">
+      <DialogContent className="sm:max-w-lg rounded-3xl p-8 bg-card border-border">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Create Group</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 mt-2">
-          {/* Avatar Selection */}
           <div className="space-y-4">
-            <Label className="text-base font-medium">Choose Group Avatar</Label>
+            <Label>Choose Avatar</Label>
             <div className="grid grid-cols-4 gap-3">
-              {/* No Avatar Option */}
               <button
                 type="button"
                 onClick={() => setValue("avatar", "")}
@@ -80,16 +72,12 @@ export function CreateGroupDialog({
                   "aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all",
                   !selectedAvatar
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                    : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"
                 )}
               >
                 <ImageIcon className="h-6 w-6 mb-1" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">
-                  None
-                </span>
+                <span className="text-[10px] font-bold uppercase">None</span>
               </button>
-
-              {/* Image Options */}
               {GROUP_AVATARS.map((url, index) => (
                 <button
                   key={index}
@@ -98,20 +86,18 @@ export function CreateGroupDialog({
                   className={cn(
                     "relative aspect-square rounded-2xl overflow-hidden border-2 transition-all",
                     selectedAvatar === url
-                      ? "border-primary ring-2 ring-primary ring-offset-2"
+                      ? "border-primary ring-2 ring-primary/30"
                       : "border-transparent hover:opacity-80"
                   )}
                 >
                   <img
                     src={url}
-                    alt={`Avatar ${index}`}
+                    alt="Avatar"
                     className="h-full w-full object-cover"
                   />
                   {selectedAvatar === url && (
-                    <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                      <div className="bg-primary rounded-full p-1.5 shadow-md">
-                        <Check className="h-3 w-3 text-white" />
-                      </div>
+                    <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
+                      <Check className="h-5 w-5 text-white drop-shadow-md" />
                     </div>
                   )}
                 </button>
@@ -128,21 +114,16 @@ export function CreateGroupDialog({
                 className="h-12 rounded-xl bg-muted/30"
               />
               {errors.name && (
-                <p className="text-destructive text-xs font-medium ml-1">
+                <p className="text-destructive text-xs ml-1">
                   {errors.name.message}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label>
-                Description{" "}
-                <span className="text-muted-foreground font-normal">
-                  (Optional)
-                </span>
-              </Label>
+              <Label>Description</Label>
               <Input
                 {...register("description")}
-                placeholder="What's this group for?"
+                placeholder="Optional description"
                 className="h-12 rounded-xl bg-muted/30"
               />
             </div>
@@ -153,7 +134,7 @@ export function CreateGroupDialog({
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="h-12 px-6 rounded-xl text-muted-foreground"
+              className="h-12 px-6 rounded-xl"
             >
               Cancel
             </Button>
@@ -162,8 +143,8 @@ export function CreateGroupDialog({
               disabled={isPending}
               className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20"
             >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Group
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{" "}
+              Create
             </Button>
           </div>
         </form>

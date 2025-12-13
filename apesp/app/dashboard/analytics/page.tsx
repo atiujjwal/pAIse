@@ -17,11 +17,33 @@ import {
   PieChart,
   Pie,
   Cell,
+  TooltipProps,
 } from "recharts";
 
+// Brand Palette
+const COLORS = [
+  "#7C5CFF", // Electric Purple (Primary)
+  "#17B26A", // Mint Green (Secondary)
+  "#F59E0B", // Amber
+  "#EF4444", // Red
+  "#3B82F6", // Blue
+];
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-border bg-popover p-3 shadow-xl">
+        <p className="font-semibold text-popover-foreground mb-1">{label}</p>
+        <p className="text-sm font-mono text-primary">
+          {formatCurrency(String(payload[0].value), "INR")}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function AnalyticsPage() {
-  // Fetch Spending Summary [cite: 331]
   const { data: summary, isLoading } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => {
@@ -32,28 +54,37 @@ export default function AnalyticsPage() {
     },
   });
 
-  // Mock data transformation if backend returns raw lists
-  // Ideally, backend returns { spending_by_category: [{ category: 'Food', amount: 500 }] } [cite: 202]
   const categoryData = summary?.spending_by_category || [];
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
   if (isLoading)
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <Skeleton className="h-10 w-48 rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Skeleton className="h-[400px] rounded-3xl" />
+          <Skeleton className="h-[400px] rounded-3xl" />
+        </div>
       </div>
     );
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight">Financial Analytics</h1>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+          Financial Analytics
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Visualize your spending habits and trends.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         {/* Category Breakdown */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h3 className="mb-6 text-lg font-semibold">Spending by Category</h3>
-          <div className="h-[300px] w-full">
+        <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <h3 className="mb-8 text-xl font-bold text-foreground">
+            Spending by Category
+          </h3>
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -64,29 +95,31 @@ export default function AnalyticsPage() {
                   label={({ name, percent }) =>
                     `${name} ${(percent! * 100).toFixed(0)}%`
                   }
-                  outerRadius={100}
-                  fill="#8884d8"
+                  outerRadius={120}
+                  innerRadius={60}
+                  paddingAngle={5}
                   dataKey="amount"
                 >
                   {categoryData.map((entry: any, index: number) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
+                      strokeWidth={0}
                     />
                   ))}
                 </Pie>
-                <Tooltip
-                  formatter={(value) => formatCurrency(String(value), "INR")}
-                />
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Monthly Trend (Mocked for visual if backend trends endpoint not fully ready) */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h3 className="mb-6 text-lg font-semibold">Monthly Trends</h3>
-          <div className="h-[300px] w-full">
+        {/* Monthly Trend */}
+        <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <h3 className="mb-8 text-xl font-bold text-foreground">
+            Monthly Trends
+          </h3>
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={[
@@ -96,15 +129,36 @@ export default function AnalyticsPage() {
                   { name: "Apr", amount: 2780 },
                   { name: "May", amount: 1890 },
                 ]}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip
-                  formatter={(value) => formatCurrency(String(value), "INR")}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="hsl(var(--border))"
                 />
-                <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={10}
+                />
+                <YAxis
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(val) => `₹${val}`}
+                />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted)/0.3)" }}
+                  content={<CustomTooltip />}
+                />
+                <Bar
+                  dataKey="amount"
+                  fill="#7C5CFF" /* Primary Color */
+                  radius={[6, 6, 0, 0]}
+                  barSize={40}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>

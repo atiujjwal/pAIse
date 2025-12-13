@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { ChatWidget } from "@/src/components/chat/components/ChatWidget";
 import { cn } from "@/src/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", });
 
 export const metadata: Metadata = {
   title: "pAIse - AI Expense Manager",

@@ -5,7 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { Loader2, X, ArrowRight, KeyRound, Mail } from "lucide-react";
+import {
+  Loader2,
+  X,
+  ArrowRight,
+  KeyRound,
+  Mail,
+  RefreshCw,
+} from "lucide-react";
 
 import {
   useRegister,
@@ -24,15 +31,14 @@ import {
   DialogDescription,
 } from "@/src/components/ui/Dialog";
 import { useToastStore } from "@/src/hooks/use-toast";
+import { cn } from "@/src/lib/utils";
 
 export default function RegisterPage() {
-  // Hooks
   const { mutate: registerUser, isPending: isRegistering } = useRegister();
   const { mutate: sendOtp, isPending: isSendingOtp } = useSendOtp();
   const { mutate: verifyOtp, isPending: isVerifyingOtp } = useVerifyOtp();
   const { addToast } = useToastStore();
 
-  // Local State
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [formData, setFormData] = useState<RegisterInput | null>(null);
   const [otp, setOtp] = useState("");
@@ -46,7 +52,6 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  // Timer for Resend
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timer > 0) {
@@ -55,10 +60,8 @@ export default function RegisterPage() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  // Step 1: Intercept Submit -> Send OTP
   const onFormSubmit = (data: RegisterInput) => {
-    setFormData(data); // Save form data for later
-
+    setFormData(data);
     sendOtp(
       { email: data.email, type: "register" },
       {
@@ -70,27 +73,20 @@ export default function RegisterPage() {
     );
   };
 
-  // Step 2: Resend OTP
   const handleResendOtp = () => {
     if (!formData?.email) return;
-
     sendOtp(
       { email: formData.email, type: "register" },
-      {
-        onSuccess: () => setTimer(60),
-      }
+      { onSuccess: () => setTimer(60) }
     );
   };
 
-  // Step 3: Verify OTP -> Final Register
   const handleVerify = () => {
     if (!formData?.email || otp.length !== 6) return;
-
     verifyOtp(
       { email: formData.email, otp, type: "register" },
       {
         onSuccess: () => {
-          // Close dialog and create user
           setShowVerifyDialog(false);
           registerUser(formData);
         },
@@ -103,22 +99,22 @@ export default function RegisterPage() {
   };
 
   return (
-    <>
+    <div className="relative bg-card border border-border shadow-2xl shadow-primary/5 rounded-[2.5rem] p-8 md:p-10 overflow-hidden">
       {/* Close Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors rounded-xl"
+        className="absolute top-6 right-6 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full"
         asChild
       >
         <Link href="/" aria-label="Go back to home">
-          <X className="h-6 w-6" />
+          <X className="h-5 w-5" />
         </Link>
       </Button>
 
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Create an account
           </h1>
           <p className="text-muted-foreground">
@@ -134,10 +130,10 @@ export default function RegisterPage() {
               {...register("name")}
               placeholder="John Doe"
               disabled={isSendingOtp}
-              className="h-12 rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all"
+              className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
             />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name.message}</p>
+              <p className="text-xs text-destructive">{errors.name.message}</p>
             )}
           </div>
 
@@ -149,10 +145,10 @@ export default function RegisterPage() {
               {...register("email")}
               placeholder="name@example.com"
               disabled={isSendingOtp}
-              className="h-12 rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all"
+              className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
+              <p className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 
@@ -163,17 +159,19 @@ export default function RegisterPage() {
               type="password"
               {...register("password")}
               disabled={isSendingOtp}
-              className="h-12 rounded-xl border-0 bg-slate-50 ring-1 ring-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/50 transition-all"
+              className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
             />
             {errors.password && (
-              <p className="text-sm text-red-500">{errors.password.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
           <Button
             type="submit"
             disabled={isSendingOtp || isRegistering}
-            className="h-12 w-full rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.01] transition-all duration-200"
+            className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.01] transition-all duration-200"
           >
             {isSendingOtp ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -187,7 +185,7 @@ export default function RegisterPage() {
           Already have an account?{" "}
           <Link
             href="/auth/login"
-            className="font-semibold text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+            className="font-semibold text-primary hover:text-primary/80 hover:underline underline-offset-4 transition-colors"
           >
             Log in
           </Link>
@@ -196,32 +194,32 @@ export default function RegisterPage() {
 
       {/* --- EMAIL VERIFICATION DIALOG --- */}
       <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-3xl p-8">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
+            <DialogTitle className="text-center text-2xl font-bold">
               Verify your Email
             </DialogTitle>
-            <DialogDescription className="text-center">
+            <DialogDescription className="text-center text-muted-foreground">
               We sent a 6-digit code to{" "}
-              <span className="font-semibold text-slate-900">
+              <span className="font-semibold text-foreground">
                 {formData?.email}
               </span>
               . Enter it below to complete registration.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-slate-500 tracking-wider">
+          <div className="space-y-8 py-4">
+            <div className="space-y-4">
+              <Label className="text-xs uppercase text-muted-foreground tracking-wider font-bold text-center block">
                 Verification Code
               </Label>
               <div className="relative">
-                <KeyRound className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                <KeyRound className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
                 <Input
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                   placeholder="123456"
-                  className="pl-10 h-12 text-lg tracking-widest font-mono text-center"
+                  className="pl-12 h-14 text-2xl tracking-[0.5em] font-mono text-center rounded-2xl border-2 focus:border-primary"
                   maxLength={6}
                 />
               </div>
@@ -230,14 +228,14 @@ export default function RegisterPage() {
             <Button
               onClick={handleVerify}
               disabled={isVerifyingOtp || otp.length < 6}
-              className="w-full h-11"
+              className="w-full h-12 rounded-xl text-lg shadow-lg"
             >
               {isVerifyingOtp || isRegistering ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
                 <>
                   Verify & Create Account{" "}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </>
               )}
             </Button>
@@ -247,18 +245,26 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleResendOtp}
                 disabled={timer > 0 || isSendingOtp}
-                className={`text-xs font-medium ${
-                  timer > 0 ? "text-slate-400" : "text-primary hover:underline"
-                }`}
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  timer > 0
+                    ? "text-muted-foreground flex items-center justify-center gap-2 cursor-not-allowed"
+                    : "text-primary hover:underline"
+                )}
               >
-                {timer > 0
-                  ? `Resend code in ${timer}s`
-                  : "Resend Verification Code"}
+                {timer > 0 ? (
+                  <>
+                    <RefreshCw className="h-3 w-3 animate-spin" /> Resend code
+                    in {timer}s
+                  </>
+                ) : (
+                  "Resend Verification Code"
+                )}
               </button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
