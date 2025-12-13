@@ -31,7 +31,10 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
   const name = isGroup ? expense.group.name : expense.description;
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors px-2 -mx-2 rounded-lg group">
+    <Link
+      href={`/dashboard/expenses/${expense.id}`}
+      className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors px-2 -mx-2 rounded-lg group"
+    >
       <Avatar className="h-9 w-9 border border-slate-100 group-hover:border-indigo-100 transition-colors">
         <AvatarImage src={avatarUrl} className="object-cover" />
         <AvatarFallback
@@ -46,7 +49,7 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-900 truncate">
+        <p className="text-sm font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
           {expense.description}
         </p>
         <p className="text-[11px] text-slate-500 truncate">
@@ -65,12 +68,15 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
           {expense.category}
         </span>
       </div>
-    </div>
+    </Link>
   );
 };
 
 const BalanceRow = ({ user, type }: { user: any; type: "owe" | "owed" }) => (
-  <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md hover:border-slate-200 group">
+  <Link
+    href={`/dashboard/friends/${user.id}`}
+    className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-md hover:border-slate-200 group"
+  >
     <Avatar className="h-10 w-10 border border-transparent group-hover:border-slate-100 transition-all">
       <AvatarImage src={user.avatar} className="object-cover" />
       <AvatarFallback
@@ -85,7 +91,7 @@ const BalanceRow = ({ user, type }: { user: any; type: "owe" | "owed" }) => (
       </AvatarFallback>
     </Avatar>
     <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold text-slate-900 truncate">
+      <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-primary transition-colors">
         {user.name}
       </p>
       <p className="text-xs text-slate-500">
@@ -101,7 +107,7 @@ const BalanceRow = ({ user, type }: { user: any; type: "owe" | "owed" }) => (
       {type === "owe" ? "-" : "+"}
       {formatCurrency(user.net_balance, user.currency)}
     </div>
-  </div>
+  </Link>
 );
 
 // --- MAIN PAGE ---
@@ -259,7 +265,7 @@ export default function DashboardPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-500">
-              Upcoming Bill
+              Upcoming Bill(Pending Feature)
             </h3>
             <div className="p-2 bg-slate-50 rounded-full">
               <CalendarClock className="h-4 w-4 text-slate-400" />
