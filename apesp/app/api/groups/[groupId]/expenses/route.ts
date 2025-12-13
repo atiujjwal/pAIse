@@ -95,7 +95,7 @@ const getHandler = async (
     };
 
     return successResponse("Expenses fetched successfully", {
-      data: formattedExpenses,
+      expenses: formattedExpenses,
       meta,
     });
   } catch (error: any) {

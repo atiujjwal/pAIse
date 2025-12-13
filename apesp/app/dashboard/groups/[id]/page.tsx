@@ -139,6 +139,8 @@ export default function GroupDetailsPage() {
   // Note: expensesResponse will now contain { data: [...], meta: ... }
   const { data: expensesResponse, isLoading: loadingExpenses } =
     useGroupExpenses(groupId);
+    console.log("143: ", groupId, expensesResponse);
+    
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     group_id: groupId,
   });

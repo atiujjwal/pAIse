@@ -14,6 +14,40 @@ import { formatPublicUser } from "@/src/lib/formatter";
 Decimal.set({ precision: 12 });
 
 /**
+ * Helper to format expense list to match global /expenses API
+ */
+const formatExpenseList = (expenses: any[]) => {
+  return expenses.map((exp) => ({
+    id: exp.id,
+    description: exp.description,
+    amount: exp.amount,
+    currency: exp.currency,
+    date: exp.date,
+    category: exp.category,
+    receipt_url: exp.receipt_url,
+    split_type: exp.split_type,
+    status: exp.status,
+    created_at: exp.created_at,
+
+    // Context Info
+    group: exp.group
+      ? { id: exp.group.id, name: exp.group.name, avatar: exp.group.avatar }
+      : null,
+    created_by: formatPublicUser(exp.created_by),
+
+    // Details
+    payers: exp.payers.map((p: any) => ({
+      user: formatPublicUser(p.user),
+      amount: p.amount,
+    })),
+    splits: exp.splits.map((s: any) => ({
+      user: formatPublicUser(s.user),
+      amount_owed: s.amount_owed,
+    })),
+  }));
+};
+
+/**
  * DELETE /friends/{userId}
  * Removes a friend ("unfriends" a user) by their user ID.
  */
@@ -151,6 +185,35 @@ const getHandler = async (
       ],
     };
 
+    const expenseSelect = {
+      id: true,
+      description: true,
+      amount: true,
+      currency: true,
+      category: true,
+      date: true,
+      status: true,
+      created_at: true,
+      receipt_url: true,
+      split_type: true,
+      group_id: true,
+      created_by: {
+        select: { id: true, name: true, avatar: true },
+      },
+      payers: {
+        select: {
+          amount: true,
+          user: { select: { id: true, name: true, avatar: true } },
+        },
+      },
+      splits: {
+        select: {
+          amount_owed: true,
+          user: { select: { id: true, name: true, avatar: true } },
+        },
+      },
+    };
+
     const [friendExpenses, groupExpenses] = await Promise.all([
       // Friend (Direct) Expenses -> group_id is null
       prisma.expense.findMany({
@@ -159,19 +222,7 @@ const getHandler = async (
           group_id: null,
         },
         orderBy: { date: "desc" },
-        select: {
-          id: true,
-          friend_id: true,
-          description: true,
-          amount: true,
-          category: true,
-          date: true,
-          status: true,
-          created_at: true,
-          created_by: {
-            select: { id: true, name: true, avatar: true },
-          },
-        },
+        select: expenseSelect,
       }),
       // Group Expenses -> group_id is NOT null
       prisma.expense.findMany({
@@ -181,18 +232,8 @@ const getHandler = async (
         },
         orderBy: { date: "desc" },
         select: {
-          id: true,
-          group_id: true,
-          description: true,
-          amount: true,
-          category: true,
-          date: true,
-          status: true,
-          created_at: true,
+          ...expenseSelect,
           group: {
-            select: { id: true, name: true, avatar: true },
-          },
-          created_by: {
             select: { id: true, name: true, avatar: true },
           },
         },
@@ -203,10 +244,10 @@ const getHandler = async (
       ...formatPublicUser(friendUser),
       net_balance: netBalance.abs().toFixed(2),
       status, // "owe" | "owed" | "settled"
-      currency: "INR", // TODO: Fetch from user preferences or common group currency
+      currency: "INR",
       expenses: {
-        friend_expenses: friendExpenses,
-        group_expenses: groupExpenses,
+        friend_expenses: formatExpenseList(friendExpenses),
+        group_expenses: formatExpenseList(groupExpenses),
       },
     });
   } catch (error: any) {

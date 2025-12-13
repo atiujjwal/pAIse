@@ -11,6 +11,9 @@ import {
   CalendarClock,
   ArrowRight,
   Receipt,
+  Layers,
+  User,
+  Calendar,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/Button";
@@ -22,50 +25,102 @@ import {
 } from "@/src/components/ui/Avatar";
 import { formatCurrency, cn } from "@/src/lib/utils";
 import { useDashboardSummary } from "@/src/features/dashboard/api/dashboard-queries";
+import { useAuthStore } from "@/src/features/auth/store"; // Added for consistent logic
 
 // --- LOCAL UI COMPONENTS ---
 
+// Replicates the logic and design of ExpenseCard from ExpensesPage
 const RecentActivityCard = ({ expense }: { expense: any }) => {
-  const isGroup = !!expense.group;
-  const avatarUrl = isGroup ? expense.group.avatar : expense.created_by.avatar;
-  const name = isGroup ? expense.group.name : expense.description;
+  const { user } = useAuthStore(); // Needed to determine "Friend" context
+
+  const isGroupExpense = !!expense.group;
+
+  // 1. Resolve Avatar & Name Logic (Consistent with ExpensesPage)
+  let avatarUrl: string | null | undefined = null;
+  let displayName: string = "";
+  let FallbackIcon = User;
+
+  if (isGroupExpense) {
+    avatarUrl = expense.group.avatar;
+    displayName = expense.group.name;
+    FallbackIcon = Layers;
+  } else {
+    // Friend Logic: Find the "Other" person involved
+    const otherPerson = expense.splits.find(
+      (split: any) => split.user.id !== user?.id
+    )?.user;
+
+    if (otherPerson) {
+      avatarUrl = otherPerson.avatar;
+      displayName = otherPerson.name;
+    } else {
+      // Fallback for self-expenses or data anomalies
+      avatarUrl = expense.created_by.avatar;
+      displayName = expense.created_by.name;
+    }
+    FallbackIcon = User;
+  }
 
   return (
     <Link
       href={`/dashboard/expenses/${expense.id}`}
-      className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors px-2 -mx-2 rounded-lg group"
+      className="flex items-center gap-4 p-4 hover:bg-slate-50/80 transition-colors group"
     >
-      <Avatar className="h-9 w-9 border border-slate-100 group-hover:border-indigo-100 transition-colors">
-        <AvatarImage src={avatarUrl} className="object-cover" />
+      {/* Dynamic Avatar Section */}
+      <Avatar className="h-10 w-10 border border-slate-100 shadow-sm">
+        <AvatarImage src={avatarUrl || undefined} className="object-cover" />
         <AvatarFallback
           className={cn(
             "text-xs font-bold",
-            isGroup
+            isGroupExpense
               ? "bg-indigo-50 text-indigo-600"
-              : "bg-slate-100 text-slate-600"
+              : "bg-emerald-50 text-emerald-600"
           )}
         >
-          {name?.[0]?.toUpperCase()}
+          {displayName?.[0]?.toUpperCase() || (
+            <FallbackIcon className="h-4 w-4" />
+          )}
         </AvatarFallback>
       </Avatar>
+
+      {/* Main Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-          {expense.description}
-        </p>
-        <p className="text-[11px] text-slate-500 truncate">
-          {isGroup ? `${expense.group.name} • ` : ""}
-          {new Date(expense.date).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}
-        </p>
+        <div className="flex items-center gap-2 mb-0.5">
+          <h4 className="font-semibold text-sm text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+            {expense.description}
+          </h4>
+          {/* Context Badge */}
+          <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600">
+            {isGroupExpense ? "Group" : "Friend"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>
+              {new Date(expense.date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <span className="capitalize">{expense.category}</span>
+          <span className="text-slate-300">•</span>
+          <span className="truncate max-w-[100px]">
+            {isGroupExpense ? expense.group.name : displayName}
+          </span>
+        </div>
       </div>
+
+      {/* Amount Section */}
       <div className="text-right">
-        <span className="block text-sm font-bold text-slate-900 font-mono">
+        <span className="block font-bold text-slate-900 font-mono text-sm">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
-        <span className="text-[10px] text-slate-400 capitalize">
-          {expense.category}
+        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+          {expense.split_type}
         </span>
       </div>
     </Link>
@@ -226,7 +281,7 @@ export default function DashboardPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-500">
-              Monthly Spending
+              Monthly Spending (Coming Soon...)
             </h3>
             <div className="p-2 bg-slate-50 rounded-full">
               <CreditCard className="h-4 w-4 text-slate-400" />
@@ -265,7 +320,7 @@ export default function DashboardPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-500">
-              Upcoming Bill(Pending Feature)
+              Upcoming Bill (Coming Soon...)
             </h3>
             <div className="p-2 bg-slate-50 rounded-full">
               <CalendarClock className="h-4 w-4 text-slate-400" />
@@ -314,9 +369,10 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm min-h-[400px]">
+          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm min-h-[400px] overflow-hidden">
             {recentExpenses.length > 0 ? (
-              <div className="flex flex-col gap-1">
+              // VISUAL UPDATE: Use divide-y to mimic ExpensesPage list style
+              <div className="divide-y divide-slate-100">
                 {recentExpenses.map((expense: any) => (
                   <RecentActivityCard key={expense.id} expense={expense} />
                 ))}

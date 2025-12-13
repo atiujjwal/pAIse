@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   Wallet,
@@ -14,7 +15,8 @@ import {
   TrendingUp,
   TrendingDown,
   Layers,
-  CalendarDays,
+  Calendar,
+  User,
 } from "lucide-react";
 
 import {
@@ -40,6 +42,85 @@ import {
 import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
 import { formatCurrency, cn } from "@/src/lib/utils";
 
+// --- LOCAL COMPONENT: Consistent Expense Card ---
+const SharedExpenseCard = ({ expense }: { expense: any }) => {
+  const isGroup = !!expense.group;
+  // Logic:
+  // - Group Expense: Show Group Avatar + Name
+  // - Direct Expense: Show Creator Avatar + Name (Who added it)
+  const avatarUrl = isGroup ? expense.group.avatar : expense.created_by.avatar;
+  const name = isGroup ? expense.group.name : expense.created_by.name;
+
+  return (
+    <Link
+      href={`/dashboard/expenses/${expense.id}`}
+      className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:border-indigo-100 hover:shadow-md transition-all group"
+    >
+      {/* Avatar Section */}
+      <Avatar className="h-10 w-10 border border-slate-100 shadow-sm group-hover:border-indigo-100 transition-colors">
+        <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+        <AvatarFallback
+          className={cn(
+            "text-xs font-bold",
+            isGroup
+              ? "bg-indigo-50 text-indigo-600"
+              : "bg-slate-100 text-slate-600"
+          )}
+        >
+          {name?.[0]?.toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <h4 className="font-semibold text-sm text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+            {expense.description}
+          </h4>
+          {/* Badge for Context */}
+          {isGroup && (
+            <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-indigo-50 text-indigo-600">
+              Group
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>
+              {new Date(expense.date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <span className="capitalize">{expense.category}</span>
+          <span className="text-slate-300">•</span>
+          <span className="truncate max-w-[100px]">
+            {isGroup
+              ? "Group Expense"
+              : `Added by ${expense.created_by.name.split(" ")[0]}`}
+          </span>
+        </div>
+      </div>
+
+      {/* Amount Section */}
+      <div className="text-right">
+        <span className="block font-bold text-slate-900 font-mono text-sm">
+          {formatCurrency(expense.amount, expense.currency)}
+        </span>
+        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+          {expense.split_type}
+        </span>
+      </div>
+    </Link>
+  );
+};
+
+// --- MAIN PAGE ---
+
 export default function FriendDetailsPage() {
   const params = useParams();
   const friendId = params?.id as string;
@@ -47,7 +128,6 @@ export default function FriendDetailsPage() {
   const currentUser = useAuthStore((state) => state.user);
 
   // --- Queries ---
-  // Using the new enriched API hook
   const { data: friend, isLoading: loadingFriend } = useFriendDetails(friendId);
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     friend_id: friendId,
@@ -123,7 +203,7 @@ export default function FriendDetailsPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-bl-full -mr-16 -mt-16 z-0" />
 
         <div className="relative z-10">
-          {/* Back Button (In-flow for spacing) */}
+          {/* Back Button */}
           <div className="mb-6">
             <Button
               variant="ghost"
@@ -244,7 +324,7 @@ export default function FriendDetailsPage() {
                 Group Expenses
               </TabsTrigger>
               <TabsTrigger value="history" className="rounded-lg h-10 px-6">
-                Payment History
+                Settlement History
               </TabsTrigger>
             </TabsList>
 
@@ -257,8 +337,8 @@ export default function FriendDetailsPage() {
                 />
               ) : (
                 <div className="space-y-3">
-                  {friend.expenses.friend_expenses.map((expense) => (
-                    <ExpenseItem key={expense.id} expense={expense} />
+                  {friend.expenses.friend_expenses.map((expense: any) => (
+                    <SharedExpenseCard key={expense.id} expense={expense} />
                   ))}
                 </div>
               )}
@@ -273,8 +353,8 @@ export default function FriendDetailsPage() {
                 />
               ) : (
                 <div className="space-y-3">
-                  {friend.expenses.group_expenses.map((expense) => (
-                    <GroupExpenseItem key={expense.id} expense={expense} />
+                  {friend.expenses.group_expenses.map((expense: any) => (
+                    <SharedExpenseCard key={expense.id} expense={expense} />
                   ))}
                 </div>
               )}
@@ -363,87 +443,6 @@ export default function FriendDetailsPage() {
 }
 
 // --- SUB-COMPONENTS ---
-
-function ExpenseItem({ expense }: { expense: any }) {
-  return (
-    <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:border-primary/20 transition-all">
-      <div className="flex items-center gap-4">
-        <div className="h-12 w-12 rounded-lg bg-slate-100 flex flex-col items-center justify-center text-slate-500 border border-slate-200">
-          <span className="text-[10px] font-bold uppercase">
-            {new Date(expense.date).toLocaleString("default", {
-              month: "short",
-            })}
-          </span>
-          <span className="text-base font-bold text-slate-900">
-            {new Date(expense.date).getDate()}
-          </span>
-        </div>
-        <div>
-          <p className="font-bold text-slate-900">{expense.description}</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-              {expense.category}
-            </span>
-            <span className="text-xs text-slate-400">
-              Paid by{" "}
-              <span className="font-medium text-slate-600">
-                {expense.created_by.name}
-              </span>
-            </span>
-          </div>
-        </div>
-      </div>
-      <span className="font-mono font-bold text-lg text-slate-900">
-        {formatCurrency(expense.amount, "INR")}
-      </span>
-    </div>
-  );
-}
-
-function GroupExpenseItem({ expense }: { expense: any }) {
-  return (
-    <div className="relative flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:border-primary/20 transition-all overflow-hidden">
-      {/* Group Indicator Strip */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />
-
-      <div className="flex items-center gap-4 pl-2">
-        <div className="relative">
-          <Avatar className="h-12 w-12 border border-slate-100 shadow-sm">
-            <AvatarImage src={expense.group.avatar} />
-            <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold">
-              {expense.group.name[0]}
-            </AvatarFallback>
-          </Avatar>
-          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border shadow-sm">
-            <Layers className="h-3 w-3 text-slate-400" />
-          </div>
-        </div>
-
-        <div>
-          <p className="font-bold text-slate-900">{expense.description}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-xs font-medium text-indigo-600">
-              {expense.group.name}
-            </span>
-            <span className="text-slate-300">•</span>
-            <span className="text-xs text-slate-400">
-              Paid by {expense.created_by.name}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col items-end">
-        <span className="font-mono font-bold text-lg text-slate-900">
-          {formatCurrency(expense.amount, "INR")}
-        </span>
-        <span className="text-[10px] text-slate-400 uppercase font-medium">
-          Group Expense
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function SettlementItem({
   settlement,
