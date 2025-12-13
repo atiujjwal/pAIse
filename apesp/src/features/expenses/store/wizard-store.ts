@@ -1,48 +1,62 @@
-import { CreateExpenseInput } from '@/src/lib/schemas';
-import { create } from 'zustand';
+import { create } from "zustand";
+import { CreateExpenseInput } from "@/src/lib/schemas";
 
-// Partial type allows building the object step-by-step
-type WizardState = Partial<CreateExpenseInput> & {
-  // UI State
+interface WizardState extends Partial<CreateExpenseInput> {
   currentStep: number;
   totalSteps: number;
   isMultiPayer: boolean;
 
   // Actions
-  setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
+  setStep: (step: number) => void;
   updateDraft: (data: Partial<CreateExpenseInput>) => void;
   resetWizard: () => void;
-  setSplitType: (type: CreateExpenseInput['split_type']) => void;
-};
+  setSplitType: (type: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARE") => void;
+}
 
-const INITIAL_STATE = {
+const initialState = {
   currentStep: 1,
   totalSteps: 4,
   isMultiPayer: false,
-  [cite_start]currency: 'INR', // Default [cite: 801]
+  currency: "INR", // Fixed: Removed artifact
   payers: [],
   splits: [],
-  split_type: 'EQUAL' as const,
+  split_type: "EQUAL" as const,
+  amount: "",
+  description: "",
+  category: "General",
+  date: new Date().toISOString().slice(0, 16), // Format for datetime-local
 };
 
 export const useExpenseWizardStore = create<WizardState>((set) => ({
-  ...INITIAL_STATE,
+  ...initialState,
+
+  nextStep: () =>
+    set((state) => ({
+      currentStep: Math.min(state.currentStep + 1, state.totalSteps),
+    })),
+
+  prevStep: () =>
+    set((state) => ({
+      currentStep: Math.max(state.currentStep - 1, 1),
+    })),
 
   setStep: (step) => set({ currentStep: step }),
-  
-  nextStep: () => set((state) => ({ 
-    currentStep: Math.min(state.currentStep + 1, state.totalSteps) 
-  })),
-  
-  prevStep: () => set((state) => ({ 
-    currentStep: Math.max(state.currentStep - 1, 1) 
-  })),
 
-  updateDraft: (data) => set((state) => ({ ...state, ...data })),
+  updateDraft: (data) =>
+    set((state) => ({
+      ...state,
+      ...data,
+    })),
 
-  setSplitType: (type) => set({ split_type: type }),
+  setSplitType: (type) =>
+    set((state) => ({
+      ...state,
+      split_type: type,
+      // Reset splits when type changes to avoid validation conflicts
+      splits: [],
+    })),
 
-  resetWizard: () => set(INITIAL_STATE),
+  resetWizard: () => set(initialState),
 }));

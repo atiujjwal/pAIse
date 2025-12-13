@@ -11,6 +11,7 @@ import {
   PieChart,
   Wallet,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { useAuthStore } from "@/src/features/auth/store";
 import {
@@ -57,8 +58,8 @@ export default function ExpenseDetailsPage() {
     return (
       <div className="max-w-2xl mx-auto space-y-6 pt-6">
         <Skeleton className="h-10 w-24 mb-4 rounded-lg" />
-        <Skeleton className="h-64 w-full rounded-3xl" />
-        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-[2.5rem]" />
+        <Skeleton className="h-40 w-full rounded-[2.5rem]" />
       </div>
     );
   }
@@ -121,14 +122,25 @@ export default function ExpenseDetailsPage() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
 
-        {canDelete && (
-          <Button
-            variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
-            onClick={() => setIsDeleteDialogOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" /> Delete
-          </Button>
+        {isCreator && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="rounded-xl h-10 border-border bg-card hover:bg-muted text-foreground"
+              onClick={() =>
+                router.push(`/dashboard/expenses/${expenseId}/edit`)
+              }
+            >
+              <Pencil className="h-4 w-4 mr-2" /> Edit
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-10"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 

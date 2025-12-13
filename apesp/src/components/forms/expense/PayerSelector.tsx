@@ -10,11 +10,17 @@ import {
   AvatarImage,
 } from "@/src/components/ui/Avatar";
 
+interface Payer {
+  user_id: string;
+  amount: string;
+}
+
 interface PayerSelectorProps {
   members: User[];
   totalAmount: string;
   currentUser: User | null;
-  onChange: (payers: { user_id: string; amount: string }[]) => void;
+  value?: Payer[]; // Controlled value
+  onChange: (payers: Payer[]) => void;
 }
 
 export function PayerSelector({
@@ -22,9 +28,21 @@ export function PayerSelector({
   totalAmount,
   onChange,
   currentUser,
+  value = [],
 }: PayerSelectorProps) {
-  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  // Initialize from props if available (Edit Mode), else default to empty
+  const [amounts, setAmounts] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    if (value && value.length > 0) {
+      value.forEach((p) => {
+        initial[p.user_id] = p.amount;
+      });
+    }
+    return initial;
+  });
+
   const lastEmittedRef = useRef<string>("");
+  const isInitialized = useRef(false);
 
   const sortedMembers = [
     ...(currentUser ? [currentUser] : []),
@@ -33,11 +51,18 @@ export function PayerSelector({
 
   const numericTotal = parseFloat(totalAmount) || 0;
 
+  // Auto-fill "Me" on first load ONLY if it's a new creation (value is empty)
   useEffect(() => {
-    if (Object.keys(amounts).length === 0 && currentUser && numericTotal > 0) {
+    if (
+      !isInitialized.current &&
+      value.length === 0 &&
+      currentUser &&
+      numericTotal > 0
+    ) {
       setAmounts({ [currentUser.id]: totalAmount });
     }
-  }, [totalAmount, currentUser, amounts, numericTotal]);
+    isInitialized.current = true;
+  }, [totalAmount, currentUser, value.length, numericTotal]);
 
   useEffect(() => {
     const payers = Object.entries(amounts)
@@ -55,8 +80,10 @@ export function PayerSelector({
     (sum, val) => sum + (parseFloat(val) || 0),
     0
   );
-  const remaining = numericTotal - currentSum;
-  const isBalanced = Math.abs(remaining) < 0.05;
+
+  // Fix Float Precision
+  const remaining = parseFloat((numericTotal - currentSum).toFixed(2));
+  const isBalanced = Math.abs(remaining) === 0;
 
   const handleAmountChange = (userId: string, val: string) => {
     setAmounts((prev) => ({ ...prev, [userId]: val }));
@@ -64,7 +91,6 @@ export function PayerSelector({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
-      {/* Validation Header */}
       <div className="flex justify-between items-center text-xs font-medium text-muted-foreground mb-2">
         <span>Enter amount paid by each:</span>
         <span
@@ -84,7 +110,6 @@ export function PayerSelector({
         </span>
       </div>
 
-      {/* Members List */}
       <div className="space-y-3">
         {sortedMembers.map((user) => {
           const userAmount = parseFloat(amounts[user.id] || "0");
@@ -102,7 +127,7 @@ export function PayerSelector({
             >
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.avatar} />
+                  <AvatarImage src={user.avatar || undefined} />
                   <AvatarFallback
                     className={
                       isPaying

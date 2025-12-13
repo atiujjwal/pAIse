@@ -12,10 +12,18 @@ import {
   AvatarImage,
 } from "@/src/components/ui/Avatar";
 
+interface Split {
+  user_id: string;
+  amount_owed?: string;
+  percent_owed?: number;
+  shares_owed?: number;
+}
+
 interface SplitProps {
   splitType: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARE";
   amount: string;
   members: User[];
+  value?: Split[]; // Initial/Controlled value
   setValue: UseFormSetValue<CreateExpenseInput>;
 }
 
@@ -23,23 +31,55 @@ export function SplitDistribution({
   splitType,
   amount,
   members,
+  value = [],
   setValue,
 }: SplitProps) {
-  const [inputs, setInputs] = useState<Record<string, string>>({});
+  // Initialize Inputs from Props (Edit Mode)
+  const [inputs, setInputs] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    if (value && value.length > 0) {
+      value.forEach((s) => {
+        if (s.amount_owed) initial[s.user_id] = s.amount_owed;
+        if (s.percent_owed) initial[s.user_id] = s.percent_owed.toString();
+        if (s.shares_owed) initial[s.user_id] = s.shares_owed.toString();
+      });
+    }
+    return initial;
+  });
+
+  // Initialize Checkboxes for Equal Split
   const [selectedForEqual, setSelectedForEqual] = useState<
     Record<string, boolean>
-  >({});
-  const lastUpdateRef = useRef<string>("");
+  >(() => {
+    const initial: Record<string, boolean> = {};
+    if (value.length > 0) {
+      // Edit Mode: check only present members
+      members.forEach((m) => {
+        const isInSplit = value.some((s) => s.user_id === m.id);
+        initial[m.id] = isInSplit;
+      });
+    } else {
+      // Create Mode: Default everyone checked
+      members.forEach((m) => (initial[m.id] = true));
+    }
+    return initial;
+  });
 
+  const lastUpdateRef = useRef<string>("");
   const totalAmount = parseFloat(amount) || 0;
 
+  // Fallback for first render if empty (Reset logic)
   useEffect(() => {
-    if (Object.keys(selectedForEqual).length === 0 && members.length > 0) {
+    if (
+      value.length === 0 &&
+      Object.keys(selectedForEqual).length === 0 &&
+      members.length > 0
+    ) {
       const initial: Record<string, boolean> = {};
       members.forEach((m) => (initial[m.id] = true));
       setSelectedForEqual(initial);
     }
-  }, [members]);
+  }, [members, value.length]);
 
   const selectedCount = Object.values(selectedForEqual).filter(Boolean).length;
   const equalShare =
@@ -47,6 +87,7 @@ export function SplitDistribution({
       ? (totalAmount / selectedCount).toFixed(2)
       : "0.00";
 
+  // Calculation & Sync Logic
   useEffect(() => {
     if (!members.length) return;
 
@@ -107,12 +148,12 @@ export function SplitDistribution({
                   type="checkbox"
                   checked={!!selectedForEqual[user.id]}
                   onChange={() => toggleSelection(user.id)}
-                  className="h-5 w-5 rounded-md border-border text-primary focus:ring-primary"
+                  className="h-5 w-5 rounded-md border-border text-primary focus:ring-primary accent-primary"
                 />
               )}
 
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar} />
+                <AvatarImage src={user.avatar || undefined} />
                 <AvatarFallback className="text-xs">
                   {user.name[0]}
                 </AvatarFallback>
@@ -142,6 +183,7 @@ export function SplitDistribution({
                   <Input
                     type="number"
                     placeholder="0"
+                    value={inputs[user.id] || ""}
                     className="h-9 pl-5 text-right text-sm bg-background"
                     onChange={(e) => handleInputChange(user.id, e.target.value)}
                   />
@@ -153,6 +195,7 @@ export function SplitDistribution({
                   <Input
                     type="number"
                     placeholder="0"
+                    value={inputs[user.id] || ""}
                     className="h-9 pr-6 text-right text-sm bg-background"
                     onChange={(e) => handleInputChange(user.id, e.target.value)}
                   />
@@ -167,6 +210,7 @@ export function SplitDistribution({
                   <Input
                     type="number"
                     defaultValue="1"
+                    value={inputs[user.id] || "1"}
                     className="h-9 text-center text-sm bg-background"
                     onChange={(e) => handleInputChange(user.id, e.target.value)}
                   />
