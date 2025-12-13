@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import { fontFamily } from "tailwindcss/defaultTheme";
+const { fontFamily } = require("tailwindcss/defaultTheme");
 
 const config = {
   darkMode: ["class"],
@@ -9,7 +9,6 @@ const config = {
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
-  prefix: "",
   theme: {
     container: {
       center: true,
@@ -20,9 +19,12 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // FIXED: Ensure sans stack falls back to standard system fonts
-        sans: ["var(--font-sans)", ...fontFamily.sans],
-        mono: ["var(--font-mono)", ...fontFamily.mono],
+        sans: ["var(--font-inter)", ...fontFamily.sans], // Enforce Inter
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       colors: {
         border: "hsl(var(--border))",
@@ -31,37 +33,37 @@ const config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(250, 95%, 65%)",
-          foreground: "#ffffff",
-          soft: "hsl(250, 95%, 96%)",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(160, 84%, 39%)",
-          foreground: "#ffffff",
-          soft: "hsl(160, 84%, 96%)",
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(0, 84%, 60%)",
-          foreground: "#ffffff",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(210, 40%, 96.1%)",
-          foreground: "hsl(215.4, 16.3%, 46.9%)",
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(0, 0%, 100%)",
-          foreground: "hsl(222.2, 84%, 4.9%)",
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
-        // ... any other custom colors you added
-      },
-      borderRadius: {
-        lg: "16px",
-        md: "12px",
-        sm: "8px",
       },
       boxShadow: {
-        soft: "0 10px 40px -10px rgba(0,0,0,0.08)",
-        glow: "0 0 20px -5px hsl(250, 95%, 65%, 0.3)",
+        glow: "0 0 20px -5px hsl(var(--primary) / 0.5)",
+        card: "0 2px 10px rgba(0, 0, 0, 0.04)",
       },
     },
   },

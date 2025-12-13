@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { ChatWidget } from "@/src/components/chat/components/ChatWidget";
 import { cn } from "@/src/lib/utils";
 
-// const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "pAIse - AI Expense Manager",
@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       {/* FIXED: Replaced inter.className with standard Tailwind classes */}
       {/* "font-sans" uses the native system font stack (San Francisco, Segoe UI, etc.) */}
-      <body className={cn("min-h-screen bg-background font-sans antialiased")}>
+      <body className={`${inter.variable} font-sans`}>
         <Providers>
           {children}
           <ChatWidget />
