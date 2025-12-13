@@ -1,13 +1,15 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-// REMOVED: import { Inter } from 'next/font/google';
 import { Providers } from "./providers";
+import { ChatWidget } from "@/src/components/chat/components/ChatWidget";
 import { cn } from "@/src/lib/utils";
 
-// REMOVED: const inter = Inter({ subsets: ['latin'] });
+// const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "pAIse - AI Expense Manager",
-  description: "Smart splitting and expense tracking",
+  description: "Smart splitting for smart groups.",
 };
 
 export default function RootLayout({
@@ -20,7 +22,10 @@ export default function RootLayout({
       {/* FIXED: Replaced inter.className with standard Tailwind classes */}
       {/* "font-sans" uses the native system font stack (San Francisco, Segoe UI, etc.) */}
       <body className={cn("min-h-screen bg-background font-sans antialiased")}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ChatWidget />
+          </Providers>
       </body>
     </html>
   );

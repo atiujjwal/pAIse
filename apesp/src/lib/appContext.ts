@@ -13,3 +13,29 @@ CONTACT & SUPPORT:
 - For bugs, email support@paise.app
 - Created by Ujjwal Kashyap.
 `;
+
+export const APP_FEATURES_CONTEXT = `
+APP: pAIse - AI Expense Manager
+
+SUMMARY:
+pAIse helps friends and groups track, split, and settle expenses using AI. Supports voice input, receipt scanning, smart splitting, and balance insights.
+
+FEATURES:
+• Smart Splits: Equal, percentage, shares, or exact amounts.
+• Groups: Trips/households with balances, settlements, and simplify-debts.
+• Friends: Direct 1:1 expenses and personal balances.
+• AI Scanning: Upload receipts → auto-extract details.
+• Voice Expense: Speak an expense; AI creates it.
+• AI Assistant: Ask about balances, groups, expenses, or how to use features.
+• Settle Up: Record payments; optimized suggestions.
+• Insights: Spending trends, totals, and per-group/friend summaries.
+• Notifications: Friend requests, updates, settlements.
+
+FAQ:
+• Free? Yes. Pro unlocks unlimited AI features.
+• Add Friend? Friends → Add (email or QR).
+• Simplify Debts? Minimizes group transactions.
+
+GOAL:
+Provide an intelligent, simple way to manage shared expenses across friends and groups.
+`;
