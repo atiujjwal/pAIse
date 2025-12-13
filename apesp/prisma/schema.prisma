@@ -34,6 +34,11 @@ enum ExpenseStatus {
   DELETED
 }
 
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
 // ----------------------------------------
 // User & Authentication Models
 // ----------------------------------------
@@ -86,8 +91,12 @@ model User {
   groups        Group[] // as owner) (1 User → Many Groups): Creator ownership distinct from regular membership.
   expenses      Expense[] //
 
+
   spendingSummary ExpenseSummary[]
   spendingTrend   ExpenseTrend[]
+
+  AiChatSession   AiChatSession[]
+  AiChatMessage   AiChatMessage[]
 
   @@index([email])
   @@index([invite_code])
@@ -393,4 +402,35 @@ model ExpenseTrend {
 
   @@unique([user_id, date, granularity])
   @@index([user_id, date])
+}
+
+
+// Track Usage Limits
+model ChatUsage {
+  id        String   @id @default(cuid())
+  key       String   @unique // UserID (Private) or IP (Public)
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+}
+
+// Private Bot Memory (Rolling Summary)
+model AiChatSession {
+  id        String   @id @default(cuid())
+  user_id   String   @unique
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  summary   String?  @db.Text // Compressed context of long history
+  last_active DateTime @default(now())
+}
+
+// Private Bot Message History
+model AiChatMessage {
+  id        String   @id @default(cuid())
+  user_id   String
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role      ChatRole
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([user_id, createdAt])
 }
