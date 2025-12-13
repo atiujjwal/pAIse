@@ -14,6 +14,7 @@ import {
   Wallet,
   PlusCircle,
   UserPlus,
+  ArrowLeft,
 } from "lucide-react";
 
 import { api } from "@/src/lib/api";
@@ -70,7 +71,6 @@ export default function ExpenseForm() {
       category: "General",
       payers: [],
       splits: [],
-      // Initialize with URL param if valid
       group_id: preSelectedGroupId || null,
       friend_id: null,
     },
@@ -81,10 +81,7 @@ export default function ExpenseForm() {
   const setIsDirty = useNavigationGuard((state) => state.setIsDirty);
 
   useEffect(() => {
-    // Sync local form state to global guard
     setIsDirty(isDirty);
-
-    // Cleanup: Always allow navigation when this component unmounts
     return () => setIsDirty(false);
   }, [isDirty, setIsDirty]);
 
@@ -95,17 +92,13 @@ export default function ExpenseForm() {
   const amount = useWatch({ control, name: "amount" });
 
   // --- State: Context Switching ---
-  // Default to 'group' unless we want to support deep-linking friend selection later
   const [activeTab, setActiveTab] = useState<"group" | "friend">("group");
 
   const isContextSelected =
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
-  // Effect: Handle Context Switching & Cleanup
-  // We add a check to prevent clearing the pre-filled ID on the very first render
   useEffect(() => {
-    // Only reset if the user manually switches tabs or if the tab state mismatches the current ID
     if (activeTab === "group") {
       if (!selectedGroupId && selectedFriendId) setValue("friend_id", null);
     } else {
@@ -117,11 +110,7 @@ export default function ExpenseForm() {
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
 
   const activeMembers = useMemo(() => {
-    // Case 1: Group Selected -> Show all group members
-    if (selectedGroupId && groupMembers) {
-      return groupMembers;
-    }
-    // Case 2: Friend Selected -> Show [Me, Friend]
+    if (selectedGroupId && groupMembers) return groupMembers;
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
       return friend ? [currentUser, friend] : [];
@@ -138,29 +127,23 @@ export default function ExpenseForm() {
   );
 
   const handleSmartDraft = (draft: any) => {
-    console.log("Draft Received:", draft);
-
-    // 1. Amount
     const rawAmount = draft.total_amount || draft.amount;
     if (rawAmount) {
       const cleanAmount = String(rawAmount).replace(/[^0-9.]/g, "");
       setValue("amount", cleanAmount);
     }
 
-    // 2. Description
     if (draft.merchant) setValue("description", `Payment to ${draft.merchant}`);
     else if (draft.description) setValue("description", draft.description);
 
-    // 3. Date
     if (draft.date) {
       try {
         setValue("date", new Date(draft.date).toISOString().split("T")[0]);
       } catch (e) {
-        /* keep default */
+        /* empty */
       }
     }
 
-    // 4. Category
     const detectedCategory = draft.category_suggestion || draft.category;
     if (detectedCategory) {
       const validCategories = [
@@ -179,35 +162,22 @@ export default function ExpenseForm() {
       );
     }
 
-    // 5. Voice-Specific: Splits & Payers
-    if (draft.split_type) {
-      setValue("split_type", draft.split_type);
-    }
+    if (draft.split_type) setValue("split_type", draft.split_type);
 
-    if (
-      draft.payers &&
-      Array.isArray(draft.payers) &&
-      draft.payers.length > 0
-    ) {
+    if (draft.payers?.length > 0) {
       const validPayers = draft.payers.filter((p: any) =>
         activeMembers.some((m) => m.id === p.user_id)
       );
-      if (validPayers.length > 0) {
+      if (validPayers.length > 0)
         setValue("payers", validPayers, { shouldValidate: true });
-      }
     }
 
-    if (
-      draft.splits &&
-      Array.isArray(draft.splits) &&
-      draft.splits.length > 0
-    ) {
+    if (draft.splits?.length > 0) {
       const validSplits = draft.splits.filter((s: any) =>
         activeMembers.some((m) => m.id === s.user_id)
       );
-      if (validSplits.length > 0) {
+      if (validSplits.length > 0)
         setValue("splits", validSplits, { shouldValidate: true });
-      }
     }
   };
 
@@ -218,7 +188,6 @@ export default function ExpenseForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-
       if (selectedGroupId) {
         queryClient.invalidateQueries({
           queryKey: ["groups", selectedGroupId],
@@ -227,10 +196,7 @@ export default function ExpenseForm() {
           queryKey: ["balances", selectedGroupId],
         });
       }
-
       addToast("Expense created successfully", "success");
-
-      // Redirect Logic
       if (preSelectedGroupId) {
         router.push(`/dashboard/groups/${preSelectedGroupId}`);
       } else {
@@ -242,41 +208,44 @@ export default function ExpenseForm() {
   });
 
   return (
-    <div className="max-w-2xl mx-auto pb-20">
-      {/* SECTION 1: MANDATORY CONTEXT SELECTOR */}
-      <div className="mb-8">
-        <Label className="mb-3 block text-base font-semibold text-slate-700">
-          Who is this expense with?
-        </Label>
+    <div className="max-w-2xl mx-auto pb-20 pt-6 px-4 sm:px-0">
+      {/* SECTION 1: CONTEXT */}
+      <div className="mb-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-lg font-bold text-foreground">
+            Who are you splitting with?
+          </Label>
+        </div>
+
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as any)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 h-12 bg-slate-100 rounded-xl">
+          <TabsList className="grid w-full grid-cols-2 h-14 p-1.5 bg-muted rounded-2xl">
             <TabsTrigger
               value="group"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              className="rounded-xl h-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
             >
               <Users className="w-4 h-4 mr-2" /> Group
             </TabsTrigger>
             <TabsTrigger
               value="friend"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              className="rounded-xl h-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
             >
               <User className="w-4 h-4 mr-2" /> Friend
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <div className="mt-4 animate-in slide-in-from-top-2 fade-in duration-300">
+        <div className="animate-in slide-in-from-top-2 fade-in duration-300">
           {activeTab === "group" ? (
             <div className="space-y-3">
               <Select
                 onValueChange={(val) => setValue("group_id", val)}
                 value={selectedGroupId || ""}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
+                <SelectTrigger className="h-14 rounded-2xl bg-card border-border shadow-sm text-base focus:ring-primary/20">
                   <SelectValue
                     placeholder={
                       loadingGroups ? "Loading groups..." : "Select a Group"
@@ -293,14 +262,16 @@ export default function ExpenseForm() {
               </Select>
 
               {groups?.length === 0 && !loadingGroups && (
-                <div className="p-4 border border-dashed rounded-xl flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
-                  <p className="text-sm text-slate-500">No groups found.</p>
+                <div className="p-6 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-center gap-3 bg-muted/30">
+                  <p className="text-sm text-muted-foreground">
+                    No groups found.
+                  </p>
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={() => setShowCreateGroup(true)}
+                    className="rounded-xl border-dashed border-border"
                   >
-                    <PlusCircle className="w-4 h-4" /> Create New Group
+                    <PlusCircle className="w-4 h-4 mr-2" /> Create New Group
                   </Button>
                 </div>
               )}
@@ -311,7 +282,7 @@ export default function ExpenseForm() {
                 onValueChange={(val) => setValue("friend_id", val)}
                 value={selectedFriendId || ""}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 focus:ring-primary/20">
+                <SelectTrigger className="h-14 rounded-2xl bg-card border-border shadow-sm text-base focus:ring-primary/20">
                   <SelectValue
                     placeholder={
                       loadingFriends ? "Loading friends..." : "Select a Friend"
@@ -328,14 +299,16 @@ export default function ExpenseForm() {
               </Select>
 
               {friends?.length === 0 && !loadingFriends && (
-                <div className="p-4 border border-dashed rounded-xl flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
-                  <p className="text-sm text-slate-500">No friends found.</p>
+                <div className="p-6 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-center gap-3 bg-muted/30">
+                  <p className="text-sm text-muted-foreground">
+                    No friends found.
+                  </p>
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={() => router.push("/dashboard/friends")}
+                    className="rounded-xl border-dashed border-border"
                   >
-                    <UserPlus className="w-4 h-4" /> Add Friend
+                    <UserPlus className="w-4 h-4 mr-2" /> Add Friend
                   </Button>
                 </div>
               )}
@@ -350,10 +323,10 @@ export default function ExpenseForm() {
           onSubmit={handleSubmit((data) => mutation.mutate(data))}
           className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          {/* 2. Smart Inputs */}
+          {/* Smart Inputs */}
           <div>
-            <Label className="mb-3 block text-base font-semibold text-slate-700">
-              Quick Entry (Optional)
+            <Label className="mb-3 block text-base font-semibold text-foreground">
+              Smart Entry (Optional)
             </Label>
             <SmartInputs
               onDraftReceived={handleSmartDraft}
@@ -367,21 +340,21 @@ export default function ExpenseForm() {
             />
           </div>
 
-          {/* 3. Manual Details */}
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm space-y-6">
+          {/* Manual Details Card */}
+          <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Description</Label>
                 <div className="relative">
-                  <FileText className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                  <FileText className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     {...register("description")}
                     placeholder="e.g. Flight tickets"
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-11 h-12 rounded-xl text-base"
                   />
                 </div>
                 {formState.errors.description && (
-                  <p className="text-red-500 text-xs">
+                  <p className="text-destructive text-xs font-medium">
                     {formState.errors.description.message}
                   </p>
                 )}
@@ -389,18 +362,18 @@ export default function ExpenseForm() {
               <div className="space-y-2">
                 <Label>Amount</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-3.5 text-slate-400 font-bold">
+                  <span className="absolute left-3.5 top-3.5 text-muted-foreground font-bold">
                     ₹
                   </span>
                   <Input
                     {...register("amount")}
                     type="number"
                     placeholder="0.00"
-                    className="pl-8 h-12 rounded-xl text-lg font-bold"
+                    className="pl-9 h-12 rounded-xl text-lg font-bold"
                   />
                 </div>
                 {formState.errors.amount && (
-                  <p className="text-red-500 text-xs">
+                  <p className="text-destructive text-xs font-medium">
                     {formState.errors.amount.message}
                   </p>
                 )}
@@ -435,27 +408,29 @@ export default function ExpenseForm() {
               <div className="space-y-2">
                 <Label>Date</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                  <Calendar className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="date"
                     {...register("date")}
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-11 h-12 rounded-xl"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 4. Who Paid? */}
+          {/* Payers Card */}
           <div
             className={cn(
-              "rounded-2xl border border-slate-100 bg-white p-6 shadow-sm",
-              !amount && "opacity-50 pointer-events-none grayscale"
+              "rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm transition-all duration-300",
+              !amount && "opacity-60 pointer-events-none grayscale-[0.5]"
             )}
           >
-            <div className="flex items-center gap-2 mb-4">
-              <Wallet className="h-5 w-5 text-primary" />
-              <Label className="text-base font-semibold">Who paid?</Label>
+            <div className="flex items-center gap-3 mb-6 border-b border-border pb-4">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+              <Label className="text-lg font-bold">Who paid?</Label>
             </div>
             <PayerSelector
               members={activeMembers}
@@ -464,35 +439,37 @@ export default function ExpenseForm() {
               onChange={handlePayerChange}
             />
             {formState.errors.payers && (
-              <p className="text-red-500 text-xs mt-2 font-medium bg-red-50 p-2 rounded-md">
-                Error: Sum of payers must equal total amount.
+              <p className="text-destructive text-sm mt-3 font-medium bg-destructive/10 p-3 rounded-xl">
+                Error: The sum of payers must equal the total amount.
               </p>
             )}
           </div>
 
-          {/* 5. Split Logic */}
+          {/* Split Logic Card */}
           <div
             className={cn(
-              "rounded-2xl border border-slate-100 bg-white p-6 shadow-sm",
-              !amount && "opacity-50 pointer-events-none grayscale"
+              "rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm transition-all duration-300",
+              !amount && "opacity-60 pointer-events-none grayscale-[0.5]"
             )}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Tag className="h-5 w-5 text-primary" />
-                <Label className="text-base font-semibold">Split Method</Label>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 border-b border-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-secondary/10 rounded-full">
+                  <Tag className="h-5 w-5 text-secondary" />
+                </div>
+                <Label className="text-lg font-bold">How to split?</Label>
               </div>
               <Select
                 onValueChange={(v: any) => setValue("split_type", v)}
                 defaultValue="EQUAL"
               >
-                <SelectTrigger className="h-9 w-32 rounded-lg bg-slate-50 border-slate-200">
+                <SelectTrigger className="h-10 w-full sm:w-40 rounded-xl bg-muted/50 border-transparent hover:bg-muted focus:ring-secondary/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="EQUAL">Equal</SelectItem>
-                  <SelectItem value="EXACT">Exact</SelectItem>
-                  <SelectItem value="PERCENTAGE">%</SelectItem>
+                  <SelectItem value="EXACT">Exact Amount</SelectItem>
+                  <SelectItem value="PERCENTAGE">Percentage (%)</SelectItem>
                   <SelectItem value="SHARE">Shares</SelectItem>
                 </SelectContent>
               </Select>
@@ -506,11 +483,12 @@ export default function ExpenseForm() {
             />
           </div>
 
+          {/* Actions */}
           <div className="flex gap-4 pt-4">
             <Button
               type="button"
               variant="ghost"
-              className="flex-1 h-12 rounded-xl"
+              className="flex-1 h-14 rounded-2xl text-base text-muted-foreground hover:bg-muted"
               onClick={() => router.back()}
             >
               Cancel
@@ -518,22 +496,22 @@ export default function ExpenseForm() {
             <Button
               type="submit"
               disabled={formState.isSubmitting}
-              className="flex-[2] h-12 rounded-xl shadow-lg shadow-primary/20"
+              className="flex-[2] h-14 rounded-2xl text-base shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]"
             >
               {formState.isSubmitting ? "Creating..." : "Create Expense"}
             </Button>
           </div>
         </form>
       ) : (
-        <div className="mt-12 flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-          <div className="h-16 w-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
-            <Users className="h-8 w-8 text-slate-300" />
+        <div className="mt-12 flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-border rounded-3xl bg-muted/20">
+          <div className="h-20 w-20 bg-card rounded-full shadow-sm border border-border flex items-center justify-center mb-6">
+            <Users className="h-10 w-10 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-700">
+          <h3 className="text-xl font-bold text-foreground">
             Start by selecting a context
           </h3>
-          <p className="text-slate-500 max-w-xs mt-2">
-            Choose a Group or Friend above to begin splitting expenses.
+          <p className="text-muted-foreground max-w-sm mt-2">
+            Choose a Group or Friend at the top to begin tracking your expenses.
           </p>
         </div>
       )}

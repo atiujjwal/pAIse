@@ -13,7 +13,6 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  // Get the hydration flag
   const { accessToken, isAuthenticated, logout, updateUser, _hasHydrated } =
     useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
@@ -32,9 +31,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
-      // If logged in (token exists)
       try {
-        // We only call this if we haven't checked recently or to ensure validity
         const { data } = await api.get<ApiResponse<{ user: User }>>(
           "/users/me"
         );
@@ -65,17 +62,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if ((!_hasHydrated || isChecking) && !isPublicRoute) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
-  // Render public routes immediately
   if (isPublicRoute) {
     return <>{children}</>;
   }
 
-  // Render protected children only if authenticated
   return isAuthenticated ? <>{children}</> : null;
 }

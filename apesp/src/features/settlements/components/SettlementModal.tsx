@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { Calendar, ArrowRight, Loader2, IndianRupee } from "lucide-react";
+import { Calendar, ArrowRight, Loader2 } from "lucide-react";
 
 import {
   Dialog,
@@ -21,7 +21,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/src/components/ui/Avatar"; 
+} from "@/src/components/ui/Avatar";
 import { cn } from "@/src/lib/utils";
 
 const settlementSchema = z.object({
@@ -44,7 +44,7 @@ interface SettlementModalProps {
     | { type: "group"; groupId: string; groupName: string }
     | { type: "friend" };
   defaultAmount?: string;
-  defaultDirection?: "PAY" | "RECEIVE"; // PAY = Current User pays Counterparty
+  defaultDirection?: "PAY" | "RECEIVE";
 }
 
 export function SettlementModal({
@@ -60,11 +60,10 @@ export function SettlementModal({
     defaultDirection
   );
   const { mutate: createSettlement, isPending } = useCreateSettlement();
-  
+
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     formState: { errors },
   } = useForm({
@@ -75,7 +74,6 @@ export function SettlementModal({
     },
   });
 
-  // Reset form when modal opens with new props
   useEffect(() => {
     if (isOpen) {
       reset({ amount: defaultAmount, date: format(new Date(), "yyyy-MM-dd") });
@@ -84,24 +82,8 @@ export function SettlementModal({
   }, [isOpen, defaultAmount, defaultDirection, reset]);
 
   const onSubmit = (data: { amount: string; date: string }) => {
-    // If direction is PAY: Payer = Me, Receiver = Them
-    // If direction is RECEIVE: Payer = Them, Receiver = Me
-    // BUT the API expects `receiver_id` relative to the authenticated user?
-    // No, the API uses `userId` from auth as the "Actor".
-    // If I am recording "I paid", I call POST /settlements with receiver_id = Them.
-    // If I am recording "They paid me", I technically cannot do that with your current API payload { receiver_id }
-    // UNLESS the API infers payer from auth token.
-    // Reviewing your API: `const { userId: payerId } = payload;` -> The API assumes the logged-in user is ALWAYS the payer.
-    // LIMITATION: Your current backend only allows the logged-in user to record payments *they* made.
-    // To support "Alice paid me", you need to update the backend or swap the IDs if you were an Admin recording it.
-    // For now, based on your API code, we only support "I paid".
-
     if (direction === "RECEIVE") {
-      // If we want to record that THEY paid US, we strictly need API support or we initiate a "Request".
-      // For this implementation, we will restrict to "I Paid" to match your backend code provided.
-      console.warn(
-        "Recording 'Received' payments requires backend update to allow setting payer_id explicitly."
-      );
+      console.warn("Recording 'Received' payments not supported in this view.");
       return;
     }
 
@@ -112,9 +94,7 @@ export function SettlementModal({
         amount: data.amount,
         date: new Date(data.date).toISOString(),
       },
-      {
-        onSuccess: onClose,
-      }
+      { onSuccess: onClose }
     );
   };
 
@@ -122,56 +102,66 @@ export function SettlementModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-3xl p-6">
         <DialogHeader>
-          <DialogTitle>Record Payment</DialogTitle>
+          <DialogTitle className="text-xl">Record Payment</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 mt-2">
           {/* Visual Payment Flow */}
-          <div className="flex items-center justify-between px-4 py-6 bg-slate-50 rounded-xl border border-slate-100">
+          <div className="flex items-center justify-between px-4 py-6 bg-muted/30 rounded-2xl border border-border">
             <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                <AvatarImage src={currentUser.avatar || ""} />    { /*need changes here */}
-                <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
+              <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                <AvatarImage src={currentUser.avatar || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                  {currentUser.name[0]}
+                </AvatarFallback>
               </Avatar>
-              <span className="text-xs font-medium text-slate-600">You</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                You
+              </span>
             </div>
 
             <div className="flex flex-col items-center gap-1 flex-1 px-4">
-              <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-full">
+              <div className="flex items-center gap-2 text-secondary-foreground font-bold text-xs bg-secondary px-4 py-1.5 rounded-full shadow-sm">
                 <span>Paying</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                <AvatarImage src={counterparty.avatar || ""} />
-                <AvatarFallback>{counterparty.name[0]}</AvatarFallback>
+              <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                <AvatarImage src={counterparty.avatar || undefined} />
+                <AvatarFallback className="bg-muted text-muted-foreground font-bold">
+                  {counterparty.name[0]}
+                </AvatarFallback>
               </Avatar>
-              <span className="text-xs font-medium text-slate-600">
+              <span className="text-xs font-semibold text-muted-foreground">
                 {counterparty.name.split(" ")[0]}
               </span>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Amount Input */}
             <div className="space-y-2">
               <Label>Amount</Label>
               <div className="relative">
-                <IndianRupee className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                <span className="absolute left-4 top-3.5 text-muted-foreground font-bold text-lg">
+                  ₹
+                </span>
                 <Input
                   {...register("amount")}
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  className="pl-10 h-12 text-lg font-bold"
+                  className="pl-10 h-14 text-xl font-bold rounded-2xl"
                 />
               </div>
               {errors.amount && (
-                <p className="text-red-500 text-xs">{errors.amount.message}</p>
+                <p className="text-destructive text-xs font-medium">
+                  {errors.amount.message}
+                </p>
               )}
             </div>
 
@@ -179,36 +169,40 @@ export function SettlementModal({
             <div className="space-y-2">
               <Label>Date</Label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                <Input type="date" {...register("date")} className="pl-10" />
+                <Calendar className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="date"
+                  {...register("date")}
+                  className="pl-11 h-12 rounded-xl"
+                />
               </div>
             </div>
 
             {/* Context Info */}
-            <div className="text-xs text-slate-400 text-center">
+            <div className="text-xs text-muted-foreground text-center bg-muted/20 py-2 rounded-lg">
               {isGroup ? (
                 <span>
-                  Settling via <strong>{context.groupName}</strong>
+                  Settling via group <strong>{context.groupName}</strong>
                 </span>
               ) : (
-                <span>Non-group (private) settlement</span>
+                <span>Recording private settlement</span>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-4 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-11"
+              className="h-12 rounded-xl border-border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200"
+              className="h-12 rounded-xl bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-lg shadow-secondary/20"
             >
               {isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

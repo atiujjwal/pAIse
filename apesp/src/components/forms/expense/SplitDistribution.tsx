@@ -6,7 +6,11 @@ import { Input } from "@/src/components/ui/Input";
 import { cn, formatCurrency } from "@/src/lib/utils";
 import { UseFormSetValue } from "react-hook-form";
 import { CreateExpenseInput } from "@/src/lib/schemas";
-// import { Checkbox } from "@/src/components/ui/checkbox";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/Avatar";
 
 interface SplitProps {
   splitType: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARE";
@@ -29,7 +33,6 @@ export function SplitDistribution({
 
   const totalAmount = parseFloat(amount) || 0;
 
-  // Initialize all members as selected for Equal split
   useEffect(() => {
     if (Object.keys(selectedForEqual).length === 0 && members.length > 0) {
       const initial: Record<string, boolean> = {};
@@ -38,18 +41,15 @@ export function SplitDistribution({
     }
   }, [members]);
 
-  // Calculate Equal Share (for display)
   const selectedCount = Object.values(selectedForEqual).filter(Boolean).length;
   const equalShare =
     totalAmount > 0 && selectedCount > 0
       ? (totalAmount / selectedCount).toFixed(2)
       : "0.00";
 
-  // Logic: Sync to RHF Form
   useEffect(() => {
     if (!members.length) return;
 
-    // Filter members based on 'EQUAL' checkbox selection, or include all for other types
     const activeMembers =
       splitType === "EQUAL"
         ? members.filter((m) => selectedForEqual[m.id])
@@ -59,18 +59,16 @@ export function SplitDistribution({
       const valStr = inputs[user.id] || "0";
       const valNum = parseFloat(valStr) || 0;
 
-      if (splitType === "EQUAL") {
-        return { user_id: user.id };
-      } else if (splitType === "EXACT") {
+      if (splitType === "EQUAL") return { user_id: user.id };
+      else if (splitType === "EXACT")
         return { user_id: user.id, amount_owed: valStr };
-      } else if (splitType === "PERCENTAGE") {
+      else if (splitType === "PERCENTAGE")
         return { user_id: user.id, percent_owed: valNum };
-      } else {
+      else
         return {
           user_id: user.id,
           shares_owed: parseFloat(inputs[user.id] || "1"),
         };
-      }
     });
 
     const signature = JSON.stringify({ type: splitType, splits });
@@ -91,68 +89,74 @@ export function SplitDistribution({
   return (
     <div className="space-y-3">
       {members.map((user) => {
-        // For EQUAL, we only care if checked. For others, always show inputs.
         const isSelected = splitType !== "EQUAL" || selectedForEqual[user.id];
 
         return (
           <div
             key={user.id}
             className={cn(
-              "flex items-center justify-between p-3 rounded-xl border transition-all",
+              "flex items-center justify-between p-3 rounded-2xl border transition-all",
               isSelected
-                ? "bg-white border-slate-200"
-                : "bg-slate-50 border-slate-100 opacity-60"
+                ? "bg-card border-border shadow-sm"
+                : "bg-muted/30 border-transparent opacity-60"
             )}
           >
             <div className="flex items-center gap-3">
-              {/* Checkbox for Equal Split */}
               {splitType === "EQUAL" && (
                 <input
                   type="checkbox"
                   checked={!!selectedForEqual[user.id]}
                   onChange={() => toggleSelection(user.id)}
-                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  className="h-5 w-5 rounded-md border-border text-primary focus:ring-primary"
                 />
               )}
 
-              <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                {user.name[0]}
-              </div>
-              <span className="text-sm font-medium text-slate-700">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback className="text-xs">
+                  {user.name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  isSelected ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
                 {user.name}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               {splitType === "EQUAL" && isSelected && (
-                <span className="font-mono text-sm font-bold text-slate-700">
+                <span className="font-mono text-sm font-bold text-foreground">
                   {formatCurrency(equalShare, "INR")}
                 </span>
               )}
 
               {splitType === "EXACT" && (
-                <div className="relative w-24">
-                  <span className="absolute left-2 top-2 text-xs text-slate-400">
+                <div className="relative w-28">
+                  <span className="absolute left-2 top-2 text-xs text-muted-foreground">
                     ₹
                   </span>
                   <Input
                     type="number"
                     placeholder="0"
-                    className="h-8 pl-5 text-right text-sm"
+                    className="h-9 pl-5 text-right text-sm bg-background"
                     onChange={(e) => handleInputChange(user.id, e.target.value)}
                   />
                 </div>
               )}
 
               {splitType === "PERCENTAGE" && (
-                <div className="relative w-20">
+                <div className="relative w-24">
                   <Input
                     type="number"
                     placeholder="0"
-                    className="h-8 pr-6 text-right text-sm"
+                    className="h-9 pr-6 text-right text-sm bg-background"
                     onChange={(e) => handleInputChange(user.id, e.target.value)}
                   />
-                  <span className="absolute right-2 top-2 text-xs text-slate-400">
+                  <span className="absolute right-2 top-2 text-xs text-muted-foreground">
                     %
                   </span>
                 </div>
@@ -163,10 +167,10 @@ export function SplitDistribution({
                   <Input
                     type="number"
                     defaultValue="1"
-                    className="h-8 text-center text-sm"
+                    className="h-9 text-center text-sm bg-background"
                     onChange={(e) => handleInputChange(user.id, e.target.value)}
                   />
-                  <span className="absolute -bottom-3 left-0 w-full text-center text-[9px] text-slate-400">
+                  <span className="absolute -bottom-3 left-0 w-full text-center text-[9px] text-muted-foreground">
                     shares
                   </span>
                 </div>

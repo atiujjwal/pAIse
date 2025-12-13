@@ -29,11 +29,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/src/components/ui/Dialog";
 import { Skeleton } from "@/src/components/ui/Skeleton";
+import { cn } from "@/src/lib/utils";
 
 const addFriendSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -81,14 +82,9 @@ export function AddFriendCard() {
           try {
             if (err?.response?.data && typeof err.response.data === "object") {
               const apiData = err.response.data;
-              if (apiData.error && typeof apiData.error === "string") {
-                displayMsg = apiData.error;
-              }
-              else if (apiData.message && typeof apiData.message === "string") {
-                displayMsg = apiData.message;
-              }
-            }
-            else if (err?.message && typeof err.message === "string") {
+              if (apiData.error) displayMsg = apiData.error;
+              else if (apiData.message) displayMsg = apiData.message;
+            } else if (err?.message) {
               displayMsg = err.message;
             }
           } catch (e) {
@@ -142,45 +138,45 @@ export function AddFriendCard() {
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sticky top-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-slate-900">Add Friends</h3>
+      <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm sticky top-6">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xl font-bold text-foreground">Add Friends</h3>
 
           {isLoadingProfile && !inviteLink ? (
-            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-10 w-10 rounded-xl" />
           ) : inviteLink ? (
             <Dialog>
               <DialogTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-slate-400 hover:text-primary hover:bg-primary/5"
+                  className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl"
                   title="Show QR Code"
                 >
                   <QrCode className="h-5 w-5" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-sm">
+              <DialogContent className="sm:max-w-sm rounded-3xl">
                 <DialogHeader>
-                  <DialogTitle className="text-center">
+                  <DialogTitle className="text-center text-xl">
                     Your pAIse Tag
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center justify-center p-6 space-y-6">
                   <div
                     ref={qrRef}
-                    className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm"
+                    className="p-4 bg-white border border-border rounded-3xl shadow-sm"
                   >
                     <QRCode value={inviteLink} size={200} />
                   </div>
                   <Button
                     onClick={downloadQRCode}
                     variant="outline"
-                    className="w-full"
+                    className="w-full h-12 rounded-xl"
                   >
                     <Download className="h-4 w-4 mr-2" /> Download QR
                   </Button>
-                  <p className="text-xs text-center text-slate-500">
+                  <p className="text-xs text-center text-muted-foreground">
                     Friends can scan this to add you instantly.
                   </p>
                 </div>
@@ -189,22 +185,24 @@ export function AddFriendCard() {
           ) : null}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            <Label className="text-slate-600">Invite by Email</Label>
-            <div className="flex gap-2">
+            <Label className="text-foreground font-semibold">
+              Invite by Email
+            </Label>
+            <div className="flex gap-3">
               <div className="relative flex-1">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
                 <Input
                   {...register("email")}
                   placeholder="friend@example.com"
-                  className="pl-9 h-11 bg-slate-50 border-slate-200"
+                  className="pl-11 h-12 rounded-xl bg-muted/30 border-border focus:bg-card"
                 />
               </div>
               <Button
                 type="submit"
                 disabled={sendRequest.isPending}
-                className="h-11 shadow-md shadow-primary/20"
+                className="h-12 px-6 rounded-xl shadow-lg shadow-primary/20"
               >
                 {sendRequest.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -214,7 +212,7 @@ export function AddFriendCard() {
               </Button>
             </div>
             {errors.email && (
-              <p className="text-xs text-red-500 ml-1">
+              <p className="text-xs text-destructive ml-1">
                 {errors.email.message}
               </p>
             )}
@@ -223,27 +221,29 @@ export function AddFriendCard() {
 
         <div className="relative my-8">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-slate-100" />
+            <span className="w-full border-t border-border" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-slate-400 font-medium">
+          <div className="relative flex justify-center text-xs uppercase tracking-wider">
+            <span className="bg-card px-3 text-muted-foreground font-medium">
               Or share link
             </span>
           </div>
         </div>
 
         <div className="space-y-3">
-          <Label className="text-slate-600">Your Invite Link</Label>
+          <Label className="text-foreground font-semibold">
+            Your Invite Link
+          </Label>
 
           {isLoadingProfile && !inviteLink ? (
-            <Skeleton className="h-12 w-full rounded-xl" />
+            <Skeleton className="h-14 w-full rounded-2xl" />
           ) : (
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 pr-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
-                <LinkIcon className="h-4 w-4 text-slate-400" />
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-muted/30 p-2 pr-3 transition-colors hover:bg-muted/50">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card shadow-sm border border-border">
+                <LinkIcon className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0 px-2">
-                <p className="truncate text-xs font-mono text-slate-500">
+                <p className="truncate text-xs font-mono text-muted-foreground">
                   {inviteLink || "Generate a tag in Settings"}
                 </p>
               </div>
@@ -252,12 +252,12 @@ export function AddFriendCard() {
                 variant="ghost"
                 onClick={handleCopyLink}
                 disabled={!inviteLink}
-                className="h-8 w-8 hover:bg-white hover:shadow-sm"
+                className="h-9 w-9 hover:bg-card hover:shadow-sm rounded-lg"
               >
                 {copied ? (
-                  <Check className="h-4 w-4 text-green-600" />
+                  <Check className="h-4 w-4 text-secondary" />
                 ) : (
-                  <Copy className="h-4 w-4 text-slate-500" />
+                  <Copy className="h-4 w-4 text-muted-foreground" />
                 )}
               </Button>
             </div>
@@ -267,22 +267,22 @@ export function AddFriendCard() {
 
       {/* --- ERROR ALERT DIALOG --- */}
       <Dialog open={isErrorOpen} onOpenChange={setIsErrorOpen}>
-        <DialogContent className="sm:max-w-[400px] border-l-4 border-l-red-500">
+        <DialogContent className="sm:max-w-[400px] border-l-4 border-l-destructive rounded-2xl">
           <DialogHeader>
-            <div className="flex items-center gap-2 text-red-600 mb-2">
-              <AlertCircle className="h-5 w-5" />
-              <DialogTitle className="text-lg font-semibold">
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <AlertCircle className="h-6 w-6" />
+              <DialogTitle className="text-xl font-bold text-foreground">
                 Request Failed
               </DialogTitle>
             </div>
-            <DialogDescription className="text-slate-700 font-medium text-base pt-1">
+            <DialogDescription className="text-muted-foreground font-medium text-base pt-1">
               {errorMessage}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-4 sm:justify-end">
+          <DialogFooter className="mt-6 sm:justify-end">
             <Button
               onClick={() => setIsErrorOpen(false)}
-              className="bg-slate-900 text-white hover:bg-slate-800"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded-xl"
             >
               OK
             </Button>

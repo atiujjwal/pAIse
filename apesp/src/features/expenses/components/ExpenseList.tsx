@@ -1,41 +1,44 @@
 "use client";
 
 import { format } from "date-fns";
-import { ArrowRight, Calendar, Layers, User } from "lucide-react";
-import { formatCurrency } from "@/src/lib/utils";
+import { Layers, User } from "lucide-react";
+import { formatCurrency, cn } from "@/src/lib/utils";
 
 interface ExpenseListProps {
-  expense: any; // Using 'any' temporarily to match your API response structure, or define interface below
+  expense: any;
 }
 
 export function ExpenseList({ expense }: ExpenseListProps) {
   const isGroupExpense = !!expense.group;
 
-  // Helper to get initials
-  const getInitials = (name: string) =>
-    name?.substring(0, 2).toUpperCase() || "??";
-
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
-      <div className="flex items-center gap-4">
+    <div className="flex items-center justify-between p-5 bg-card hover:bg-muted/30 transition-colors group first:rounded-t-3xl last:rounded-b-3xl border-b border-border last:border-0">
+      <div className="flex items-center gap-5">
         {/* Date Box */}
-        <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-slate-100 text-slate-600 border border-slate-200">
-          <span className="text-xs font-bold uppercase">
+        <div className="flex flex-col items-center justify-center h-14 w-14 rounded-2xl bg-muted/50 text-muted-foreground border border-border group-hover:border-primary/20 group-hover:bg-primary/5 transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider">
             {format(new Date(expense.date), "MMM")}
           </span>
-          <span className="text-sm font-bold">
+          <span className="text-lg font-bold text-foreground">
             {format(new Date(expense.date), "dd")}
           </span>
         </div>
 
         {/* Details */}
-        <div className="flex flex-col">
-          <p className="font-semibold text-slate-900 group-hover:text-primary transition-colors">
+        <div className="flex flex-col gap-1">
+          <p className="font-semibold text-foreground text-lg group-hover:text-primary transition-colors">
             {expense.description}
           </p>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-            <span className="inline-flex items-center gap-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-medium",
+                isGroupExpense
+                  ? "bg-primary/10 text-primary"
+                  : "bg-secondary/10 text-secondary"
+              )}
+            >
               {isGroupExpense ? (
                 <Layers className="h-3 w-3" />
               ) : (
@@ -44,13 +47,13 @@ export function ExpenseList({ expense }: ExpenseListProps) {
               {isGroupExpense ? expense.group?.name : "Friend"}
             </span>
             <span>•</span>
-            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
-              {expense.category}
-            </span>
+            <span>{expense.category}</span>
             <span>•</span>
             <span>
               Paid by{" "}
-              <strong>{expense.payers[0]?.user.name.split(" ")[0]}</strong>
+              <strong className="text-foreground">
+                {expense.payers[0]?.user.name.split(" ")[0]}
+              </strong>
             </span>
           </div>
         </div>
@@ -58,10 +61,10 @@ export function ExpenseList({ expense }: ExpenseListProps) {
 
       {/* Amount & Actions */}
       <div className="text-right">
-        <p className="font-bold font-mono text-slate-900 text-lg">
+        <p className="font-mono font-bold text-foreground text-lg">
           {formatCurrency(expense.amount, expense.currency)}
         </p>
-        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted px-2 py-0.5 rounded-full inline-block mt-1">
           {expense.split_type}
         </p>
       </div>

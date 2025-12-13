@@ -32,46 +32,45 @@ export function TopNav() {
 
   const avatar = useMemo(() => {
     if (user?.avatar) return user.avatar;
-    // @ts-ignore: Handle potential schema mismatch
-    if (user?.avatar) return user.avatar;
-
+    // @ts-ignore
+    if (user?.avatar) return user.avatar; // Redundant check kept from original
     return getAvatarFromToken(accessToken);
   }, [user, accessToken]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-end border-b border-slate-100 bg-white/80 px-8 backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-20 items-center justify-end border-b border-border bg-background/80 px-8 backdrop-blur-md transition-colors">
       <div className="flex items-center gap-4">
         {/* Notification Bell */}
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-slate-400 hover:bg-slate-50 hover:text-primary transition-colors"
+          className="relative text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
           <Bell className="h-5 w-5" />
-          <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+          <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
         </Button>
 
         {/* Divider */}
-        <div className="h-8 w-px bg-slate-100" />
+        <div className="h-8 w-px bg-border" />
 
         {/* Profile Section */}
         <button
           onClick={() => router.push("/dashboard/settings")}
-          className="group flex items-center gap-3 rounded-xl py-1 pl-3 pr-1 transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="group flex items-center gap-3 rounded-xl py-1 pl-3 pr-1 transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <div className="hidden flex-col items-end md:flex">
-            <p className="text-sm font-semibold text-slate-700 transition-colors group-hover:text-primary">
+            <p className="text-sm font-semibold text-foreground transition-colors">
               {user?.name || "User"}
             </p>
-            <p className="text-[10px] text-slate-400 max-w-[150px] truncate">
+            <p className="text-[10px] text-muted-foreground max-w-[150px] truncate">
               {user?.email || "user@example.com"}
             </p>
           </div>
 
           <div
             className={cn(
-              "relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105",
-              "bg-gradient-to-tr from-purple-100 to-primary/10 text-primary font-bold overflow-hidden"
+              "relative flex h-10 w-10 items-center justify-center rounded-full border border-border shadow-sm transition-transform group-hover:scale-105",
+              "bg-muted overflow-hidden"
             )}
           >
             {avatar ? (
@@ -87,8 +86,13 @@ export function TopNav() {
                 }}
               />
             ) : null}
-            {/* Initial Fallback (Visible if no URL or if Image Errors) */}
-            <span className={cn("absolute", avatar && "hidden")}>
+            {/* Initial Fallback */}
+            <span
+              className={cn(
+                "absolute text-primary font-bold",
+                avatar && "hidden"
+              )}
+            >
               {user?.name?.[0]?.toUpperCase() || "U"}
             </span>
           </div>

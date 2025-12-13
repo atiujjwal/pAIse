@@ -38,7 +38,6 @@ interface EditGroupDialogProps {
   isOpen: boolean;
   onClose: () => void;
   groupId: string;
-  // UPDATED: Added avatar to interface
   initialData: {
     name: string;
     description?: string;
@@ -70,7 +69,6 @@ export function EditGroupDialog({
 
   const currentAvatar = watch("avatar");
 
-  // Reset form when modal opens with fresh data
   useEffect(() => {
     if (isOpen) {
       reset({
@@ -78,7 +76,7 @@ export function EditGroupDialog({
         description: initialData.description || "",
         avatar: initialData.avatar || "",
       });
-      setShowAvatarGrid(false); // Reset UI state
+      setShowAvatarGrid(false);
     }
   }, [isOpen, initialData, reset]);
 
@@ -88,19 +86,19 @@ export function EditGroupDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Group Settings</DialogTitle>
+          <DialogTitle className="text-xl">Group Settings</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Avatar Preview Section */}
-          <div className="flex flex-col items-center gap-4 py-2">
+          <div className="flex flex-col items-center gap-4 py-4">
             <div className="relative group">
               <div
                 className={cn(
-                  "h-24 w-24 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm flex items-center justify-center bg-slate-50 transition-all",
-                  !currentAvatar && "bg-slate-100"
+                  "h-28 w-28 rounded-3xl overflow-hidden border-4 border-card shadow-lg flex items-center justify-center bg-muted transition-all",
+                  !currentAvatar && "bg-muted text-muted-foreground"
                 )}
               >
                 {currentAvatar ? (
@@ -110,66 +108,63 @@ export function EditGroupDialog({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <ImageIcon className="h-8 w-8 text-slate-300" />
+                  <ImageIcon className="h-10 w-10 opacity-50" />
                 )}
               </div>
 
-              {/* Edit Pencil Button */}
               <Button
                 type="button"
                 size="icon"
                 variant="secondary"
-                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-md border border-white hover:bg-slate-100"
+                className="absolute -bottom-2 -right-2 h-10 w-10 rounded-full shadow-lg border-2 border-card hover:scale-110 transition-transform"
                 onClick={() => setShowAvatarGrid(!showAvatarGrid)}
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Conditional Avatar Grid */}
             {showAvatarGrid && (
-              <div className="w-full space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <div className="w-full space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 bg-muted/30 p-4 rounded-2xl border border-border">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                  <Label className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                     Select Avatar
                   </Label>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAvatarGrid(false)}
-                    className="h-6 text-[10px] text-slate-400"
+                    className="h-6 text-[10px] text-muted-foreground"
                   >
                     Close
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-4 gap-2">
-                  {/* Remove Option */}
                   <button
                     type="button"
                     onClick={() => setValue("avatar", "")}
                     className={cn(
-                      "aspect-square rounded-lg border flex items-center justify-center transition-all hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20",
+                      "aspect-square rounded-xl border-2 flex items-center justify-center transition-all",
                       !currentAvatar
-                        ? "border-primary bg-white text-primary"
-                        : "border-transparent text-slate-400"
+                        ? "border-primary bg-background text-primary"
+                        : "border-transparent bg-background/50 text-muted-foreground hover:bg-background"
                     )}
                     title="Remove Avatar"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-5 w-5" />
                   </button>
 
-                  {/* Image Options */}
                   {GROUP_AVATARS.map((url, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => setValue("avatar", url)}
                       className={cn(
-                        "relative aspect-square rounded-lg overflow-hidden border transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
+                        "relative aspect-square rounded-xl overflow-hidden border-2 transition-all",
                         currentAvatar === url
                           ? "border-primary ring-2 ring-primary ring-offset-1"
-                          : "border-transparent opacity-70 hover:opacity-100"
+                          : "border-transparent opacity-80 hover:opacity-100"
                       )}
                     >
                       <img
@@ -178,7 +173,7 @@ export function EditGroupDialog({
                         className="h-full w-full object-cover"
                       />
                       {currentAvatar === url && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
                           <Check className="h-4 w-4 text-white drop-shadow-md" />
                         </div>
                       )}
@@ -192,27 +187,27 @@ export function EditGroupDialog({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Group Name</Label>
-              <Input {...register("name")} className="h-11" />
+              <Input {...register("name")} className="h-12 rounded-xl" />
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Input {...register("description")} className="h-11" />
+              <Input {...register("description")} className="h-12 rounded-xl" />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="h-11"
+              className="h-12 px-6 rounded-xl"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isUpdating}
-              className="h-11 min-w-[120px]"
+              className="h-12 px-6 rounded-xl min-w-[140px]"
             >
               {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
@@ -220,18 +215,18 @@ export function EditGroupDialog({
           </div>
         </form>
 
-        <div className="border-t pt-4 mt-2">
-          <div className="rounded-lg bg-red-50 p-4 border border-red-100">
-            <div className="flex items-center gap-2 text-red-600 font-semibold mb-1">
+        <div className="border-t border-border pt-6 mt-4">
+          <div className="rounded-2xl bg-destructive/5 p-5 border border-destructive/10">
+            <div className="flex items-center gap-2 text-destructive font-bold mb-1">
               <AlertTriangle className="h-4 w-4" /> Danger Zone
             </div>
-            <p className="text-xs text-red-600/80 mb-3">
+            <p className="text-xs text-destructive/80 mb-4 font-medium leading-relaxed">
               Deleting this group will remove all expenses and settlement
               history permanently.
             </p>
             <Button
               variant="destructive"
-              className="w-full h-10"
+              className="w-full h-11 rounded-xl shadow-sm"
               onClick={() => deleteGroup()}
               disabled={isDeleting}
             >

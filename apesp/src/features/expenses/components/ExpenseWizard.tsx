@@ -1,25 +1,35 @@
-'use client';
+"use client";
 
+import { useToastStore } from "@/src/hooks/use-toast";
+import { Step1Details } from "./Step1Details";
+import { Step3Splits } from "./Step3Splits";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { api } from "@/src/lib/api";
+import { useExpenseWizardStore } from "../store/wizard-store";
+import { Button } from "@/src/components/ui/Button";
 
-import { useToastStore } from '@/src/hooks/use-toast';
-import { Step1Details } from './Step1Details';
-import { Step3Splits } from './Step3Splits';
-
-import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { api } from '@/src/lib/api';
-import { useExpenseWizardStore } from '../store/wizard-store';
-import { Button } from '@/src/components/ui/Button';
-
-// Mock members for now - in production this comes from Group context
 const MOCK_MEMBERS = [
-    { id: 'u1', name: 'Alice', email: 'alice@test.com', currency: 'INR', timezone: 'UTC' },
-    { id: 'u2', name: 'Bob', email: 'bob@test.com', currency: 'INR', timezone: 'UTC' },
+  {
+    id: "u1",
+    name: "Alice",
+    email: "alice@test.com",
+    currency: "INR",
+    timezone: "UTC",
+  },
+  {
+    id: "u2",
+    name: "Bob",
+    email: "bob@test.com",
+    currency: "INR",
+    timezone: "UTC",
+  },
 ];
 
 export default function ExpenseWizard() {
-  const { currentStep, nextStep, prevStep, totalSteps, resetWizard, ...draft } = useExpenseWizardStore();
+  const { currentStep, nextStep, prevStep, totalSteps, resetWizard, ...draft } =
+    useExpenseWizardStore();
   const { addToast } = useToastStore();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -28,63 +38,111 @@ export default function ExpenseWizard() {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
-      // Construct payload strictly matching Schema [cite: 601]
       const payload = {
         ...draft,
-        // Ensure defaults if missing
-        currency: draft.currency || 'INR',
-        // In real app, "Step 2" would populate payers. Defaulting to current user for single payer MVP.
-        payers: draft.payers?.length ? draft.payers : [{ user_id: 'u1', amount: draft.amount! }],
+        currency: draft.currency || "INR",
+        payers: draft.payers?.length
+          ? draft.payers
+          : [{ user_id: "u1", amount: draft.amount! }],
       };
 
-      await api.post('/expenses', payload);
-      
-      addToast('Expense created successfully', 'success');
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['balances'] });
+      await api.post("/expenses", payload);
+
+      addToast("Expense created successfully", "success");
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["balances"] });
       resetWizard();
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (error: any) {
-      addToast(error.message || 'Failed to create expense', 'error');
+      addToast(error.message || "Failed to create expense", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-2xl rounded-lg border bg-card p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-semibold">New Expense</h2>
-        <span className="text-sm text-muted-foreground">Step {currentStep} of {totalSteps}</span>
+    <div className="mx-auto max-w-2xl rounded-3xl border border-border bg-card p-8 shadow-sm">
+      <div className="mb-8 flex items-center justify-between border-b border-border pb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">New Expense</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Add details about your spending
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            Step
+          </span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+            {currentStep}
+          </span>
+          <span className="text-sm text-muted-foreground">of {totalSteps}</span>
+        </div>
       </div>
 
-      <div className="min-h-[300px]">
+      <div className="min-h-[400px]">
         {currentStep === 1 && <Step1Details />}
-        {/* Skipping Step 2 (Payer) for brevity, straightforward list selection similar to Step 3 */}
-        {currentStep === 2 && <div className="p-4 text-center text-muted-foreground">Payer Selection (Assuming You Paid for MVP)</div>}
+        {currentStep === 2 && (
+          <div className="p-12 text-center border-2 border-dashed border-border rounded-2xl bg-muted/20">
+            <p className="text-muted-foreground">
+              Payer Selection Step (Skipped for MVP)
+            </p>
+          </div>
+        )}
         {currentStep === 3 && <Step3Splits members={MOCK_MEMBERS} />}
         {currentStep === 4 && (
-            <div className="space-y-4">
-                <h3 className="font-medium">Review</h3>
-                <div className="rounded-md bg-muted p-4 text-sm">
-                    <p><strong>Total:</strong> {draft.currency} {draft.amount}</p>
-                    <p><strong>For:</strong> {draft.description}</p>
-                    <p><strong>Split:</strong> {draft.split_type}</p>
-                </div>
+          <div className="space-y-6">
+            <h3 className="font-bold text-lg text-foreground">
+              Review Details
+            </h3>
+            <div className="rounded-2xl bg-muted/40 p-6 space-y-4 border border-border">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Amount</span>
+                <span className="font-bold text-foreground text-lg">
+                  {draft.currency} {draft.amount}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Description</span>
+                <span className="font-medium text-foreground">
+                  {draft.description}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Split Method</span>
+                <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase">
+                  {draft.split_type}
+                </span>
+              </div>
             </div>
+          </div>
         )}
       </div>
 
-      <div className="mt-8 flex justify-between">
-        <Button variant="outline" onClick={prevStep} disabled={currentStep === 1}>
+      <div className="mt-10 flex justify-between pt-6 border-t border-border">
+        <Button
+          variant="ghost"
+          onClick={prevStep}
+          disabled={currentStep === 1}
+          className="h-12 rounded-xl"
+        >
           Back
         </Button>
-        
+
         {currentStep < totalSteps ? (
-          <Button onClick={nextStep}>Next</Button>
+          <Button
+            onClick={nextStep}
+            className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20"
+          >
+            Next Step
+          </Button>
         ) : (
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Confirm Expense'}
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20"
+          >
+            {isSubmitting ? "Saving..." : "Confirm Expense"}
           </Button>
         )}
       </div>
