@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { Decimal } from "decimal.js";
-import { FriendshipStatus } from "@prisma/client";
+import { FriendshipStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/src/lib/db";
 import { formatPublicUser } from "@/src/lib/formatter";
 import {
@@ -15,6 +15,8 @@ Decimal.set({ precision: 12 });
 /**
  * GET /friends
  * Lists all accepted friends of the authenticated user.
+ * Supports filtering by friend's name via ?search=...
+ * Supports sorting by balance via ?sort_by=balance&sort_order=asc/desc
  */
 const getHandler = async (
   request: NextRequest,
@@ -25,33 +27,53 @@ const getHandler = async (
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
     const offset = Math.max(parseInt(searchParams.get("offset") || "0"), 0);
+    const search = searchParams.get("search");
+    const sortBy = searchParams.get("sort_by"); // 'balance' or 'status'
+    const sortOrder = searchParams.get("sort_order") === "asc" ? "asc" : "desc";
 
-    // Fetch Friendships
-    // We fetch the relation to get the actual User objects (requester/addressee)
-    const friendships = await prisma.friendship.findMany({
-      where: {
-        status: FriendshipStatus.ACCEPTED,
-        OR: [{ requester_id: userId }, { addressee_id: userId }],
-      },
+
+    const whereClause: Prisma.FriendshipWhereInput = {
+      status: FriendshipStatus.ACCEPTED,
+    };
+
+    if (search) {
+      whereClause.OR = [
+        {
+          requester_id: userId,
+          addressee: {
+            name: { contains: search, mode: "insensitive" },
+          },
+        },
+        {
+          addressee_id: userId,
+          requester: {
+            name: { contains: search, mode: "insensitive" },
+          },
+        },
+      ];
+    } else {
+      whereClause.OR = [{ requester_id: userId }, { addressee_id: userId }];
+    }
+
+    const allFriendships = await prisma.friendship.findMany({
+      where: whereClause,
       include: {
         requester: true,
         addressee: true,
       },
-      take: limit,
-      skip: offset,
       orderBy: {
         updated_at: "desc",
       },
     });
 
-    if (friendships.length === 0) {
+    if (allFriendships.length === 0) {
       return successResponse("Friends fetched successfully", { friends: [] });
     }
 
     const friendIds: string[] = [];
     const friendMap = new Map<string, any>();
 
-    const friendsList = friendships.map((f) => {
+    const friendsList = allFriendships.map((f) => {
       const isRequesterMe = f.requester_id === userId;
       const friendUser = isRequesterMe ? f.addressee : f.requester;
       friendIds.push(friendUser.id);
@@ -87,7 +109,7 @@ const getHandler = async (
       }
     }
 
-    const enrichedFriends = friendsList.map((friend) => {
+    let enrichedFriends = friendsList.map((friend) => {
       const netBalance = balanceMap.get(friend?.id!) || new Decimal(0);
       const balanceVal = netBalance.toNumber();
 
@@ -98,13 +120,34 @@ const getHandler = async (
       return {
         ...friend,
         net_balance: netBalance.abs().toFixed(2),
+        raw_balance: balanceVal,
         status: status, // "owe" | "owed" | "settled"
         currency: "INR",
       };
     });
 
+    if (sortBy === "balance") {
+      enrichedFriends.sort((a, b) => {
+        const valA = Math.abs(a.raw_balance);
+        const valB = Math.abs(b.raw_balance);
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      });
+    } else if (sortBy === "status") {
+      enrichedFriends.sort((a, b) => {
+        return sortOrder === "asc"
+          ? a.raw_balance - b.raw_balance
+          : b.raw_balance - a.raw_balance;
+      });
+    }
+
+    const paginatedFriends = enrichedFriends.slice(offset, offset + limit);
+
+    const sanitizedFriends = paginatedFriends.map(
+      ({ raw_balance, ...rest }) => rest
+    );
+
     return successResponse("Friends fetched successfully", {
-      friends: enrichedFriends,
+      friends: sanitizedFriends,
     });
   } catch (error: any) {
     console.error("Error fetching friends list:", error);
