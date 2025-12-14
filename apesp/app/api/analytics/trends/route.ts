@@ -1,20 +1,25 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { Decimal } from "decimal.js";
-
-Decimal.set({ precision: 12 });
-
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
-
 import { errorResponse, successResponse } from "@/src/lib/response";
 
-// Validate YYYY or YYYY-MM
-const periodSchema = z.string().regex(/^\d{4}(-\d{2})?$/);
+// Schema ensures proper date formatting and valid granularity
+const trendsQuerySchema = z.object({
+  from_date: z.string().datetime().optional(),
+  to_date: z.string().datetime().optional(),
+  granularity: z.enum(["day", "month"]).default("day"),
+  group_id: z.string().optional(),
+});
 
 /**
- * GET /analytics/summary
- * Provides a high-level spending summary from a denormalized table.
+ * GET /analytics/trends
+ * Returns time-series spending data.
+ * Features:
+ * - Dynamic granularity (Daily vs Monthly)
+ * - Gap filling (returns 0 for days with no spend)
+ * - Context filtering (Group specific trends)
  */
 const getHandler = async (
   request: NextRequest,
@@ -23,72 +28,112 @@ const getHandler = async (
   try {
     const { userId } = payload;
     const { searchParams } = new URL(request.url);
+    const rawQuery = Object.fromEntries(searchParams.entries());
 
-    const period = searchParams.get("period");
-    const group_id = searchParams.get("group_id");
-    const category = searchParams.get("category");
-
-    const whereClause: any = { user_id: userId };
-
-    if (period) {
-      const parseResult = periodSchema.safeParse(period);
-      if (!parseResult.success) {
-        return errorResponse(
-          "Invalid period format. Use YYYY or YYYY-MM.",
-          400,
-          "BAD_REQUEST"
-        );
-      }
-      whereClause.period = { startsWith: period };
+    const validation = trendsQuerySchema.safeParse(rawQuery);
+    if (!validation.success) {
+      return errorResponse(
+        "Invalid parameters",
+        400,
+        "BAD_REQUEST",
+        validation.error.issues
+      );
     }
+
+    const { from_date, to_date, granularity, group_id } = validation.data;
+
+    // 1. Determine Date Range
+    // Default to last 30 days if not specified
+    const end = to_date ? new Date(to_date) : new Date();
+    const start = from_date
+      ? new Date(from_date)
+      : new Date(new Date().setDate(end.getDate() - 30));
+
+    // 2. Query Source Data
+    // We fetch raw expense splits for the user within the range
+    const whereClause: any = {
+      user_id: userId,
+      expense: {
+        status: "ACTIVE",
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+    };
 
     if (group_id) {
-      whereClause.group_id = group_id;
+      whereClause.expense.group_id = group_id;
     }
 
-    if (category) {
-      whereClause.category = category;
-    }
-
-    // Read from summary table
-    const summaries = await prisma.expenseSummary.findMany({
+    const splits = await prisma.expenseSplit.findMany({
       where: whereClause,
+      select: {
+        amount_owed: true,
+        expense: {
+          select: {
+            date: true,
+          },
+        },
+      },
+      orderBy: {
+        expense: { date: "asc" },
+      },
     });
 
-    // Aggregate results
-    let total_spent = new Decimal(0);
-    const categoryMap = new Map<string, Decimal>();
+    // 3. Bucket Aggregation Logic
+    const timeMap = new Map<string, Decimal>();
 
-    for (const s of summaries) {
-      total_spent = total_spent.add(s.total_spent);
-      const current = categoryMap.get(s.category) || new Decimal(0);
-      categoryMap.set(s.category, current.add(s.total_spent));
+    // Helper to generate bucket keys (YYYY-MM-DD or YYYY-MM)
+    const getKey = (date: Date) => {
+      const iso = date.toISOString().split("T")[0]; // YYYY-MM-DD
+      return granularity === "month" ? iso.slice(0, 7) : iso; // YYYY-MM
+    };
+
+    // Fill map with data
+    for (const split of splits) {
+      const key = getKey(split.expense.date);
+      const current = timeMap.get(key) || new Decimal(0);
+      timeMap.set(key, current.add(split.amount_owed));
     }
 
-    const spending_by_category = Array.from(categoryMap.entries()).map(
-      ([category, amount]) => ({
-        category,
-        amount: amount.toFixed(2),
-      })
-    );
+    // 4. Gap Filling (Crucial for Charts)
+    // Create a continuous timeline from start to end
+    const trends = [];
+    let currentPointer = new Date(start);
 
-    const currency =
-      (
-        await prisma.user.findUnique({
-          where: { id: userId },
-          select: { currency: true },
-        })
-      )?.currency || "INR";
+    while (currentPointer <= end) {
+      const key = getKey(currentPointer);
+      const amount = timeMap.get(key) || new Decimal(0);
 
-    return successResponse("Analytics summary fetched successfully", {
-      period: period || "all",
-      total_spent: total_spent.toFixed(2),
-      currency,
-      spending_by_category,
+      trends.push({
+        date: key,
+        amount: amount.toNumber(),
+        // Optional: formatting for frontend display
+        display_date: currentPointer.toLocaleDateString(
+          "en-US",
+          granularity === "month"
+            ? { month: "short", year: "numeric" }
+            : { month: "short", day: "numeric" }
+        ),
+      });
+
+      // Increment Pointer
+      if (granularity === "month") {
+        currentPointer.setMonth(currentPointer.getMonth() + 1);
+      } else {
+        currentPointer.setDate(currentPointer.getDate() + 1);
+      }
+    }
+
+    return successResponse("Trends fetched successfully", {
+      granularity,
+      trends,
     });
   } catch (error: any) {
-    console.log("Error fetching analytics summary:", error);
-    if (error.message.includes("token")) return errorResponse("Unauthorized");
+    console.error("Error fetching analytics trends:", error);
+    if (error.message?.includes("token"))
+      return errorResponse("Unauthorized", 401);
     return errorResponse("Internal server error");
   }
 };
