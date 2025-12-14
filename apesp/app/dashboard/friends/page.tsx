@@ -27,6 +27,7 @@ import {
   TrendingUp,
   TrendingDown,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import {
@@ -35,8 +36,9 @@ import {
   AvatarImage,
 } from "@/src/components/ui/Avatar";
 import { cn, formatCurrency } from "@/src/lib/utils";
+import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
 
-// Define the interface based on your new API response
+// Define the interface based on your API response
 interface FriendListItem {
   id: string;
   name: string;
@@ -51,6 +53,10 @@ export default function FriendsPage() {
   const [requestType, setRequestType] = useState<"incoming" | "outgoing">(
     "incoming"
   );
+  const [selectedFriend, setSelectedFriend] = useState<FriendListItem | null>(
+    null
+  );
+  const [showSettlement, setShowSettlement] = useState(false);
 
   // Cast response to the new interface
   const { data: friendsData, isLoading: loadingFriends } = useFriends();
@@ -61,38 +67,38 @@ export default function FriendsPage() {
   const { acceptRequest, rejectRequest, cancelRequest } = useFriendActions();
 
   return (
-    <div className="space-y-6 h-full flex flex-col pb-20">
+    <div className="space-y-8 h-full flex flex-col pb-20 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             Friends
           </h1>
-          <p className="text-slate-500 mt-1">
-            Manage your connections and requests.
+          <p className="text-muted-foreground mt-1">
+            Manage your connections and balances.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="my-friends" className="w-full">
-            <TabsList className="bg-slate-100 p-1 rounded-xl w-full sm:w-auto h-12">
+            <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14">
               <TabsTrigger
                 value="my-friends"
-                className="rounded-lg h-10 px-6 transition-all"
+                className="rounded-xl h-full px-6 transition-all text-sm font-bold"
               >
                 My Friends ({friends?.length || 0})
               </TabsTrigger>
               <TabsTrigger
                 value="requests"
-                className="rounded-lg h-10 px-6 transition-all"
+                className="rounded-xl h-full px-6 transition-all text-sm font-bold"
               >
                 Requests
                 {requestType === "incoming" &&
                   requests &&
                   requests.length > 0 && (
-                    <span className="ml-2 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-bold">
+                    <span className="ml-2 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-xs">
                       {requests.length}
                     </span>
                   )}
@@ -100,36 +106,30 @@ export default function FriendsPage() {
             </TabsList>
 
             {/* --- TAB: MY FRIENDS --- */}
-            <TabsContent value="my-friends" className="mt-6">
+            <TabsContent
+              value="my-friends"
+              className="mt-8 animate-in fade-in slide-in-from-bottom-2"
+            >
               {loadingFriends ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-4 p-4 border border-slate-100 rounded-xl"
-                    >
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
+                    <Skeleton key={i} className="h-40 rounded-3xl" />
                   ))}
                 </div>
               ) : friends?.length === 0 ? (
-                <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                  <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <Users className="h-8 w-8 text-slate-300" />
+                <div className="py-20 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                  <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Users className="h-10 w-10 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900">
+                  <h3 className="text-xl font-bold text-foreground">
                     No friends yet
                   </h3>
-                  <p className="text-slate-500 max-w-sm mx-auto mt-1">
-                    Add friends using the panel on the right.
+                  <p className="text-muted-foreground max-w-sm mx-auto mt-2">
+                    Add friends using their email or pAIse Tag on the right.
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   {friends?.map((friend) => {
                     const isOwe = friend.status === "owe";
                     const isOwed = friend.status === "owed";
@@ -139,55 +139,55 @@ export default function FriendsPage() {
                       <Link
                         key={friend.id}
                         href={`/dashboard/friends/${friend.id}`}
-                        className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/20"
+                        className="group relative flex flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
                       >
                         {/* Top: Info */}
                         <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12 border border-slate-100 shadow-sm">
+                          <Avatar className="h-14 w-14 border-2 border-background shadow-md">
                             <AvatarImage
                               src={friend.avatar || undefined}
                               className="object-cover"
                             />
-                            <AvatarFallback className="bg-gradient-to-br from-primary/10 to-purple-100 text-primary font-bold">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                               {friend.name[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-slate-900 truncate group-hover:text-primary transition-colors">
+                            <p className="font-bold text-lg text-foreground truncate group-hover:text-primary transition-colors">
                               {friend.name}
                             </p>
-                            <p className="text-xs text-slate-500 font-mono truncate">
+                            <p className="text-xs text-muted-foreground font-mono truncate">
                               {friend.email}
                             </p>
                           </div>
-                          <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0" />
+                          <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                            <ChevronRight className="h-4 w-4 text-foreground" />
+                          </div>
                         </div>
 
                         {/* Bottom: Balance Status */}
-                        <div className="mt-5 pt-3 border-t border-slate-50 flex items-center justify-between">
+                        <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
                           <div className="flex flex-col">
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                               Net Balance
                             </span>
                             <div
                               className={cn(
                                 "flex items-center gap-1.5 mt-0.5 font-bold",
                                 isOwe
-                                  ? "text-rose-600"
+                                  ? "text-destructive"
                                   : isOwed
-                                  ? "text-emerald-600"
-                                  : "text-slate-400"
+                                  ? "text-secondary"
+                                  : "text-muted-foreground"
                               )}
                             >
-                              {isOwe && (
-                                <TrendingDown className="h-3.5 w-3.5" />
-                              )}
-                              {isOwed && <TrendingUp className="h-3.5 w-3.5" />}
+                              {isOwe && <TrendingDown className="h-4 w-4" />}
+                              {isOwed && <TrendingUp className="h-4 w-4" />}
                               {isSettled && (
-                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <CheckCircle2 className="h-4 w-4" />
                               )}
 
-                              <span className="font-mono text-base">
+                              <span className="font-mono text-lg">
                                 {isSettled
                                   ? "Settled"
                                   : formatCurrency(
@@ -202,10 +202,10 @@ export default function FriendsPage() {
                           {!isSettled && (
                             <div
                               className={cn(
-                                "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide",
+                                "px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wide shadow-sm",
                                 isOwe
-                                  ? "bg-rose-50 text-rose-600"
-                                  : "bg-emerald-50 text-emerald-600"
+                                  ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                  : "bg-secondary/10 text-secondary border border-secondary/20"
                               )}
                             >
                               {isOwe ? "You Owe" : "Owes You"}
@@ -219,17 +219,17 @@ export default function FriendsPage() {
               )}
             </TabsContent>
 
-            {/* --- TAB: REQUESTS (Existing) --- */}
-            <TabsContent value="requests" className="mt-6 space-y-6">
+            {/* --- TAB: REQUESTS --- */}
+            <TabsContent value="requests" className="mt-8 space-y-6">
               {/* Sub-Tabs Toggle */}
-              <div className="flex p-1 bg-slate-100 rounded-lg w-fit">
+              <div className="flex p-1 bg-muted rounded-xl w-fit">
                 <button
                   onClick={() => setRequestType("incoming")}
                   className={cn(
-                    "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                    "px-5 py-2 text-sm font-bold rounded-lg transition-all",
                     requestType === "incoming"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Received
@@ -237,10 +237,10 @@ export default function FriendsPage() {
                 <button
                   onClick={() => setRequestType("outgoing")}
                   className={cn(
-                    "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                    "px-5 py-2 text-sm font-bold rounded-lg transition-all",
                     requestType === "outgoing"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Sent
@@ -251,12 +251,15 @@ export default function FriendsPage() {
                 {loadingRequests ? (
                   <div className="space-y-4">
                     {[1, 2].map((i) => (
-                      <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+                      <Skeleton key={i} className="h-24 w-full rounded-3xl" />
                     ))}
                   </div>
                 ) : requests?.length === 0 ? (
-                  <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                    <p className="text-slate-500">No {requestType} requests.</p>
+                  <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                    <Clock className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+                    <p className="text-muted-foreground font-medium">
+                      No {requestType} requests pending.
+                    </p>
                   </div>
                 ) : (
                   requests?.map((req) => {
@@ -271,78 +274,79 @@ export default function FriendsPage() {
                       <div
                         key={req.id}
                         className={cn(
-                          "flex items-center justify-between rounded-2xl border p-5 shadow-sm",
+                          "flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border p-6 shadow-sm transition-all",
                           requestType === "incoming"
-                            ? "border-blue-100 bg-blue-50/30"
-                            : "border-slate-200 bg-slate-50/50"
+                            ? "border-primary/20 bg-primary/5"
+                            : "border-border bg-card"
                         )}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-5">
                           <div className="relative">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border-2 border-white shadow-sm overflow-hidden text-lg font-bold text-slate-600 bg-slate-100">
-                              {displayUser?.avatar ? (
-                                <img
-                                  src={displayUser.avatar}
-                                  alt={userName}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                userName[0]
-                              )}
-                            </div>
+                            <Avatar className="h-14 w-14 border-2 border-background shadow-md">
+                              <AvatarImage
+                                src={displayUser?.avatar || undefined}
+                              />
+                              <AvatarFallback className="bg-muted text-muted-foreground font-bold">
+                                {userName[0]}
+                              </AvatarFallback>
+                            </Avatar>
                             <div
                               className={cn(
-                                "absolute -bottom-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm",
+                                "absolute -bottom-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center border-2 border-background shadow-sm",
                                 requestType === "incoming"
-                                  ? "bg-blue-100 text-blue-600"
-                                  : "bg-slate-200 text-slate-600"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground"
                               )}
                             >
                               {requestType === "incoming" ? (
-                                <ArrowDownLeft className="h-3 w-3" />
+                                <ArrowDownLeft className="h-3.5 w-3.5" />
                               ) : (
-                                <ArrowUpRight className="h-3 w-3" />
+                                <ArrowUpRight className="h-3.5 w-3.5" />
                               )}
                             </div>
                           </div>
 
                           <div>
-                            <p className="text-sm text-slate-900">
+                            <p className="text-base text-foreground">
                               {requestType === "incoming" ? (
                                 <>
                                   <span className="font-bold">{userName}</span>{" "}
-                                  sent you a request.
+                                  <span className="text-muted-foreground">
+                                    sent a request.
+                                  </span>
                                 </>
                               ) : (
                                 <>
-                                  You sent a request to{" "}
-                                  <span className="font-bold">{userName}</span>.
+                                  <span className="text-muted-foreground">
+                                    Sent to
+                                  </span>{" "}
+                                  <span className="font-bold">{userName}</span>
                                 </>
                               )}
                             </p>
-                            <p className="text-xs text-slate-500 mt-0.5 font-mono">
+                            <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                               {userEmail}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-3 w-full sm:w-auto">
                           {requestType === "incoming" ? (
                             <>
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 onClick={() => rejectRequest.mutate(req.id)}
                                 disabled={rejectRequest.isPending}
-                                className="hover:text-red-600 hover:bg-red-50"
+                                className="flex-1 sm:flex-none border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-10 rounded-xl"
                               >
-                                <X className="h-4 w-4" />
+                                <X className="h-4 w-4 mr-1" /> Decline
                               </Button>
                               <Button
                                 size="sm"
                                 onClick={() => acceptRequest.mutate(req.id)}
                                 disabled={acceptRequest.isPending}
-                                className="bg-blue-600 hover:bg-blue-700"
+                                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground h-10 rounded-xl shadow-md"
                               >
                                 <Check className="h-4 w-4 mr-1" /> Accept
                               </Button>
@@ -353,7 +357,7 @@ export default function FriendsPage() {
                               variant="outline"
                               onClick={() => cancelRequest.mutate(req.id)}
                               disabled={cancelRequest.isPending}
-                              className="text-slate-600 border-slate-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                              className="flex-1 sm:flex-none border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 h-10 rounded-xl"
                             >
                               <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancel
                             </Button>
@@ -368,10 +372,25 @@ export default function FriendsPage() {
           </Tabs>
         </div>
 
+        {/* Sidebar: Add Friend */}
         <div className="lg:col-span-1">
           <AddFriendCard />
         </div>
       </div>
+
+      {/* Settle Modal (If needed from query param or derived state later) */}
+      {showSettlement && selectedFriend && (
+        <SettlementModal
+          isOpen={showSettlement}
+          onClose={() => setShowSettlement(false)}
+          currentUser={{ id: "me", name: "Me" }} // In real app, get from store
+          counterparty={{
+            id: selectedFriend.id,
+            name: selectedFriend.name,
+            avatar: selectedFriend.avatar,
+          }}
+        />
+      )}
     </div>
   );
 }

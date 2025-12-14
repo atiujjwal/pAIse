@@ -26,17 +26,17 @@ export function UnsavedChangesDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3 text-amber-600 mb-2">
-            <div className="p-2 bg-amber-50 rounded-full">
+            <div className="p-2 bg-amber-100/20 rounded-full border border-amber-200/50">
               <AlertTriangle className="h-5 w-5" />
             </div>
-            <DialogTitle className="text-lg font-semibold text-slate-900">
+            <DialogTitle className="text-lg font-bold text-foreground">
               Unsaved Changes
             </DialogTitle>
           </div>
         </DialogHeader>
 
         <div className="py-2">
-          <p className="text-slate-500">
+          <p className="text-muted-foreground leading-relaxed">
             You have unsaved changes. Are you sure you want to discard them?
             This action cannot be undone.
           </p>
@@ -50,11 +50,7 @@ export function UnsavedChangesDialog({
           >
             Keep Editing
           </Button>
-          <Button
-            variant="destructive"
-            onClick={onDiscard}
-            className="bg-red-600 hover:bg-red-700"
-          >
+          <Button variant="destructive" onClick={onDiscard}>
             Discard Changes
           </Button>
         </DialogFooter>

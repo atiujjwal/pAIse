@@ -69,16 +69,8 @@ const getHandler = async (
       await checkGroupMembership(userId, expense.group_id);
     } else if (expense.friend_id) {
       const friendId = expense.friend_id;
-      const friendship = await prisma.friendship.findFirst({
-        where: {
-          OR: [
-            { requester_id: userId, addressee_id: friendId },
-            { requester_id: friendId, addressee_id: userId },
-          ],
-          status: "ACCEPTED",
-        },
-      });
-      if (!friendship) return forbidden("Users are not friends");
+      if (expense.created_by_id !== userId && friendId !== userId)
+        return forbidden("You are not allowed to view this friend expense")
     }
 
     const formattedData = formatDetailedExpense(expense);

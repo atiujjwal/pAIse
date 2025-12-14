@@ -4,34 +4,146 @@
 
 @layer base {
   :root {
-    /* Soft Slate Background #F8FAFC */
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* --- LIGHT MODE TOKENS --- */
+
+    /* Neutral & Surfaces */
+    --background: 240 20% 99%;
+    --foreground: 240 15% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Surface */
+    --card-foreground: 240 15% 12%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Surface Elevated */
+    --popover-foreground: 240 15% 12%;
 
-    --primary: 250 95% 65%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand: Electric Purple */
+    --primary: 260 92% 64%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 260 92% 96%;
+    --primary-dark: 260 92% 54%;
+    --primary-light: 260 92% 74%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Brand: Mint Green */
+    --secondary: 160 78% 42%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-soft: 160 78% 95%;
+    --secondary-dark: 160 78% 32%;
+    --secondary-light: 160 78% 52%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* UI States */
+    --muted: 240 20% 96%;
+    --muted-foreground: 240 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Mapped to "Surface Hover" for generic UI hovers */
+    --accent: 240 20% 96%;
+    --accent-foreground: 240 15% 12%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Semantic Accents (Pink, Yellow, Blue) */
+    --accent-pink: 260 86% 65%;
+    --accent-yellow: 45 95% 58%;
+    --accent-blue: 210 95% 58%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 250 95% 65%;
+    /* Destructive */
+    --destructive: 0 82% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-soft: 0 82% 96%;
+
+    /* Borders & Inputs */
+    --border: 240 15% 92%;
+    --input: 240 15% 92%;
+    --ring: 260 92% 64%;
+
     --radius: 1rem;
+
+    /* --- CATEGORY COLORS (Light) --- */
+    --cat-dining: 0 85% 62%;
+    --cat-travel: 28 95% 60%;
+    --cat-shopping: 285 75% 65%;
+    --cat-entertainment: 290 85% 58%;
+    --cat-groceries: 135 68% 48%;
+    --cat-transport: 210 95% 58%;
+    --cat-health: 175 75% 50%;
+    --cat-utilities: 45 90% 58%;
+    --cat-general: 240 10% 55%;
+  }
+
+  .dark {
+    /* --- DARK MODE TOKENS --- */
+
+    /* Neutral & Surfaces */
+    --background: 240 18% 8%;
+    --foreground: 240 20% 95%;
+
+    --card: 240 15% 12%;
+    /* Surface */
+    --card-foreground: 240 20% 95%;
+
+    --popover: 240 12% 16%;
+    /* Surface Elevated */
+    --popover-foreground: 240 20% 95%;
+
+    /* Brand: Adjusted for Dark Mode */
+    --primary: 260 92% 68%;
+    /* +4% Lightness */
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 260 92% 12%;
+    /* Low opacity/dark mix */
+    --primary-dark: 260 92% 54%;
+    /* Kept same or adjusted if needed */
+    --primary-light: 260 92% 74%;
+
+    --secondary: 160 78% 48%;
+    /* +6% Lightness */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-soft: 160 78% 12%;
+    --secondary-dark: 160 78% 32%;
+    --secondary-light: 160 78% 52%;
+
+    /* UI States */
+    --muted: 240 15% 16%;
+    --muted-foreground: 240 10% 70%;
+
+    --accent: 240 15% 16%;
+    /* Muted surface for generic hovers */
+    --accent-foreground: 240 20% 95%;
+
+    /* Semantic Accents (Dark Mode Adjusted) */
+    --accent-pink: 348 86% 70%;
+    --accent-yellow: 45 95% 62%;
+    --accent-blue: 210 95% 62%;
+
+    /* Destructive */
+    --destructive: 0 82% 67%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-soft: 0 62% 20%;
+    /* Inferred dark soft */
+
+    /* Borders & Inputs */
+    --border: 240 12% 20%;
+    --input: 240 12% 20%;
+    --ring: 260 92% 68%;
+
+    /* --- CATEGORY COLORS (Dark Mode Adjustments) --- */
+    --cat-dining: 0 100% 74%;
+    /* #FF8A7A (Light Mode + ~10% L) */
+    --cat-travel: 25 100% 74%;
+    /* #FFB27A */
+    --cat-shopping: 275 100% 82%;
+    /* #D9A3FF */
+    --cat-entertainment: 291 100% 75%;
+    /* #F380FF */
+    --cat-groceries: 145 60% 60%;
+    /* #5BD88F */
+    --cat-transport: 209 100% 74%;
+    /* #79BFFF */
+    --cat-health: 170 75% 61%;
+    /* #52E4CC */
+    --cat-utilities: 41 100% 72%;
+    /* #FFD170 */
+    --cat-general: 240 10% 63%;
+    /* #9999A8 */
   }
 }
 
@@ -41,13 +153,6 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    /* Smooth scrolling for the "Zen" feel */
-    scroll-behavior: smooth;
+    @apply bg-background text-foreground font-sans antialiased;
   }
-}
-
-/* Glassmorphism Utility */
-.glass-card {
-  @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-soft;
 }

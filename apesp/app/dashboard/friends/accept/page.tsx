@@ -5,9 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/src/lib/api";
 import { useAuthStore } from "@/src/features/auth/store";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import Link from "next/link";
+import { cn } from "@/src/lib/utils";
 
 export default function AcceptFriendPage() {
   const searchParams = useSearchParams();
@@ -68,39 +69,67 @@ export default function AcceptFriendPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
-      <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
+      <div className="w-full max-w-md bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-primary/5 space-y-8 animate-in zoom-in-95 duration-300">
         {status === "verifying" && (
-          <>
-            <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
-            <h2 className="text-xl font-bold text-slate-900">Processing...</h2>
-            <p className="text-slate-500">{message}</p>
-          </>
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+              <div className="relative h-20 w-20 bg-background rounded-full flex items-center justify-center border-2 border-primary/20 shadow-inner">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
+                Processing...
+              </h2>
+              <p className="text-muted-foreground mt-2 font-medium">
+                {message}
+              </p>
+            </div>
+          </div>
         )}
 
         {status === "success" && (
-          <>
-            <div className="h-12 w-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle2 className="h-6 w-6" />
+          <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-2">
+            <div className="h-20 w-20 bg-secondary/10 text-secondary rounded-full flex items-center justify-center border-2 border-secondary/20 shadow-sm">
+              <CheckCircle2 className="h-10 w-10" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Success!</h2>
-            <p className="text-slate-500">{message}</p>
-            <Button asChild className="w-full">
-              <Link href="/dashboard/friends">Go to Friends</Link>
+            <div>
+              <h2 className="text-2xl font-extrabold text-foreground">
+                Success!
+              </h2>
+              <p className="text-muted-foreground mt-2">{message}</p>
+            </div>
+            <Button
+              asChild
+              className="w-full h-12 rounded-xl bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-lg shadow-secondary/20"
+            >
+              <Link href="/dashboard/friends">
+                Go to Friends <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
-          </>
+          </div>
         )}
 
         {status === "error" && (
-          <>
-            <div className="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
-              <XCircle className="h-6 w-6" />
+          <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-2">
+            <div className="h-20 w-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center border-2 border-destructive/20 shadow-sm">
+              <XCircle className="h-10 w-10" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Link Invalid</h2>
-            <p className="text-slate-500">{message}</p>
-            <Button variant="outline" asChild className="w-full">
+            <div>
+              <h2 className="text-2xl font-extrabold text-foreground">
+                Link Invalid
+              </h2>
+              <p className="text-muted-foreground mt-2">{message}</p>
+            </div>
+            <Button
+              variant="outline"
+              asChild
+              className="w-full h-12 rounded-xl border-border hover:bg-muted"
+            >
               <Link href="/dashboard">Go Home</Link>
             </Button>
-          </>
+          </div>
         )}
       </div>
     </div>

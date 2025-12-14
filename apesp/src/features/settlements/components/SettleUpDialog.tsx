@@ -8,12 +8,12 @@ import { api } from "@/src/lib/api";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/Input";
 import { Button } from "@/src/components/ui/Button";
-
+import { Loader2 } from "lucide-react";
 
 interface SettleUpProps {
-  friend: User; // Who we are paying
-  amountOwed: string; // Default amount to pre-fill
-  groupId?: string; // Context
+  friend: User;
+  amountOwed: string;
+  groupId?: string;
   onClose: () => void;
 }
 
@@ -29,7 +29,6 @@ export function SettleUpDialog({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // API Integration: POST /api/settlements [Source 171]
       await api.post("/settlements", {
         receiver_id: friend.id,
         amount: amount,
@@ -49,22 +48,22 @@ export function SettleUpDialog({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-lg bg-background p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-sm rounded-3xl bg-card border border-border p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+        <h2 className="mb-6 text-xl font-bold text-foreground">
           Settle Up with {friend.name}
         </h2>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="space-y-2">
             <Label>Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-muted-foreground">
+              <span className="absolute left-3.5 top-3.5 text-muted-foreground font-bold">
                 ₹
               </span>
               <Input
                 type="number"
-                className="pl-8"
+                className="pl-9 h-12 rounded-xl text-lg font-bold"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
@@ -74,21 +73,29 @@ export function SettleUpDialog({
             </p>
           </div>
 
-          <div className="rounded-md bg-yellow-50 p-3 text-xs text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
+          <div className="rounded-xl bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400 border border-amber-500/20 leading-relaxed">
             <strong>Note:</strong> This does not transfer actual money. Ensure
             you have paid via UPI/Cash first.
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose}>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              className="h-11 rounded-xl"
+            >
               Cancel
             </Button>
             <Button
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending || !amount}
-              className="bg-green-600 hover:bg-green-700"
+              className="h-11 rounded-xl bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-lg shadow-secondary/20"
             >
-              {mutation.isPending ? "Recording..." : "Record Payment"}
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Record Payment"
+              )}
             </Button>
           </div>
         </div>

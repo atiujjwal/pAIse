@@ -64,6 +64,9 @@ export const formatDetailedExpense = (expense: any) => {
     date: expense.date,
     category: expense.category,
     group_id: expense.group_id,
+    split_type: expense.split_type,
+    receipt_url: expense.receipt_url,
+    created_at: expense.created_at,
     created_by: formatPublicUser(expense.created_by),
     payers: expense.payers.map((p: any) => ({
       ...p,

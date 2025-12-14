@@ -9,8 +9,8 @@ import {
   Layers,
   User,
   Calendar,
-  Search,
   SlidersHorizontal,
+  ArrowRight,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/Button";
@@ -28,7 +28,6 @@ import { useAuthStore } from "@/src/features/auth/store";
 // --- Local Component: Expense Card ---
 const ExpenseCard = ({ expense }: { expense: any }) => {
   const { user } = useAuthStore();
-
   const isGroupExpense = !!expense.group;
 
   let avatarUrl: string | null | undefined = null;
@@ -55,63 +54,74 @@ const ExpenseCard = ({ expense }: { expense: any }) => {
   }
 
   return (
-    <div className="flex items-center gap-4 p-4">
-      {/* Dynamic Avatar Section */}
-      <Avatar className="h-10 w-10 border border-slate-100 shadow-sm">
-        <AvatarImage src={avatarUrl || undefined} className="object-cover" />
-        <AvatarFallback
-          className={cn(
-            "text-xs font-bold",
-            isGroupExpense
-              ? "bg-indigo-50 text-indigo-600"
-              : "bg-emerald-50 text-emerald-600"
-          )}
-        >
-          {displayName?.[0]?.toUpperCase() || (
-            <FallbackIcon className="h-4 w-4" />
-          )}
-        </AvatarFallback>
-      </Avatar>
+    <div className="group flex items-center justify-between p-5 hover:bg-muted/40 transition-all duration-200">
+      <div className="flex items-center gap-5 overflow-hidden">
+        {/* Dynamic Avatar Section */}
+        <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
+          <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+          <AvatarFallback
+            className={cn(
+              "text-xs font-bold",
+              isGroupExpense
+                ? "bg-primary/10 text-primary"
+                : "bg-secondary/10 text-secondary"
+            )}
+          >
+            {displayName?.[0]?.toUpperCase() || (
+              <FallbackIcon className="h-5 w-5" />
+            )}
+          </AvatarFallback>
+        </Avatar>
 
-      {/* Main Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <h4 className="font-semibold text-sm text-slate-900 truncate">
-            {expense.description}
-          </h4>
-          {/* Small context badge */}
-          <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600">
-            {isGroupExpense ? "Group" : "Friend"}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            <span>
-              {new Date(expense.date).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })}
+        {/* Main Content */}
+        <div className="flex flex-col min-w-0 gap-1">
+          <div className="flex items-center gap-2">
+            <h4 className="font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">
+              {expense.description}
+            </h4>
+            <span
+              className={cn(
+                "hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border",
+                isGroupExpense
+                  ? "bg-primary/5 text-primary border-primary/10"
+                  : "bg-secondary/5 text-secondary border-secondary/10"
+              )}
+            >
+              {isGroupExpense ? "Group" : "Friend"}
             </span>
           </div>
-          <span className="text-slate-300">•</span>
-          <span className="capitalize">{expense.category}</span>
-          <span className="text-slate-300">•</span>
-          <span className="truncate max-w-[100px]">
-            {isGroupExpense ? expense.group.name : displayName}
-          </span>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>
+                {new Date(expense.date).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
+            <span className="text-border">•</span>
+            <span className="capitalize font-medium">{expense.category}</span>
+            <span className="text-border">•</span>
+            <span className="truncate max-w-[100px]">
+              {isGroupExpense ? expense.group.name : displayName}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Amount Section */}
-      <div className="text-right">
-        <span className="block font-bold text-slate-900 font-mono text-sm">
+      <div className="text-right pl-2">
+        <span className="block font-mono font-bold text-foreground text-lg group-hover:scale-105 transition-transform origin-right">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
-        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
-          {expense.split_type}
-        </span>
+        <div className="flex justify-end items-center gap-1 mt-1">
+          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted/50 px-2 py-0.5 rounded-md">
+            {expense.split_type}
+          </span>
+          <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-primary transition-all -translate-x-2 group-hover:translate-x-0" />
+        </div>
       </div>
     </div>
   );
@@ -146,14 +156,14 @@ export default function ExpensesPage() {
   const expenses = data?.data || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20 max-w-5xl mx-auto">
       {/* --- HEADER SECTION --- */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between px-2">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             Expenses
           </h1>
-          <p className="text-slate-500 mt-2 text-sm leading-relaxed max-w-md">
+          <p className="text-muted-foreground mt-2 text-sm leading-relaxed max-w-md">
             Manage your shared expenses, track balances, and settle up with
             friends and groups.
           </p>
@@ -161,7 +171,7 @@ export default function ExpensesPage() {
         <Button
           asChild
           size="lg"
-          className="shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all"
+          className="rounded-xl shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-105"
         >
           <Link href="/dashboard/expenses/new">
             <Plus className="mr-2 h-5 w-5" /> Add Expense
@@ -169,18 +179,17 @@ export default function ExpensesPage() {
         </Button>
       </div>
 
-      {/* --- BEAUTIFIED FILTER & SEARCH SECTION --- */}
-      {/* Wrapped in a sticky, polished container for a 'Control Panel' feel */}
+      {/* --- CONTROL PANEL (Sticky Filter Bar) --- */}
       <div className="sticky top-4 z-20">
-        <div className="bg-white/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200/60 shadow-sm ring-1 ring-slate-200/50 transition-all hover:shadow-md hover:border-slate-300/60">
+        <div className="bg-background/80 backdrop-blur-xl p-3 rounded-2xl border border-border shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:border-primary/20">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            {/* Visual Label (Optional, adds structure) */}
-            <div className="hidden md:flex items-center gap-2 text-slate-400 text-sm font-medium pr-4 border-r border-slate-200 h-10">
+            {/* Visual Label */}
+            <div className="hidden md:flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider pr-4 border-r border-border h-8">
               <SlidersHorizontal className="h-4 w-4" />
               <span>Filters</span>
             </div>
 
-            {/* The Actual Filter Bar Component */}
+            {/* Filter Component */}
             <div className="flex-1 w-full">
               <FilterBar />
             </div>
@@ -189,7 +198,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* --- CONTENT LIST --- */}
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[400px]">
+      <div className="rounded-[2rem] border border-border bg-card shadow-sm overflow-hidden min-h-[400px]">
         {isLoading ? (
           <div className="p-6 space-y-6">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -205,45 +214,50 @@ export default function ExpensesPage() {
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="p-3 bg-red-50 rounded-full mb-3">
-              <Receipt className="h-6 w-6 text-red-400" />
+            <div className="p-4 bg-destructive/10 rounded-full mb-4">
+              <Receipt className="h-8 w-8 text-destructive" />
             </div>
-            <h3 className="text-slate-900 font-semibold mb-1">
+            <h3 className="text-foreground font-bold text-lg mb-1">
               Unable to load expenses
             </h3>
-            <p className="text-slate-500 text-sm mb-4">
+            <p className="text-muted-foreground text-sm mb-6">
               Something went wrong while fetching data.
             </p>
-            <Button variant="outline" onClick={() => window.location.reload()}>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              className="rounded-xl"
+            >
               Retry
             </Button>
           </div>
         ) : expenses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-            <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-slate-100 transform rotate-3">
-              <Receipt className="h-10 w-10 text-slate-300" />
+            <div className="h-24 w-24 bg-muted/30 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner border border-border transform -rotate-3">
+              <Receipt className="h-12 w-12 text-muted-foreground/50" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">
+            <h3 className="text-2xl font-bold text-foreground">
               No expenses found
             </h3>
-            <p className="text-slate-500 max-w-sm mt-2 mb-6">
+            <p className="text-muted-foreground max-w-sm mt-2 mb-8 leading-relaxed">
               We couldn't find any expenses matching your filters. Try adjusting
               them or create a new one.
             </p>
             <Button
               variant="secondary"
               onClick={() => window.location.reload()}
+              className="rounded-xl"
             >
-              Clear Filters
+              Clear All Filters
             </Button>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {expenses.map((expense: any) => (
               <Link
                 key={expense.id}
                 href={`/dashboard/expenses/${expense.id}`}
-                className="block hover:bg-slate-50/80 transition-colors"
+                className="block"
               >
                 <ExpenseCard expense={expense} />
               </Link>

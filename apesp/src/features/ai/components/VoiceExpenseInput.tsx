@@ -7,9 +7,6 @@ import { useToastStore } from "@/src/hooks/use-toast";
 import { api } from "@/src/lib/api";
 import { Button } from "@/src/components/ui/Button";
 
-
-
-
 export function VoiceExpenseInput() {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -51,12 +48,10 @@ export function VoiceExpenseInput() {
       const formData = new FormData();
       formData.append("audio", audioBlob);
 
-      // Async pattern: Upload -> Wait -> Get Draft [cite: 226]
       const { data } = await api.post("/ai/voice-expense", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Populate wizard store with AI response
       updateDraft({
         amount: data.data.amount,
         description: data.data.description,
@@ -82,7 +77,7 @@ export function VoiceExpenseInput() {
         "Processing..."
       ) : isRecording ? (
         <>
-          <Square className="h-4 w-4" /> Stop Recording
+          <Square className="h-4 w-4 fill-current" /> Stop Recording
         </>
       ) : (
         <>

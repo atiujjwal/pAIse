@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2 } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 import { useExpenseWizardStore } from "../../expenses/store/wizard-store";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { ApiResponse } from "@/src/types/api";
@@ -30,7 +30,6 @@ export function ReceiptScanner() {
     formData.append("image", file);
 
     try {
-      // Integration: POST /api/ai/scan-receipt [cite: 219]
       const { data } = await api.post<ApiResponse<DraftExpense>>(
         "/ai/scan-receipt",
         formData,
@@ -43,8 +42,8 @@ export function ReceiptScanner() {
 
       updateDraft({
         amount: extracted.amount,
-        date: extracted.date, // ISO String
-        description: extracted.merchant, // Map merchant to description
+        date: extracted.date,
+        description: extracted.merchant,
         category: extracted.category || "General",
       });
 
@@ -56,7 +55,6 @@ export function ReceiptScanner() {
       );
     } finally {
       setIsScanning(false);
-      // Reset input to allow re-uploading same file if needed
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -72,7 +70,7 @@ export function ReceiptScanner() {
       />
       <Button
         variant="outline"
-        className="w-full gap-2 border-dashed"
+        className="w-full gap-2 border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-muted"
         onClick={() => fileInputRef.current?.click()}
         disabled={isScanning}
       >

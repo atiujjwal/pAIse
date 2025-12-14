@@ -7,11 +7,11 @@ import {
   Plus,
   Users,
   ArrowRight,
-  Layers,
   Search,
   TrendingUp,
   TrendingDown,
   CheckCircle2,
+  Layers,
 } from "lucide-react";
 
 import { useGroupsList } from "@/src/features/groups/api/group-list-query";
@@ -27,7 +27,7 @@ import {
 import { useDebounce } from "@/src/hooks/use-debounce";
 import { cn, formatCurrency } from "@/src/lib/utils";
 
-// Interface matching the updated API response
+// Interface matching the API response
 interface GroupListItem {
   id: string;
   name: string;
@@ -40,13 +40,13 @@ interface GroupListItem {
   user_status: "settled" | "owe" | "owed";
   has_debts: boolean;
   has_credits: boolean;
+  currency: string;
 }
 
 export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Cast the data to our new interface
   const { data: groupsData, isLoading } = useGroupsList(debouncedSearch);
   const groups = groupsData as unknown as GroupListItem[];
 
@@ -62,35 +62,41 @@ export default function GroupsPage() {
   }, [searchParams, router]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* --- HEADER --- */}
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-              My Groups
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Manage your shared expenses and settlements.
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-            className="shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Create Group
-          </Button>
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            My Groups
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm leading-relaxed max-w-md">
+            Manage shared expenses, trips, and settlements.
+          </p>
         </div>
 
-        {/* --- SEARCH BAR --- */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search groups..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-11 bg-white border-slate-200 focus:bg-white transition-all"
-          />
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
+            onClick={() => setShowCreateDialog(true)}
+            size="lg"
+            className="rounded-xl shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-105 w-full sm:w-auto"
+          >
+            <Plus className="mr-2 h-5 w-5" /> Create Group
+          </Button>
+        </div>
+      </div>
+
+      {/* --- SEARCH BAR --- */}
+      <div className="sticky top-4 z-20">
+        <div className="bg-card/80 backdrop-blur-xl p-2 rounded-2xl border border-border shadow-sm ring-1 ring-border/50 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search groups..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-11 h-12 bg-transparent border-transparent focus:bg-background rounded-xl transition-all"
+            />
+          </div>
         </div>
       </div>
 
@@ -101,16 +107,16 @@ export default function GroupsPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-slate-100 p-6 space-y-4"
+                className="rounded-[2.5rem] border border-border bg-card p-6 space-y-4"
               >
                 <div className="flex items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-xl" />
+                  <Skeleton className="h-14 w-14 rounded-2xl" />
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-5 w-32" />
                     <Skeleton className="h-3 w-20" />
                   </div>
                 </div>
-                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
               </div>
             ))}
           </div>
@@ -125,52 +131,52 @@ export default function GroupsPage() {
                 <Link
                   key={group.id}
                   href={`/dashboard/groups/${group.id}`}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20"
+                  className="group relative flex flex-col justify-between rounded-[2.5rem] border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20"
                 >
                   <div>
                     {/* Header: Avatar & Member Count */}
-                    <div className="flex items-start justify-between">
-                      <Avatar className="h-14 w-14 rounded-2xl border-2 border-white shadow-sm">
+                    <div className="flex items-start justify-between mb-4">
+                      <Avatar className="h-16 w-16 rounded-2xl border-4 border-background shadow-md">
                         <AvatarImage
                           src={group.avatar || undefined}
                           className="object-cover"
                         />
-                        <AvatarFallback className="rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-bold text-lg">
+                        <AvatarFallback className="rounded-2xl bg-gradient-to-br from-primary/10 to-indigo-500/10 text-primary font-bold text-xl">
                           {group.name[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500 border border-slate-100">
+                      <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1 text-xs font-bold text-muted-foreground border border-border">
                         <Users className="h-3.5 w-3.5" />
                         {group.member_count}
                       </div>
                     </div>
 
                     {/* Group Info */}
-                    <div className="mt-4 space-y-1">
-                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors line-clamp-1">
+                    <div className="space-y-1">
+                      <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {group.name}
                       </h3>
-                      <p className="text-sm text-slate-500 line-clamp-2 h-10 leading-relaxed">
+                      <p className="text-sm text-muted-foreground line-clamp-2 h-10 leading-relaxed">
                         {group.description || "No description provided."}
                       </p>
                     </div>
                   </div>
 
                   {/* Footer: Balance Status */}
-                  <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+                  <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                         Your Balance
                       </span>
                       <div
                         className={cn(
                           "flex items-center gap-1.5 mt-0.5",
                           isOwe
-                            ? "text-rose-600"
+                            ? "text-destructive"
                             : isOwed
-                            ? "text-emerald-600"
-                            : "text-slate-400"
+                            ? "text-secondary"
+                            : "text-muted-foreground"
                         )}
                       >
                         {isOwe && <TrendingDown className="h-4 w-4" />}
@@ -180,13 +186,16 @@ export default function GroupsPage() {
                         <span className="font-mono font-bold text-lg">
                           {isSettled
                             ? "Settled"
-                            : formatCurrency(group.user_balance)}
+                            : formatCurrency(
+                                group.user_balance,
+                                group.currency || "INR"
+                              )}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-50 group-hover:bg-primary group-hover:text-white transition-colors">
-                      <ArrowRight className="h-4 w-4" />
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-muted/50 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-sm">
+                      <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
                 </Link>
@@ -195,14 +204,14 @@ export default function GroupsPage() {
           </div>
         ) : (
           /* EMPTY STATE */
-          <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50">
-            <div className="h-20 w-20 rounded-full bg-white shadow-sm flex items-center justify-center mb-6">
-              <Layers className="h-10 w-10 text-slate-300" />
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-[2.5rem] border-2 border-dashed border-border bg-muted/10">
+            <div className="h-20 w-20 rounded-[2rem] bg-card shadow-sm flex items-center justify-center mb-6 border border-border">
+              <Layers className="h-10 w-10 text-muted-foreground/40" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">
+            <h3 className="text-xl font-bold text-foreground">
               {searchTerm ? "No groups found" : "No groups yet"}
             </h3>
-            <p className="text-slate-500 max-w-sm mt-2 mb-8">
+            <p className="text-muted-foreground max-w-sm mt-2 mb-8">
               {searchTerm
                 ? `We couldn't find any groups matching "${searchTerm}"`
                 : "Create a group to split expenses for trips, house rent, or daily lunches with friends."}
@@ -211,7 +220,7 @@ export default function GroupsPage() {
               <Button
                 onClick={() => setShowCreateDialog(true)}
                 variant="outline"
-                className="border-slate-300"
+                className="rounded-xl border-border"
               >
                 Create your first group
               </Button>

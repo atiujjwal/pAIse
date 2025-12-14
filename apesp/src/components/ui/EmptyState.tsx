@@ -1,28 +1,42 @@
 "use client";
 import React from "react";
-import Button from "./Button";
+import { Button } from "./Button";
 
 interface EmptyStateProps {
-  icon?: React.ReactNode;
-  title: string;
+  icon?: React.ElementType;
+  title?: string;
   description?: string;
+  message?: string;
   action?: { label: string; onClick: () => void };
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon,
+  icon: Icon,
   title,
   description,
+  message,
   action,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="mb-4 text-mono-400">{icon}</div>
-      <h3 className="text-lg font-semibold text-mono-900 mb-2">{title}</h3>
-      {description && (
-        <p className="text-sm text-mono-500 max-w-md mb-6">{description}</p>
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-3xl border border-dashed border-border bg-accent/20">
+      {Icon && (
+        <div className="mb-4 p-3 bg-background rounded-full shadow-sm border border-border">
+          <Icon className="h-8 w-8 text-muted-foreground" />
+        </div>
       )}
-      {action && <Button onClick={action.onClick}>{action.label}</Button>}
+      <h3 className="text-lg font-bold text-foreground mb-2">
+        {title || "No items found"}
+      </h3>
+      <p className="text-sm text-muted-foreground max-w-xs mb-6 leading-relaxed">
+        {description ||
+          message ||
+          "It's empty here. Try creating something new."}
+      </p>
+      {action && (
+        <Button onClick={action.onClick} variant="default">
+          {action.label}
+        </Button>
+      )}
     </div>
   );
 };

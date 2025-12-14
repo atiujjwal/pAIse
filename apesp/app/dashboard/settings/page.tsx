@@ -16,12 +16,12 @@ import {
   Pencil,
   X,
   Lock,
+  AlertTriangle,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/src/lib/api";
 import { useAuthStore } from "@/src/features/auth/store";
-import { useUpdateProfile } from "@/src/features/settings/api/settings-queries";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
@@ -40,11 +40,7 @@ const profileSchema = z.object({
   email: z.string().email().optional(),
   currency: z.string().optional(),
   timezone: z.string().optional(),
-  avatar: z
-    .string()
-    .url("Please enter a valid image URL")
-    .optional()
-    .or(z.literal("")),
+  avatar: z.string().optional().or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -59,8 +55,7 @@ export default function SettingsPage() {
 
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
 
-
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ["user", "me"],
     queryFn: async () => {
       const { data } = await api.get("/users/me");
@@ -91,22 +86,18 @@ export default function SettingsPage() {
 
   const currentAvatar = watch("avatar");
 
-  // 2. POPULATE FORM WITH API DATA
   useEffect(() => {
     if (profile) {
-      const apiAvatar = profile.avatar || "";
-
       reset({
         name: profile.name || "",
         email: profile.email || "",
         currency: profile.currency || "INR",
         timezone: profile.timezone || "UTC",
-        avatar: apiAvatar,
+        avatar: profile.avatar || "",
       });
     }
   }, [profile, reset]);
 
-  // --- MUTATIONS ---
   const { mutate: updateProfile, isPending } = useMutation({
     mutationFn: async (data: any) => {
       const res = await api.patch("/users/me", data);
@@ -115,10 +106,8 @@ export default function SettingsPage() {
     onSuccess: (updatedUser) => {
       updateStoreUser(updatedUser);
       queryClient.setQueryData(["user", "me"], updatedUser);
-
       addToast("Profile updated successfully", "success");
       setIsEditingAvatar(false);
-
       reset({
         name: updatedUser.name,
         email: updatedUser.email,
@@ -151,30 +140,15 @@ export default function SettingsPage() {
     onError: () => addToast("Failed to generate tag", "error"),
   });
 
-  // --- HANDLERS ---
   const onSubmit = (data: ProfileFormValues) => {
     const payload: Record<string, any> = {};
-
     if (dirtyFields.name) payload.name = data.name;
     if (dirtyFields.currency) payload.currency = data.currency;
     if (dirtyFields.timezone) payload.timezone = data.timezone;
-
-    if (dirtyFields.avatar) {
+    if (dirtyFields.avatar)
       payload.avatar = data.avatar === "" ? null : data.avatar;
-    }
-
     if (Object.keys(payload).length === 0) return;
     updateProfile(payload);
-  };
-
-  const handleCancelAvatarEdit = () => {
-    setValue("avatar", profile?.avatar || "");
-    setIsEditingAvatar(false);
-  };
-
-  const handleRemoveAvatar = () => {
-    setValue("avatar", "", { shouldDirty: true });
-    setIsEditingAvatar(true);
   };
 
   const inviteLink = profile?.invite_code
@@ -213,241 +187,188 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 pb-20">
+    <div className="max-w-3xl mx-auto space-y-8 pb-20 pt-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Settings
         </h1>
-        <p className="text-slate-500">Manage your profile and preferences.</p>
+        <p className="text-muted-foreground mt-1">
+          Manage your profile and preferences.
+        </p>
       </div>
 
       {/* --- SECTION 1: PROFILE --- */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-6">Profile</h2>
+      <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+        <h2 className="text-xl font-bold text-foreground mb-8">
+          Profile Details
+        </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* Avatar Section */}
-          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center pb-6 border-b border-slate-100">
-            {/* Image Preview */}
-            <div className="relative h-20 w-20 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-8 items-start pb-8 border-b border-border">
+            <div className="relative group">
               <div
                 className={cn(
-                  "h-20 w-20 rounded-full overflow-hidden flex items-center justify-center border-2 border-slate-100 bg-slate-50 shadow-sm",
-                  !currentAvatar && "bg-slate-100"
+                  "h-28 w-28 rounded-full overflow-hidden flex items-center justify-center border-4 border-muted/50 bg-muted shadow-sm",
+                  !currentAvatar && "bg-muted"
                 )}
               >
                 {currentAvatar ? (
                   <img
                     src={currentAvatar}
-                    alt="Avatar Preview"
+                    alt="Avatar"
                     className="h-full w-full object-cover"
-                    onError={(e) => (e.currentTarget.style.display = "none")}
                   />
                 ) : (
-                  <span className="text-2xl font-bold text-slate-300">
+                  <span className="text-4xl font-bold text-muted-foreground">
                     {profile?.name?.[0]?.toUpperCase() || "U"}
                   </span>
                 )}
               </div>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full shadow-md border-2 border-card"
+                onClick={() => setIsEditingAvatar(!isEditingAvatar)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Avatar Inputs */}
-            <div className="flex-1 w-full space-y-3">
-              <Label>Profile Picture</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <ImageIcon className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                  <Input
-                    {...register("avatar")}
-                    disabled={!isEditingAvatar} // LOCKED by default
-                    placeholder="https://example.com/my-photo.jpg"
-                    className={cn(
-                      "pl-9 h-11 bg-slate-50 border-slate-200 transition-colors focus:bg-white",
-                      !isEditingAvatar &&
-                        "text-slate-500 bg-slate-100 cursor-not-allowed"
-                    )}
-                  />
-                </div>
+            <div className="flex-1 w-full space-y-4">
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input
+                  {...register("name")}
+                  className="h-12 rounded-xl bg-muted/30 focus:bg-background"
+                />
+              </div>
 
-                {/* Toggle Buttons */}
-                {!isEditingAvatar ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsEditingAvatar(true)}
-                    className="h-11 border-slate-200"
-                    title="Edit Avatar URL"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <>
+              {isEditingAvatar && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <Label>Avatar URL</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <ImageIcon className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        {...register("avatar")}
+                        placeholder="https://..."
+                        className="pl-10 h-12 rounded-xl"
+                      />
+                    </div>
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleCancelAvatarEdit}
-                      className="h-11 border-slate-200 text-slate-500 hover:text-slate-700"
-                      title="Cancel Edit"
+                      onClick={() => setValue("avatar", "")}
+                      className="h-12 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
                     >
-                      <X className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                     </Button>
-                    {currentAvatar && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleRemoveAvatar}
-                        className="h-11 border-slate-200 text-red-500 hover:text-red-600 hover:bg-red-50"
-                        title="Remove Avatar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {errors.avatar && (
-                <p className="text-red-500 text-xs">{errors.avatar.message}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Paste a direct image link.
+                  </p>
+                </div>
               )}
-
-              <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                {!isEditingAvatar && <Lock className="h-3 w-3" />}
-                {isEditingAvatar
-                  ? "Paste a direct link to an image (JPG, PNG). Clear to remove."
-                  : "Field is locked to prevent accidental changes."}
-              </p>
             </div>
           </div>
 
           {/* Form Fields */}
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Display Name</Label>
-              <Input
-                {...register("name")}
-                className="h-12 rounded-xl bg-slate-50 focus:bg-white transition-colors"
-              />
-              {errors.name && (
-                <p className="text-red-500 text-xs">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Default Currency</Label>
-                <Select
-                  onValueChange={(val) =>
-                    setValue("currency", val, { shouldDirty: true })
-                  }
-                  value={form.watch("currency")}
-                >
-                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 focus:bg-white transition-colors">
-                    <SelectValue placeholder="Select Currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INR">INR (₹)</SelectItem>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Timezone</Label>
-                <Select
-                  onValueChange={(val) =>
-                    setValue("timezone", val, { shouldDirty: true })
-                  }
-                  value={form.watch("timezone")}
-                >
-                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 focus:bg-white transition-colors">
-                    <SelectValue placeholder="Select Timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="UTC">UTC</SelectItem>
-                    <SelectItem value="IST">India (IST)</SelectItem>
-                    <SelectItem value="PST">Pacific (PST)</SelectItem>
-                    <SelectItem value="EST">Eastern (EST)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Label>Default Currency</Label>
+              <Select
+                onValueChange={(val) =>
+                  setValue("currency", val, { shouldDirty: true })
+                }
+                value={form.watch("currency")}
+              >
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30">
+                  <SelectValue placeholder="Select Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INR">INR (₹)</SelectItem>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="GBP">GBP (£)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>Timezone</Label>
+              <Select
+                onValueChange={(val) =>
+                  setValue("timezone", val, { shouldDirty: true })
+                }
+                value={form.watch("timezone")}
+              >
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30">
+                  <SelectValue placeholder="Select Timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="UTC">UTC</SelectItem>
+                  <SelectItem value="IST">India (IST)</SelectItem>
+                  <SelectItem value="PST">Pacific (PST)</SelectItem>
+                  <SelectItem value="EST">Eastern (EST)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label>Email Address</Label>
               <Input
                 {...register("email")}
                 disabled
-                className="h-12 rounded-xl bg-slate-100 text-slate-500 cursor-not-allowed"
+                className="h-12 rounded-xl bg-muted/50 text-muted-foreground cursor-not-allowed"
               />
-              <p className="text-[10px] text-slate-400">
-                Email cannot be changed directly.
+              <p className="text-[11px] text-muted-foreground">
+                Contact support to change email.
               </p>
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="flex justify-end pt-4">
             <Button
               type="submit"
               disabled={!isDirty || isPending}
-              className="h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+              className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20"
             >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                "Save Changes"
-              )}
+              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Save Changes
             </Button>
           </div>
         </form>
       </div>
 
-      {/* --- SECTION 2: pAIse TAG (QR Code) --- */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">
-              Your pAIse Tag
-            </h2>
-            <p className="text-sm text-slate-500">
-              Share this code to quickly connect with friends.
-            </p>
-          </div>
+      {/* --- SECTION 2: pAIse TAG --- */}
+      <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-foreground">Your pAIse Tag</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Share this to quickly connect with friends.
+          </p>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-8">
+        <div className="flex flex-col md:flex-row gap-8">
           <div
             ref={qrRef}
-            className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm flex-shrink-0 min-h-[160px] min-w-[160px] flex items-center justify-center relative group"
+            className="p-4 bg-white border border-border rounded-2xl shadow-sm w-fit mx-auto md:mx-0"
           >
             {profile?.invite_code ? (
-              <>
-                <QRCode
-                  value={inviteLink}
-                  size={160}
-                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                />
-                <div className="absolute inset-0 bg-black/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none group-hover:pointer-events-auto">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={downloadQRCode}
-                    className="shadow-lg"
-                  >
-                    <Download className="w-4 h-4 mr-2" /> Save
-                  </Button>
-                </div>
-              </>
+              <QRCode value={inviteLink} size={160} />
             ) : (
-              <div className="flex flex-col items-center gap-2">
-                <QrCode className="h-8 w-8 text-slate-300" />
-                <p className="text-[10px] text-slate-400">No tag generated</p>
+              <div className="h-40 w-40 flex flex-col items-center justify-center bg-muted/30 rounded-xl">
+                <QrCode className="h-8 w-8 text-muted-foreground/50" />
+                <span className="text-xs text-muted-foreground mt-2">
+                  No Tag
+                </span>
               </div>
             )}
           </div>
 
-          <div className="flex-1 w-full space-y-4">
+          <div className="flex-1 space-y-6">
             {profile?.invite_code ? (
               <>
                 <div className="space-y-2">
@@ -456,54 +377,59 @@ export default function SettingsPage() {
                     <Input
                       readOnly
                       value={inviteLink}
-                      className="bg-slate-50 font-mono text-xs text-slate-600 h-11"
+                      className="h-12 bg-muted/30 font-mono text-xs rounded-xl"
                     />
                     <Button
-                      variant="outline"
                       size="icon"
-                      className="h-11 w-11 shrink-0 border-slate-200"
+                      variant="outline"
+                      className="h-12 w-12 rounded-xl"
                       onClick={copyToClipboard}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="h-12 w-12 rounded-xl"
+                      onClick={downloadQRCode}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <p className="text-xs text-slate-400">
-                    Code leaked? Reset it to invalidate old links.
+                <div className="rounded-xl bg-destructive/5 p-4 border border-destructive/10 flex items-center justify-between">
+                  <p className="text-xs text-destructive/80 font-medium">
+                    Need to invalidate old links?
                   </p>
                   <Button
-                    variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50 h-9"
+                    variant="ghost"
                     onClick={() => rotateCode()}
                     disabled={isRotating}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 rounded-lg"
                   >
                     {isRotating ? (
-                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
-                      <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                      <RefreshCw className="h-3 w-3 mr-2" />
                     )}
-                    Reset Link
+                    Reset Tag
                   </Button>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-start gap-3">
-                <p className="text-sm text-slate-600">
-                  You haven't generated your unique pAIse Tag yet. Generate one
-                  to start sharing!
+              <div className="h-full flex flex-col justify-center items-start">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Generate your unique tag to start sharing.
                 </p>
                 <Button
                   onClick={() => rotateCode()}
                   disabled={isRotating}
-                  className="bg-primary"
+                  className="h-12 rounded-xl"
                 >
-                  {isRotating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                  {isRotating && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
                   Generate My Tag
                 </Button>
@@ -514,16 +440,19 @@ export default function SettingsPage() {
       </div>
 
       {/* --- SECTION 3: DANGER ZONE --- */}
-      <div className="rounded-2xl border border-red-100 bg-red-50/30 p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h2>
-        <p className="text-sm text-slate-500 mb-6">
-          Deleting your account will remove all your data and cannot be undone.
+      <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-8">
+        <h2 className="text-lg font-bold text-destructive mb-2 flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5" /> Danger Zone
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Deleting your account will permanently remove all your expenses,
+          groups, and settlement history.
         </p>
         <Button
           variant="destructive"
-          className="h-11 rounded-xl bg-red-500 hover:bg-red-600"
+          className="h-12 px-6 rounded-xl shadow-sm"
         >
-          <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+          Delete Account
         </Button>
       </div>
     </div>
