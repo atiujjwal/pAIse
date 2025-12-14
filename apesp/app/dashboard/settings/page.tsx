@@ -494,7 +494,7 @@ export default function SettingsPage() {
           </form>
 
           {/* DANGER ZONE */}
-          <div className="rounded-[2.5rem] border border-destructive/20 bg-destructive/5 p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* <div className="rounded-[2.5rem] border border-destructive/20 bg-destructive/5 p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
               <h3 className="font-bold text-lg text-destructive flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" /> Danger Zone
@@ -510,7 +510,7 @@ export default function SettingsPage() {
             >
               Delete Account
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
