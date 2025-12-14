@@ -299,20 +299,22 @@ export default function GroupDetailsPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="expenses" className="w-full">
+          <Tabs defaultValue="balances" className="w-full">
             <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14 mb-6">
-              <TabsTrigger
-                value="expenses"
-                className="rounded-xl h-full px-6 font-bold"
-              >
-                Expenses
-              </TabsTrigger>
               <TabsTrigger
                 value="balances"
                 className="rounded-xl h-full px-6 font-bold"
               >
                 Balances
               </TabsTrigger>
+              
+              <TabsTrigger
+                value="expenses"
+                className="rounded-xl h-full px-6 font-bold"
+              >
+                Expenses
+              </TabsTrigger>
+
               <TabsTrigger
                 value="history"
                 className="rounded-xl h-full px-6 font-bold"
@@ -321,7 +323,19 @@ export default function GroupDetailsPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: EXPENSES LIST */}
+            {/* TAB 1: BALANCES */}
+            <TabsContent
+              value="balances"
+              className="space-y-6 animate-in fade-in slide-in-from-bottom-2"
+            >
+              <BalancesList
+                balances={balances}
+                groupName={group.name}
+                onSettleClick={(target) => setSettlementTarget(target)}
+              />
+            </TabsContent>
+
+            {/* TAB 2: EXPENSES LIST */}
             <TabsContent
               value="expenses"
               className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
@@ -346,18 +360,6 @@ export default function GroupDetailsPage() {
                   ))}
                 </div>
               )}
-            </TabsContent>
-
-            {/* TAB 2: BALANCES */}
-            <TabsContent
-              value="balances"
-              className="space-y-6 animate-in fade-in slide-in-from-bottom-2"
-            >
-              <BalancesList
-                balances={balances}
-                groupName={group.name}
-                onSettleClick={(target) => setSettlementTarget(target)}
-              />
             </TabsContent>
 
             {/* TAB 3: SETTLEMENT HISTORY */}
