@@ -11,10 +11,11 @@ import {
   HelpCircle,
   Mail,
   Github,
-  Twitter,
+  Linkedin,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 
 export default function LandingPage() {
   return (
@@ -42,6 +43,8 @@ export default function LandingPage() {
           </Link>
         </div>
         <div className="flex gap-3">
+          {/* Theme Switcher */}
+          <ThemeToggle />
           <Button
             variant="ghost"
             className="rounded-xl text-muted-foreground hover:text-foreground hidden sm:flex"
@@ -257,7 +260,7 @@ export default function LandingPage() {
               </p>
               <Button
                 size="lg"
-                className="h-14 px-8 rounded-full bg-white text-primary hover:bg-slate-50 font-bold text-lg shadow-xl hover:scale-105 transition-all"
+                className="h-54 px-8 rounded-full bg-white text-violet-600 hover:bg-slate-50 font-bold text-lg shadow-xl hover:scale-105 transition-all"
                 asChild
               >
                 <Link href="/auth/register">Create Free Account</Link>
@@ -271,12 +274,18 @@ export default function LandingPage() {
       <footer className="border-t border-border bg-card py-12 px-6">
         <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-8 mb-12">
           <div className="col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap className="h-5 w-5 text-primary" />
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+                <img
+                  src={pAIse_LOGO}
+                  alt="pAIse"
+                  className="h-6 w-auto object-contain"
+                />
               </div>
-              <span className="text-xl font-bold">pAIse</span>
-            </div>
+              <span className="text-2xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                pAIse
+              </span>
+            </Link>
             <p className="text-muted-foreground max-w-xs leading-relaxed">
               The smartest way to split bills and track shared expenses with
               friends, roommates, and family.
@@ -302,9 +311,9 @@ export default function LandingPage() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-primary transition-colors">
+                {/* <Link href="#" className="hover:text-primary transition-colors">
                   Changelog
-                </Link>
+                </Link> */}
               </li>
             </ul>
           </div>
@@ -318,14 +327,14 @@ export default function LandingPage() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-primary transition-colors">
+                {/* <Link href="#" className="hover:text-primary transition-colors">
                   Careers
-                </Link>
+                </Link> */}
               </li>
               <li>
-                <Link href="#" className="hover:text-primary transition-colors">
+                {/* <Link href="#" className="hover:text-primary transition-colors">
                   Blog
-                </Link>
+                </Link> */}
               </li>
               <li>
                 <Link href="#" className="hover:text-primary transition-colors">
@@ -346,9 +355,29 @@ export default function LandingPage() {
               Terms of Service
             </Link>
             <div className="flex gap-4 ml-4">
-              <Twitter className="h-5 w-5 hover:text-primary cursor-pointer" />
-              <Github className="h-5 w-5 hover:text-primary cursor-pointer" />
-              <Mail className="h-5 w-5 hover:text-primary cursor-pointer" />
+              <Link
+                href="https://www.linkedin.com/in/atiujjwal/"
+                target="_blank"
+                className="hover:text-primary transition-colors"
+              >
+                <Linkedin className="h-5 w-5 hover:text-primary cursor-pointer" />
+              </Link>
+
+              <Link
+                href="https://github.com/atiujjwal/pAIse"
+                target="_blank"
+                className="hover:text-primary transition-colors"
+              >
+                <Github className="h-5 w-5 hover:text-primary cursor-pointer" />
+              </Link>
+
+              <Link
+                href="mailto:atiujjwalkashyap@gmail.com"
+                target="_blank"
+                className="hover:text-primary transition-colors"
+              >
+                <Mail className="h-5 w-5 hover:text-primary cursor-pointer" />
+              </Link>
             </div>
           </div>
         </div>
