@@ -177,7 +177,7 @@ export class OcrService {
             category_suggestion: {
               type: SchemaType.STRING,
               description:
-                "Suggest one: Food, Groceries, Travel, Utilities, Entertainment",
+                "Suggest one: Food & Dining, Housing & Utilities,Transportation,Travel & Accommodation,Shopping & Personal,Entertainment & Social,Health & Wellness,Education & Work, Family,Bills & Subscriptions or Other",
             },
             confidence_score: {
               type: SchemaType.NUMBER,

@@ -361,11 +361,17 @@ export default function ExpenseForm({
                   </SelectTrigger>
                   <SelectContent>
                     {[
-                      "General",
-                      "Food",
-                      "Travel",
-                      "Entertainment",
-                      "Utilities",
+                      "Food & Dining",
+                      "Housing & Utilities",
+                      "Transportation",
+                      "Travel & Accommodation",
+                      "Shopping & Personal",
+                      "Entertainment & Social",
+                      "Health & Wellness",
+                      "Education & Work",
+                      "Family",
+                      "Bills & Subscriptions",
+                      "Other",
                     ].map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
