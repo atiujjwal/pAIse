@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Wallet,
@@ -18,6 +19,9 @@ import {
   Calendar,
   User,
   Plus,
+  UserMinus,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 
 import {
@@ -26,6 +30,8 @@ import {
 } from "@/src/features/friends/api/friend-queries";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
 import { useAuthStore } from "@/src/features/auth/store";
+import { api } from "@/src/lib/api";
+import { useToastStore } from "@/src/hooks/use-toast";
 
 import { Button } from "@/src/components/ui/Button";
 import { Skeleton } from "@/src/components/ui/Skeleton";
@@ -40,10 +46,116 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/src/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/src/components/ui/Dialog";
 import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
 import { formatCurrency, cn } from "@/src/lib/utils";
 
-// --- LOCAL COMPONENT: Consistent Expense Card ---
+// --- INTERFACES ---
+interface PendingGroup {
+  id: string;
+  name: string;
+  avatar: string | null;
+  pending_balance: string;
+  status: "owe" | "owed";
+}
+
+// --- LOCAL COMPONENTS ---
+
+const PendingGroupsDialog = ({
+  isOpen,
+  onClose,
+  groups,
+  friendName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  groups: PendingGroup[];
+  friendName: string;
+}) => {
+  const router = useRouter();
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md rounded-[2rem] p-8 bg-card border-border shadow-2xl">
+        <DialogHeader>
+          <div className="flex items-center gap-3 text-amber-600 mb-2">
+            <div className="p-3 bg-amber-100 rounded-full">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground">
+              Cannot Remove Friend
+            </DialogTitle>
+          </div>
+          <DialogDescription className="text-muted-foreground pt-2 text-base leading-relaxed">
+            You have unsettled balances with <strong>{friendName}</strong> in
+            the following groups. Please settle them before removing this
+            friend.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6 space-y-3 max-h-[300px] overflow-y-auto pr-2">
+          {groups.map((group) => (
+            <div
+              key={group.id}
+              onClick={() => router.push(`/dashboard/groups/${group.id}`)}
+              className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border cursor-pointer hover:bg-muted/50 hover:border-primary/20 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 border border-background shadow-sm">
+                  <AvatarImage src={group.avatar || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    {group.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">
+                    {group.name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    View Group <ExternalLink className="h-2.5 w-2.5" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span
+                  className={cn(
+                    "block font-mono font-bold text-sm",
+                    group.status === "owe"
+                      ? "text-destructive"
+                      : "text-secondary"
+                  )}
+                >
+                  {group.status === "owe" ? "You owe" : "Owes you"}
+                </span>
+                <span className="text-xs font-bold text-foreground">
+                  {formatCurrency(group.pending_balance, "INR")}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <DialogFooter className="mt-6">
+          <Button
+            onClick={onClose}
+            className="w-full h-12 rounded-xl shadow-md"
+          >
+            Understood
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const SharedExpenseCard = ({ expense }: { expense: any }) => {
   const isGroup = !!expense.group;
   const avatarUrl = isGroup ? expense.group.avatar : expense.created_by.avatar;
@@ -120,6 +232,7 @@ export default function FriendDetailsPage() {
   const friendId = params?.id as string;
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
+  const { addToast } = useToastStore();
 
   const { data: friend, isLoading: loadingFriend } = useFriendDetails(friendId);
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
@@ -129,7 +242,36 @@ export default function FriendDetailsPage() {
   const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
 
   const [showSettlement, setShowSettlement] = useState(false);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showBlockerDialog, setShowBlockerDialog] = useState(false);
+  const [pendingGroups, setPendingGroups] = useState<PendingGroup[]>([]);
   const [isReminded, setIsReminded] = useState(false);
+
+  // --- MUTATION: REMOVE FRIEND ---
+  const { mutate: removeFriend, isPending: isRemoving } = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/friends/${friendId}`);
+    },
+    onSuccess: () => {
+      addToast("Friend removed successfully", "success");
+      router.push("/dashboard/friends");
+    },
+    onError: (err: any) => {
+      const errorData = err?.response?.data;
+
+      // Handle Blocking Condition
+      if (
+        errorData?.code === "PENDING_GROUP_BALANCES" &&
+        errorData?.data?.groups
+      ) {
+        setPendingGroups(errorData.data.groups);
+        setShowRemoveDialog(false); // Close confirmation
+        setShowBlockerDialog(true); // Open blocker list
+      } else {
+        addToast(errorData?.message || "Failed to remove friend", "error");
+      }
+    },
+  });
 
   const isOwe = friend?.status === "owe";
   const isOwed = friend?.status === "owed";
@@ -262,7 +404,16 @@ export default function FriendDetailsPage() {
               </div>
 
               <div className="flex flex-wrap gap-3 w-full md:w-auto">
-                {/* NEW: Add Expense Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowRemoveDialog(true)}
+                  className="h-12 w-12 rounded-xl border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-all"
+                  title="Remove Friend"
+                >
+                  <UserMinus className="h-5 w-5" />
+                </Button>
+
                 <Button
                   asChild
                   className="flex-1 md:flex-none h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
@@ -292,13 +443,6 @@ export default function FriendDetailsPage() {
                         : "bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-secondary/20"
                     )}
                   >
-                    {isReminding ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : isReminded ? (
-                      <Check className="h-4 w-4 mr-2" />
-                    ) : (
-                      <Bell className="h-4 w-4 mr-2" />
-                    )}
                     {isReminded ? "Reminded" : "Remind"}
                   </Button>
                 )}
@@ -308,9 +452,7 @@ export default function FriendDetailsPage() {
         </div>
       </div>
 
-      {/* ... (Tabs and Rest of the page remains same as previous step, ensuring consistency) ... */}
-
-      {/* Tabs Section Reuse */}
+      {/* --- TABS SECTION --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="direct" className="w-full">
@@ -375,7 +517,6 @@ export default function FriendDetailsPage() {
               value="history"
               className="space-y-4 animate-in fade-in"
             >
-              {/* ... (Settlement History List same as before) ... */}
               {loadingSettlements ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
@@ -473,6 +614,7 @@ export default function FriendDetailsPage() {
         </div>
       </div>
 
+      {/* Settle Modal */}
       {showSettlement && isOwe && (
         <SettlementModal
           isOpen={showSettlement}
@@ -491,6 +633,55 @@ export default function FriendDetailsPage() {
           context={{ type: "friend" }}
         />
       )}
+
+      {/* REMOVE FRIEND DIALOG */}
+      <Dialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-8 bg-card border-border">
+          <DialogHeader>
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <div className="p-3 bg-destructive/10 rounded-full">
+                <UserMinus className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-xl font-bold text-foreground">
+                Remove Friend?
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-muted-foreground pt-2 text-base leading-relaxed">
+              Are you sure you want to remove <strong>{friend.name}</strong>?
+              Your personal (non-group) balances will be cleared. Make sure all group balances are settled before continuing.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3 sm:gap-0 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowRemoveDialog(false)}
+              className="rounded-xl h-12 border-border flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => removeFriend()}
+              disabled={isRemoving}
+              className="rounded-xl h-12 flex-1 shadow-lg shadow-destructive/20"
+            >
+              {isRemoving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Remove Friend"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BLOCKER DIALOG */}
+      <PendingGroupsDialog
+        isOpen={showBlockerDialog}
+        onClose={() => setShowBlockerDialog(false)}
+        groups={pendingGroups}
+        friendName={friend.name}
+      />
     </div>
   );
 }

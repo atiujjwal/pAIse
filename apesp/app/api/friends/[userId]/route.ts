@@ -50,6 +50,7 @@ const formatExpenseList = (expenses: any[]) => {
 /**
  * DELETE /friends/{userId}
  * Removes a friend ("unfriends" a user) by their user ID.
+ * VALIDATION: Returns detailed list of groups with pending balances if removal is blocked.
  */
 const deleteHandler = async (
   request: NextRequest,
@@ -60,8 +61,7 @@ const deleteHandler = async (
     const { userId: myId } = payload;
     const { userId: friendId } = context.params;
 
-    // Action: Find the Friendship record where status == ACCEPTED
-    // and the two users are 'me' and '{userId}'.
+    // Find the Friendship record
     const friendship = await prisma.friendship.findFirst({
       where: {
         status: FriendshipStatus.ACCEPTED,
@@ -72,15 +72,73 @@ const deleteHandler = async (
       },
     });
 
-    // 404: Friendship not found. Idempotent: If not found, it's a success.
     if (!friendship) return notFound("Friendship not found");
 
-    // Now, delete this friendship record.
-    // We also delete any non-group balance between them.
     const [user_A_id, user_B_id] = [myId, friendId].sort();
 
+    // Fetch all group balances between these two users
+    const groupBalances = await prisma.balance.findMany({
+      where: {
+        user_A_id,
+        user_B_id,
+        group_id: { not: null },
+      },
+      include: {
+        group: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    const pendingGroups = [];
+
+    // Analyze balances to see if any are non-zero
+    for (const b of groupBalances) {
+      if (!b.group) continue;
+
+      let netBalance = new Decimal(0);
+
+      if (b.user_A_id === myId) {
+        // I am A. +Amount = Credit, -Amount = Debt
+        netBalance = b.amount;
+      } else {
+        // I am B. -Amount = Credit, +Amount = Debt
+        netBalance = b.amount.negated();
+      }
+
+      // Check if significant debt exists
+      if (Math.abs(netBalance.toNumber()) > 0.01) {
+        pendingGroups.push({
+          id: b.group.id,
+          name: b.group.name,
+          avatar: b.group.avatar,
+          pending_balance: netBalance.toFixed(2), // + means they owe me, - means I owe them
+          status: netBalance.isPositive() ? "owed" : "owe",
+        });
+      }
+    }
+
+    // 4. Return Conflict if pending balances exist
+    if (pendingGroups.length > 0) {
+      return Response.json(
+        {
+          success: false,
+          message: "Cannot remove friend due to pending group balances.",
+          code: "PENDING_GROUP_BALANCES",
+          data: {
+            groups: pendingGroups,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Clean Delete if safe
     await prisma.$transaction([
-      // Delete the friendship
       prisma.friendship.delete({
         where: { id: friendship.id },
       }),
@@ -88,19 +146,18 @@ const deleteHandler = async (
       prisma.balance.deleteMany({
         where: {
           group_id: null,
-          user_A_id: user_A_id,
-          user_B_id: user_B_id,
+          user_A_id,
+          user_B_id,
         },
       }),
     ]);
 
     return noContent();
   } catch (error: any) {
-    console.log("Error deleting friend: ", error);
-    if (error.message.includes("token")) {
-      return errorResponse("unauthorized");
+    console.error("Error deleting friend: ", error);
+    if (error.message?.includes("token")) {
+      return errorResponse("Unauthorized", 401);
     }
-    // Handle case where record is already deleted
     if (error.code === "P2025") {
       return noContent();
     }
