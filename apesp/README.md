@@ -67,7 +67,8 @@ Supports multiple real-world splitting strategies:
 - **Shares-Based** – Distribute costs using weighted shares (e.g., 1x / 2x).
 
 ### 🤖 AI-Powered Expense Entry
-
+- **AI Chatbot**:  
+  Comfortably interact with AI to know app features and your expense details.
 - **Voice Input**:  
   _“I paid 500 for lunch with Bob”_ → Expense created instantly.
 - **Automatic Categorization**:  
