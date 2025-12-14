@@ -85,6 +85,7 @@ export default function ExpenseDetailsPage() {
   // --- Logic ---
   const isCreator = expense.created_by.id === user?.id;
   const canDelete = isCreator;
+  const canEdit = isCreator;
 
   // 1. Strictly determine Context (Group vs Friend) using ID
   const isGroupExpense = !!expense?.group_id;
@@ -122,8 +123,8 @@ export default function ExpenseDetailsPage() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
 
-        {isCreator && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {canEdit && (
             <Button
               variant="outline"
               className="rounded-xl h-10 border-border bg-card hover:bg-muted text-foreground"
@@ -133,6 +134,9 @@ export default function ExpenseDetailsPage() {
             >
               <Pencil className="h-4 w-4 mr-2" /> Edit
             </Button>
+          )}
+
+          {canDelete && (
             <Button
               variant="ghost"
               className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-10"
@@ -140,8 +144,8 @@ export default function ExpenseDetailsPage() {
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* --- Main Card --- */}

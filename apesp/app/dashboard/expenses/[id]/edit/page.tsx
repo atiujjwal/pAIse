@@ -14,6 +14,8 @@ export default function EditExpensePage() {
   const { data: expense, isLoading, isError } = useExpenseDetails(id as string);
   const { user: currentUser } = useAuthStore();
 
+  let isGroupExpense = expense?.group_id;
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -38,13 +40,14 @@ export default function EditExpensePage() {
       </div>
     );
   }
-
-  // 1. Format Data for the Form (React Hook Form expects strings for inputs)
+  
+  console.log("43: ", expense);
+  
+  // Format Data for the Form
   const initialData = {
     amount: expense.amount.toString(),
     description: expense.description,
     category: expense.category,
-    // Format date to YYYY-MM-DD for input type="date"
     date: new Date(expense.date).toISOString().slice(0, 10),
     currency: expense.currency,
     group_id: expense.group_id,
@@ -62,22 +65,9 @@ export default function EditExpensePage() {
     })),
   };
 
-  // 2. Preload Members (Crucial for Friend Expenses)
-  // If we don't pass this, the form tries to find the friend in the global list,
-  // which might not be loaded yet.
-  let preloadedMembers: User[] = [];
-
-  if (expense.friend_id && expense.friend && currentUser) {
-    const friend = expense.friend;
-    // For friend expenses, the members are always [Me, Friend]
-    // Filter duplicates just in case
-    if (friend.id === currentUser.id) {
-      preloadedMembers = [currentUser];
-    } else {
-      preloadedMembers = [currentUser, friend];
-    }
+  if (!isGroupExpense) {
+    initialData.friend_id = expense.friend?.id;
   }
-  // Note: For Group expenses, the ExpenseForm handles fetching group members via ID.
 
   return (
     <div className="max-w-2xl mx-auto pb-20 pt-6">
@@ -86,10 +76,10 @@ export default function EditExpensePage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.back()} // FIX: Pops history stack instead of pushing new entry
+          onClick={() => router.back()}
           className="text-muted-foreground hover:text-foreground hover:bg-muted -ml-3 rounded-xl"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Cancel Editing
+          <ArrowLeft className="mr-2 h-4 w-4" /> back
         </Button>
       </div>
 
@@ -109,7 +99,6 @@ export default function EditExpensePage() {
         mode="edit"
         expenseId={id as string}
         initialData={initialData}
-        preloadedMembers={preloadedMembers}
       />
     </div>
   );

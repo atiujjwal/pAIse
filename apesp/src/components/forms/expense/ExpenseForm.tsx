@@ -39,20 +39,17 @@ import { PayerSelector } from "./PayerSelector";
 import { SplitDistribution } from "./SplitDistribution";
 import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 import { useExpenseWizardStore } from "@/src/features/expenses/store/wizard-store";
-import { User as ApiUser } from "@/src/types/api";
 
 interface ExpenseFormProps {
   mode?: "create" | "edit";
   expenseId?: string;
   initialData?: Partial<CreateExpenseInput>;
-  preloadedMembers?: ApiUser[];
 }
 
 export default function ExpenseForm({
   mode = "create",
   expenseId,
   initialData,
-  preloadedMembers = [],
 }: ExpenseFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,64 +58,49 @@ export default function ExpenseForm({
   const queryClient = useQueryClient();
 
   const wizardStore = useExpenseWizardStore();
+
   const preSelectedGroupId = searchParams.get("groupId");
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
   const { data: friends, isLoading: loadingFriends } = useFriends();
 
-  // 1. Determine Default Values
-  const defaultValues: Partial<CreateExpenseInput> = useMemo(() => {
-    if (mode === "edit" && initialData) {
-      return {
-        ...initialData,
-        // Ensure arrays are at least empty arrays if undefined
-        payers: initialData.payers || [],
-        splits: initialData.splits || [],
-      };
-    }
-    // Create Mode: Use Store
-    return {
-      amount: wizardStore.amount || "",
-      description: wizardStore.description || "",
-      date: wizardStore.date || new Date().toISOString().split("T")[0],
-      split_type: wizardStore.split_type || "EQUAL",
-      currency: "INR",
-      category: wizardStore.category || "General",
-      payers: wizardStore.payers || [],
-      splits: wizardStore.splits || [],
-      group_id: wizardStore.group_id || preSelectedGroupId || null,
-      friend_id: wizardStore.friend_id || null,
-    };
-  }, [mode, initialData, wizardStore, preSelectedGroupId]);
-
   const form = useForm<CreateExpenseInput>({
     resolver: zodResolver(createExpenseSchema),
-    defaultValues,
+    defaultValues: useMemo(() => {
+      if (mode === "edit" && initialData) {
+        return {
+          ...initialData,
+          // Ensure arrays are present even if empty
+          payers: initialData.payers || [],
+          splits: initialData.splits || [],
+        };
+      }
+      return {
+        amount: wizardStore.amount || "",
+        description: wizardStore.description || "",
+        date: wizardStore.date || new Date().toISOString().split("T")[0],
+        split_type: wizardStore.split_type || "EQUAL",
+        currency: "INR",
+        category: wizardStore.category || "General",
+        payers: wizardStore.payers || [],
+        splits: wizardStore.splits || [],
+        group_id: wizardStore.group_id || preSelectedGroupId || null,
+        friend_id: wizardStore.friend_id || null,
+      };
+    }, [mode, initialData, wizardStore, preSelectedGroupId]),
   });
 
   const { register, setValue, control, handleSubmit, formState } = form;
   const { isDirty } = formState;
   const setIsDirty = useNavigationGuard((state) => state.setIsDirty);
 
-  // 2. Sync Logic
-  // ONLY sync Wizard Store -> Form in CREATE mode.
-  // In EDIT mode, we rely solely on initialData + user input.
+  // Sync Form <-> Store (Create Mode Only)
   useEffect(() => {
     if (mode === "create") {
       if (wizardStore.amount) setValue("amount", wizardStore.amount);
       if (wizardStore.description)
         setValue("description", wizardStore.description);
-      if (wizardStore.category) setValue("category", wizardStore.category);
-      if (wizardStore.date) setValue("date", wizardStore.date);
-      if (wizardStore.split_type)
-        setValue("split_type", wizardStore.split_type);
-
-      if (wizardStore.payers && wizardStore.payers.length > 0)
-        setValue("payers", wizardStore.payers);
-      if (wizardStore.splits && wizardStore.splits.length > 0)
-        setValue("splits", wizardStore.splits);
 
       if (wizardStore.group_id) setValue("group_id", wizardStore.group_id);
-      if (wizardStore.friend_id) setValue("friend_id", wizardStore.friend_id);
     }
   }, [wizardStore, setValue, mode]);
 
@@ -127,25 +109,20 @@ export default function ExpenseForm({
     return () => setIsDirty(false);
   }, [isDirty, setIsDirty]);
 
-  // Watch Values for UI State
   const selectedGroupId = useWatch({ control, name: "group_id" });
   const selectedFriendId = useWatch({ control, name: "friend_id" });
   const splitType = useWatch({ control, name: "split_type" });
   const amount = useWatch({ control, name: "amount" });
 
-  // Pass these down to children so they re-render when form updates
+  // Watch payers/splits so they are reactive
   const payers = useWatch({ control, name: "payers" });
   const splits = useWatch({ control, name: "splits" });
 
-  // 3. Context Switching Logic
-  // Initialize tab based on what IDs are present
-  const [activeTab, setActiveTab] = useState<"group" | "friend">(() => {
-    if (initialData?.friend_id) return "friend";
-    if (selectedFriendId) return "friend";
-    return "group";
-  });
+  // Context Switching
+  const [activeTab, setActiveTab] = useState<"group" | "friend">(
+    selectedFriendId ? "friend" : "group"
+  );
 
-  // Ensure tab matches selection (Reactive)
   useEffect(() => {
     if (selectedGroupId) setActiveTab("group");
     else if (selectedFriendId) setActiveTab("friend");
@@ -155,31 +132,16 @@ export default function ExpenseForm({
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
-  // 4. Member Resolution Logic
+  // Fetch Members
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
-
   const activeMembers = useMemo(() => {
-    // Priority 1: Explicitly passed members (Edit Mode - Friend)
-    if (preloadedMembers.length > 0) return preloadedMembers;
-
-    // Priority 2: Group Members (Async Hook)
     if (selectedGroupId && groupMembers) return groupMembers;
-
-    // Priority 3: Friend from Global List (Create Mode)
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
       return friend ? [currentUser, friend] : [];
     }
-
     return [];
-  }, [
-    preloadedMembers,
-    selectedGroupId,
-    groupMembers,
-    selectedFriendId,
-    friends,
-    currentUser,
-  ]);
+  }, [selectedGroupId, groupMembers, selectedFriendId, friends, currentUser]);
 
   const handlePayerChange = useCallback(
     (newPayers: any[]) => {
@@ -202,6 +164,7 @@ export default function ExpenseForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
       if (expenseId) {
         queryClient.invalidateQueries({ queryKey: ["expense", expenseId] });
       }
@@ -320,10 +283,6 @@ export default function ExpenseForm({
                   if (draft.amount) setValue("amount", draft.amount);
                   if (draft.description)
                     setValue("description", draft.description);
-                  if (draft.date) setValue("date", draft.date);
-                  if (draft.category) setValue("category", draft.category);
-                  if (draft.payers) setValue("payers", draft.payers);
-                  if (draft.splits) setValue("splits", draft.splits);
                 }}
                 contextData={{
                   type: activeTab,
@@ -415,8 +374,9 @@ export default function ExpenseForm({
                 </div>
                 <Label className="text-lg font-bold">Who paid?</Label>
               </div>
-              {/* IMPORTANT: PayerSelector needs 'value' to know current state for Edit Mode.
-               */}
+              {/* IMPORTANT: PayerSelector must accept 'value' to sync with form state in Edit Mode
+                   We pass 'payers' which we are watching from useWatch() 
+                */}
               <PayerSelector
                 members={activeMembers}
                 totalAmount={amount}
@@ -449,7 +409,7 @@ export default function ExpenseForm({
                   </SelectContent>
                 </Select>
               </div>
-              {/* IMPORTANT: SplitDistribution needs 'value' to populate inputs for Edit Mode.
+              {/* IMPORTANT: SplitDistribution must accept 'value'
                */}
               <SplitDistribution
                 splitType={splitType}
