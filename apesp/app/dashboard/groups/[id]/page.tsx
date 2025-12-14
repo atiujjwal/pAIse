@@ -198,7 +198,7 @@ export default function GroupDetailsPage() {
               onClick={() => router.push("/dashboard/groups")}
               className="text-muted-foreground hover:text-foreground -ml-2 hover:bg-muted rounded-xl"
             >
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Groups
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
           </div>
 
@@ -738,7 +738,7 @@ function GroupNotFound() {
         onClick={() => router.push("/dashboard/groups")}
         className="rounded-xl"
       >
-        Back to Groups
+        Back
       </Button>
     </div>
   );
