@@ -60,6 +60,7 @@ export default function ExpenseForm({
   const wizardStore = useExpenseWizardStore();
 
   const preSelectedGroupId = searchParams.get("groupId");
+  const preSelectedFriendId = searchParams.get("friendId");
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
   const { data: friends, isLoading: loadingFriends } = useFriends();
 
@@ -84,9 +85,9 @@ export default function ExpenseForm({
         payers: wizardStore.payers || [],
         splits: wizardStore.splits || [],
         group_id: wizardStore.group_id || preSelectedGroupId || null,
-        friend_id: wizardStore.friend_id || null,
+        friend_id: wizardStore.friend_id || preSelectedFriendId || null,
       };
-    }, [mode, initialData, wizardStore, preSelectedGroupId]),
+    }, [mode, initialData, wizardStore, preSelectedGroupId, preSelectedFriendId]),
   });
 
   const { register, setValue, control, handleSubmit, formState } = form;

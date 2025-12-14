@@ -17,6 +17,7 @@ import {
   Layers,
   Calendar,
   User,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -45,9 +46,6 @@ import { formatCurrency, cn } from "@/src/lib/utils";
 // --- LOCAL COMPONENT: Consistent Expense Card ---
 const SharedExpenseCard = ({ expense }: { expense: any }) => {
   const isGroup = !!expense.group;
-  // Logic:
-  // - Group Expense: Show Group Avatar + Name
-  // - Direct Expense: Show Creator Avatar + Name (Who added it)
   const avatarUrl = isGroup ? expense.group.avatar : expense.created_by.avatar;
   const name = isGroup ? expense.group.name : expense.created_by.name;
 
@@ -56,7 +54,6 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
       href={`/dashboard/expenses/${expense.id}`}
       className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 hover:shadow-md transition-all group"
     >
-      {/* Avatar Section */}
       <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
         <AvatarImage src={avatarUrl || undefined} className="object-cover" />
         <AvatarFallback
@@ -71,13 +68,11 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
         </AvatarFallback>
       </Avatar>
 
-      {/* Main Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
             {expense.description}
           </h4>
-          {/* Badge for Context */}
           {isGroup && (
             <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
               Group
@@ -106,7 +101,6 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
         </div>
       </div>
 
-      {/* Amount Section */}
       <div className="text-right">
         <span className="block font-bold text-foreground font-mono text-base">
           {formatCurrency(expense.amount, expense.currency)}
@@ -127,40 +121,31 @@ export default function FriendDetailsPage() {
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
 
-  // --- Queries ---
   const { data: friend, isLoading: loadingFriend } = useFriendDetails(friendId);
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
     friend_id: friendId,
   });
 
-  // --- Mutations ---
   const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
 
-  // --- State ---
   const [showSettlement, setShowSettlement] = useState(false);
   const [isReminded, setIsReminded] = useState(false);
 
-  // --- Derived State ---
   const isOwe = friend?.status === "owe";
   const isOwed = friend?.status === "owed";
   const isSettled = friend?.status === "settled";
   const balanceValue = friend?.net_balance || "0";
 
-  // --- Handlers ---
   const handleRemind = () => {
     if (isReminded || !friend) return;
-
     const formattedAmount = formatCurrency(balanceValue, friend.currency);
-
     remindFriend(
       {
         friendId,
         amount: formattedAmount,
         message: `Friendly reminder: You owe me ${formattedAmount}. Please settle up when you can!`,
       },
-      {
-        onSuccess: () => setIsReminded(true),
-      }
+      { onSuccess: () => setIsReminded(true) }
     );
   };
 
@@ -201,11 +186,9 @@ export default function FriendDetailsPage() {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* --- HEADER SECTION --- */}
       <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 relative overflow-hidden">
-        {/* Decorative Background */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 z-0 pointer-events-none" />
 
         <div className="relative z-10">
-          {/* Back Button */}
           <div className="mb-8">
             <Button
               variant="ghost"
@@ -238,7 +221,6 @@ export default function FriendDetailsPage() {
                   {friend.email}
                 </p>
 
-                {/* Status Badge */}
                 <div
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mt-2 shadow-sm border",
@@ -279,7 +261,17 @@ export default function FriendDetailsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3 w-full md:w-auto">
+              <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                {/* NEW: Add Expense Button */}
+                <Button
+                  asChild
+                  className="flex-1 md:flex-none h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                >
+                  <Link href={`/dashboard/expenses/new?friendId=${friend.id}`}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Expense
+                  </Link>
+                </Button>
+
                 {isOwe && (
                   <Button
                     onClick={() => setShowSettlement(true)}
@@ -316,7 +308,9 @@ export default function FriendDetailsPage() {
         </div>
       </div>
 
-      {/* --- CONTENT TABS --- */}
+      {/* ... (Tabs and Rest of the page remains same as previous step, ensuring consistency) ... */}
+
+      {/* Tabs Section Reuse */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="direct" className="w-full">
@@ -325,32 +319,31 @@ export default function FriendDetailsPage() {
                 value="direct"
                 className="rounded-xl h-full px-6 text-sm font-bold"
               >
-                Direct Expenses
+                Direct
               </TabsTrigger>
               <TabsTrigger
                 value="groups"
                 className="rounded-xl h-full px-6 text-sm font-bold"
               >
-                Group Expenses
+                Groups
               </TabsTrigger>
               <TabsTrigger
                 value="history"
                 className="rounded-xl h-full px-6 text-sm font-bold"
               >
-                Payment History
+                History
               </TabsTrigger>
             </TabsList>
 
-            {/* 1. DIRECT EXPENSES */}
             <TabsContent
               value="direct"
-              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+              className="space-y-4 animate-in fade-in"
             >
               {friend.expenses.friend_expenses.length === 0 ? (
-                <EmptyState
-                  icon={Receipt}
-                  message="No direct shared expenses yet."
-                />
+                <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                  <Receipt className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">No direct expenses.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {friend.expenses.friend_expenses.map((expense: any) => (
@@ -360,16 +353,15 @@ export default function FriendDetailsPage() {
               )}
             </TabsContent>
 
-            {/* 2. GROUP EXPENSES */}
             <TabsContent
               value="groups"
-              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+              className="space-y-4 animate-in fade-in"
             >
               {friend.expenses.group_expenses.length === 0 ? (
-                <EmptyState
-                  icon={Layers}
-                  message="No shared expenses in groups."
-                />
+                <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                  <Layers className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">No group expenses.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {friend.expenses.group_expenses.map((expense: any) => (
@@ -379,39 +371,75 @@ export default function FriendDetailsPage() {
               )}
             </TabsContent>
 
-            {/* 3. SETTLEMENT HISTORY */}
             <TabsContent
               value="history"
-              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+              className="space-y-4 animate-in fade-in"
             >
+              {/* ... (Settlement History List same as before) ... */}
               {loadingSettlements ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+                    <Skeleton key={i} className="h-20 rounded-2xl" />
                   ))}
                 </div>
               ) : settlements?.length === 0 ? (
-                <EmptyState
-                  icon={ArrowRightLeft}
-                  message="No payment history found."
-                />
+                <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                  <ArrowRightLeft className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">No history.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {settlements.map((s: any) => (
-                    <SettlementItem
-                      key={s.id}
-                      settlement={s}
-                      currentUserId={currentUser.id}
-                      friendName={friend.name}
-                    />
-                  ))}
+                  {settlements.map((s: any) => {
+                    const isPayer = s.payer.id === currentUser.id;
+                    return (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between p-5 rounded-2xl border border-border bg-card shadow-sm"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={cn(
+                              "h-12 w-12 rounded-full flex items-center justify-center text-xl",
+                              isPayer
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-secondary/10 text-secondary"
+                            )}
+                          >
+                            {isPayer ? "↑" : "↓"}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {isPayer ? "You paid" : `${friend.name} paid`}
+                              <span className="font-normal text-muted-foreground">
+                                {" "}
+                                to{" "}
+                              </span>
+                              {isPayer ? friend.name : "You"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(s.date).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={cn(
+                            "font-mono font-bold text-lg",
+                            isPayer ? "text-destructive" : "text-secondary"
+                          )}
+                        >
+                          {isPayer ? "-" : "+"}
+                          {formatCurrency(s.amount, s.currency)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
           </Tabs>
         </div>
 
-        {/* --- RIGHT SIDEBAR (Stats / Info) --- */}
+        {/* Sidebar Summary */}
         <div className="lg:col-span-1">
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sticky top-6">
             <h3 className="font-bold text-lg text-foreground mb-6">Summary</h3>
@@ -445,7 +473,6 @@ export default function FriendDetailsPage() {
         </div>
       </div>
 
-      {/* Settle Modal */}
       {showSettlement && isOwe && (
         <SettlementModal
           isOpen={showSettlement}
@@ -464,66 +491,6 @@ export default function FriendDetailsPage() {
           context={{ type: "friend" }}
         />
       )}
-    </div>
-  );
-}
-
-// --- SUB-COMPONENTS ---
-
-function SettlementItem({
-  settlement,
-  currentUserId,
-  friendName,
-}: {
-  settlement: any;
-  currentUserId: string;
-  friendName: string;
-}) {
-  const isPayer = settlement.payer.id === currentUserId;
-  return (
-    <div className="flex items-center justify-between p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 transition-all">
-      <div className="flex items-center gap-4">
-        <div
-          className={cn(
-            "h-12 w-12 rounded-full flex items-center justify-center text-xl shadow-sm",
-            isPayer
-              ? "bg-destructive/10 text-destructive"
-              : "bg-secondary/10 text-secondary"
-          )}
-        >
-          {isPayer ? "↑" : "↓"}
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            {isPayer ? "You paid" : `${friendName} paid`}
-            <span className="font-normal text-muted-foreground"> to </span>
-            {isPayer ? friendName : "You"}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {new Date(settlement.date).toLocaleDateString(undefined, {
-              dateStyle: "medium",
-            })}
-          </p>
-        </div>
-      </div>
-      <span
-        className={cn(
-          "font-mono font-bold text-lg",
-          isPayer ? "text-destructive" : "text-secondary"
-        )}
-      >
-        {isPayer ? "-" : "+"}
-        {formatCurrency(settlement.amount, settlement.currency)}
-      </span>
-    </div>
-  );
-}
-
-function EmptyState({ icon: Icon, message }: { icon: any; message: string }) {
-  return (
-    <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-muted/10">
-      <Icon className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-      <p className="text-muted-foreground font-medium">{message}</p>
     </div>
   );
 }
