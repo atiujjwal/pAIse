@@ -16,6 +16,7 @@ import { Button } from "@/src/components/ui/Button";
 import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 import { UnsavedChangesDialog } from "@/src/components/common/UnsavedChangesDialog";
 import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+import Link from "next/link";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -62,13 +63,21 @@ export function Sidebar() {
     <>
       <aside className="flex h-full flex-col bg-background border-r border-border shadow-[2px_0_24px_-12px_rgba(0,0,0,0.02)] transition-colors">
         {/* --- Brand Header --- */}
-        <div className="flex h-20 items-center px-6">
-          <img
-            src={pAIse_LOGO}
-            alt="pAIse Logo"
-            className="h-10 w-auto object-contain"
-          />
-        </div>
+        {/* --- HEADER / LOGO --- */}
+      <div className="flex h-20 items-center px-6 border-b border-border/40">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+            <img
+              src={pAIse_LOGO}
+              alt="pAIse"
+              className="h-6 w-auto object-contain"
+            />
+          </div>
+          <span className="text-2xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
+            pAIse
+          </span>
+        </Link>
+      </div>
 
         {/* --- Navigation --- */}
         <nav className="flex-1 space-y-1.5 px-4 py-6 overflow-y-auto custom-scrollbar">

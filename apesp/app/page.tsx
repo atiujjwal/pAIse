@@ -27,11 +27,19 @@ export default function LandingPage() {
 
       {/* --- Header --- */}
       <header className="sticky top-0 z-50 flex h-20 items-center justify-between px-6 md:px-12 border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all">
-        <div className="flex items-center gap-3">
-          <img src={pAIse_LOGO} alt="pAIse" className="h-8 w-auto" />
-          <span className="text-xl font-bold tracking-tight text-foreground hidden sm:block">
-            pAIse
-          </span>
+        <div className="flex h-20 items-center px-6 border-b border-border/40">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+              <img
+                src={pAIse_LOGO}
+                alt="pAIse"
+                className="h-6 w-auto object-contain"
+              />
+            </div>
+            <span className="text-2xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
+              pAIse
+            </span>
+          </Link>
         </div>
         <div className="flex gap-3">
           <Button
