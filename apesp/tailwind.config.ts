@@ -19,7 +19,7 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", ...fontFamily.sans], // Enforce Inter
+        sans: ["var(--font-inter)", ...fontFamily.sans],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -35,14 +35,21 @@ const config = {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          soft: "hsl(var(--primary-soft))",
+          dark: "hsl(var(--primary-dark))",
+          light: "hsl(var(--primary-light))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+          soft: "hsl(var(--secondary-soft))",
+          dark: "hsl(var(--secondary-dark))",
+          light: "hsl(var(--secondary-light))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+          soft: "hsl(var(--destructive-soft))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -51,6 +58,9 @@ const config = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          pink: "hsl(var(--accent-pink))",
+          yellow: "hsl(var(--accent-yellow))",
+          blue: "hsl(var(--accent-blue))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -59,6 +69,18 @@ const config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Category Colors
+        cat: {
+          dining: "hsl(var(--cat-dining))",
+          travel: "hsl(var(--cat-travel))",
+          shopping: "hsl(var(--cat-shopping))",
+          entertainment: "hsl(var(--cat-entertainment))",
+          groceries: "hsl(var(--cat-groceries))",
+          transport: "hsl(var(--cat-transport))",
+          health: "hsl(var(--cat-health))",
+          utilities: "hsl(var(--cat-utilities))",
+          general: "hsl(var(--cat-general))",
         },
       },
       boxShadow: {
