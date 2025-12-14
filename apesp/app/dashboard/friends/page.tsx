@@ -31,6 +31,7 @@ import {
   Search,
   ArrowUpDown,
   Wallet,
+  Plus,
 } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import {
@@ -94,6 +95,20 @@ export default function FriendsPage() {
             Manage your connections and balances.
           </p>
         </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            asChild
+            size="lg"
+            className="rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-105"
+          >
+            {/* Pass context=friend to pre-select the Friend tab */}
+            <Link href="/dashboard/expenses/new?context=friend">
+              <Plus className="mr-2 h-5 w-5" /> Add Expense
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* --- STICKY FILTER BAR --- */}
@@ -112,7 +127,7 @@ export default function FriendsPage() {
 
           {/* Sort Control (Only Balance) */}
           <div className="flex items-center gap-2 px-2 border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0">
-            {/* Static Label for 'Net Balance' since it's the only option */}
+            {/* Static Label for 'Net Balance' */}
             <div className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-xl bg-muted/40 border border-border/50 text-xs font-bold uppercase tracking-wide text-muted-foreground cursor-default select-none">
               <Wallet className="h-3.5 w-3.5" />
               <span>Net Balance</span>
@@ -281,7 +296,7 @@ export default function FriendsPage() {
 
             {/* --- TAB: REQUESTS --- */}
             <TabsContent value="requests" className="mt-8 space-y-6">
-              {/* Sub-Tabs Toggle */}
+              {/* ... (Requests content unchanged) ... */}
               <div className="flex p-1 bg-muted rounded-xl w-fit">
                 <button
                   onClick={() => setRequestType("incoming")}

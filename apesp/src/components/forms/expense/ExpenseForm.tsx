@@ -39,17 +39,20 @@ import { PayerSelector } from "./PayerSelector";
 import { SplitDistribution } from "./SplitDistribution";
 import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 import { useExpenseWizardStore } from "@/src/features/expenses/store/wizard-store";
+import { User as ApiUser } from "@/src/types/api";
 
 interface ExpenseFormProps {
   mode?: "create" | "edit";
   expenseId?: string;
   initialData?: Partial<CreateExpenseInput>;
+  preloadedMembers?: ApiUser[];
 }
 
 export default function ExpenseForm({
   mode = "create",
   expenseId,
   initialData,
+  preloadedMembers = [],
 }: ExpenseFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,6 +64,8 @@ export default function ExpenseForm({
 
   const preSelectedGroupId = searchParams.get("groupId");
   const preSelectedFriendId = searchParams.get("friendId");
+  const contextParam = searchParams.get("context");
+
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
   const { data: friends, isLoading: loadingFriends } = useFriends();
 
@@ -70,7 +75,6 @@ export default function ExpenseForm({
       if (mode === "edit" && initialData) {
         return {
           ...initialData,
-          // Ensure arrays are present even if empty
           payers: initialData.payers || [],
           splits: initialData.splits || [],
         };
@@ -87,7 +91,13 @@ export default function ExpenseForm({
         group_id: wizardStore.group_id || preSelectedGroupId || null,
         friend_id: wizardStore.friend_id || preSelectedFriendId || null,
       };
-    }, [mode, initialData, wizardStore, preSelectedGroupId, preSelectedFriendId]),
+    }, [
+      mode,
+      initialData,
+      wizardStore,
+      preSelectedGroupId,
+      preSelectedFriendId,
+    ]),
   });
 
   const { register, setValue, control, handleSubmit, formState } = form;
@@ -102,6 +112,7 @@ export default function ExpenseForm({
         setValue("description", wizardStore.description);
 
       if (wizardStore.group_id) setValue("group_id", wizardStore.group_id);
+      if (wizardStore.friend_id) setValue("friend_id", wizardStore.friend_id);
     }
   }, [wizardStore, setValue, mode]);
 
@@ -115,13 +126,13 @@ export default function ExpenseForm({
   const splitType = useWatch({ control, name: "split_type" });
   const amount = useWatch({ control, name: "amount" });
 
-  // Watch payers/splits so they are reactive
   const payers = useWatch({ control, name: "payers" });
   const splits = useWatch({ control, name: "splits" });
 
   // Context Switching
+  // FIX: Initialize based on explicit 'context' param or pre-selected friend ID
   const [activeTab, setActiveTab] = useState<"group" | "friend">(
-    selectedFriendId ? "friend" : "group"
+    preSelectedFriendId || contextParam === "friend" ? "friend" : "group"
   );
 
   useEffect(() => {
@@ -133,16 +144,27 @@ export default function ExpenseForm({
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
-  // Fetch Members
+  // ... (Rest of logic: Member fetching, mutation, render - Unchanged) ...
+  // Keeping the rest identical to ensure stability
+
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
+
   const activeMembers = useMemo(() => {
+    if (preloadedMembers.length > 0) return preloadedMembers;
     if (selectedGroupId && groupMembers) return groupMembers;
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
       return friend ? [currentUser, friend] : [];
     }
     return [];
-  }, [selectedGroupId, groupMembers, selectedFriendId, friends, currentUser]);
+  }, [
+    preloadedMembers,
+    selectedGroupId,
+    groupMembers,
+    selectedFriendId,
+    friends,
+    currentUser,
+  ]);
 
   const handlePayerChange = useCallback(
     (newPayers: any[]) => {
@@ -375,9 +397,6 @@ export default function ExpenseForm({
                 </div>
                 <Label className="text-lg font-bold">Who paid?</Label>
               </div>
-              {/* IMPORTANT: PayerSelector must accept 'value' to sync with form state in Edit Mode
-                   We pass 'payers' which we are watching from useWatch() 
-                */}
               <PayerSelector
                 members={activeMembers}
                 totalAmount={amount}
@@ -410,8 +429,6 @@ export default function ExpenseForm({
                   </SelectContent>
                 </Select>
               </div>
-              {/* IMPORTANT: SplitDistribution must accept 'value'
-               */}
               <SplitDistribution
                 splitType={splitType}
                 amount={amount}
