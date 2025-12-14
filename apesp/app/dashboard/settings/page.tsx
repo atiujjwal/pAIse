@@ -17,6 +17,7 @@ import {
   X,
   Lock,
   AlertTriangle,
+  Check,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -34,6 +35,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/Select";
 import { cn } from "@/src/lib/utils";
+import { PROFILE_AVATARS } from "@/src/lib/mediaUrls";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -189,7 +191,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20 pt-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
           Settings
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -198,7 +200,7 @@ export default function SettingsPage() {
       </div>
 
       {/* --- SECTION 1: PROFILE --- */}
-      <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+      <div className="rounded-[2.5rem] border border-border bg-card p-8 shadow-sm">
         <h2 className="text-xl font-bold text-foreground mb-8">
           Profile Details
         </h2>
@@ -206,11 +208,11 @@ export default function SettingsPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* Avatar Section */}
           <div className="flex flex-col sm:flex-row gap-8 items-start pb-8 border-b border-border">
-            <div className="relative group">
+            <div className="relative group shrink-0">
               <div
                 className={cn(
-                  "h-28 w-28 rounded-full overflow-hidden flex items-center justify-center border-4 border-muted/50 bg-muted shadow-sm",
-                  !currentAvatar && "bg-muted"
+                  "h-32 w-32 rounded-3xl overflow-hidden flex items-center justify-center border-4 border-background shadow-lg transition-all",
+                  !currentAvatar ? "bg-primary/10" : "bg-muted"
                 )}
               >
                 {currentAvatar ? (
@@ -220,7 +222,7 @@ export default function SettingsPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-4xl font-bold text-muted-foreground">
+                  <span className="text-4xl font-bold text-primary">
                     {profile?.name?.[0]?.toUpperCase() || "U"}
                   </span>
                 )}
@@ -229,46 +231,92 @@ export default function SettingsPage() {
                 type="button"
                 size="icon"
                 variant="secondary"
-                className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full shadow-md border-2 border-card"
+                className="absolute -bottom-2 -right-2 h-10 w-10 rounded-xl shadow-lg border-2 border-card"
                 onClick={() => setIsEditingAvatar(!isEditingAvatar)}
               >
-                <Pencil className="h-4 w-4" />
+                {isEditingAvatar ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Pencil className="h-4 w-4" />
+                )}
               </Button>
             </div>
 
-            <div className="flex-1 w-full space-y-4">
+            <div className="flex-1 w-full space-y-5">
               <div className="space-y-2">
                 <Label>Display Name</Label>
                 <Input
                   {...register("name")}
-                  className="h-12 rounded-xl bg-muted/30 focus:bg-background"
+                  className="h-12 rounded-xl bg-muted/30 focus:bg-background border-transparent focus:border-primary/50 text-base"
                 />
               </div>
 
               {isEditingAvatar && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <Label>Avatar URL</Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <ImageIcon className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        {...register("avatar")}
-                        placeholder="https://..."
-                        className="pl-10 h-12 rounded-xl"
-                      />
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 pt-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      Custom URL
+                    </Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <ImageIcon className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                        <Input
+                          {...register("avatar")}
+                          placeholder="https://..."
+                          className="pl-10 h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          setValue("avatar", "", { shouldDirty: true })
+                        }
+                        className="h-12 px-4 rounded-xl border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                        title="Remove Avatar"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setValue("avatar", "")}
-                      className="h-12 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Paste a direct image link.
-                  </p>
+
+                  {/* Avatar Library Grid */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      Choose from Library
+                    </Label>
+                    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                      {PROFILE_AVATARS.map((url, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() =>
+                            setValue("avatar", url, { shouldDirty: true })
+                          }
+                          className={cn(
+                            "relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-200 hover:scale-110 focus:outline-none",
+                            currentAvatar === url
+                              ? "border-primary ring-2 ring-primary/20 scale-105 shadow-md"
+                              : "border-transparent opacity-80 hover:opacity-100"
+                          )}
+                        >
+                          <img
+                            src={url}
+                            alt={`Avatar ${i + 1}`}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                          {currentAvatar === url && (
+                            <div className="absolute inset-0 bg-primary/40 flex items-center justify-center backdrop-blur-[1px]">
+                              <div className="bg-white rounded-full p-0.5 shadow-sm">
+                                <Check className="h-3 w-3 text-primary" />
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -284,7 +332,7 @@ export default function SettingsPage() {
                 }
                 value={form.watch("currency")}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-muted/30">
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background">
                   <SelectValue placeholder="Select Currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,7 +352,7 @@ export default function SettingsPage() {
                 }
                 value={form.watch("timezone")}
               >
-                <SelectTrigger className="h-12 rounded-xl bg-muted/30">
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background">
                   <SelectValue placeholder="Select Timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,19 +369,19 @@ export default function SettingsPage() {
               <Input
                 {...register("email")}
                 disabled
-                className="h-12 rounded-xl bg-muted/50 text-muted-foreground cursor-not-allowed"
+                className="h-12 rounded-xl bg-muted/50 text-muted-foreground cursor-not-allowed border-transparent"
               />
-              <p className="text-[11px] text-muted-foreground">
-                Contact support to change email.
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Lock className="h-3 w-3" /> Contact support to change email.
               </p>
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-4 border-t border-border">
             <Button
               type="submit"
               disabled={!isDirty || isPending}
-              className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20"
+              className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-105 active:scale-95"
             >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save Changes
@@ -343,7 +391,7 @@ export default function SettingsPage() {
       </div>
 
       {/* --- SECTION 2: pAIse TAG --- */}
-      <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+      <div className="rounded-[2.5rem] border border-border bg-card p-8 shadow-sm">
         <div className="mb-8">
           <h2 className="text-xl font-bold text-foreground">Your pAIse Tag</h2>
           <p className="text-muted-foreground text-sm mt-1">
@@ -354,14 +402,14 @@ export default function SettingsPage() {
         <div className="flex flex-col md:flex-row gap-8">
           <div
             ref={qrRef}
-            className="p-4 bg-white border border-border rounded-2xl shadow-sm w-fit mx-auto md:mx-0"
+            className="p-6 bg-white border border-border rounded-3xl shadow-sm w-fit mx-auto md:mx-0 flex items-center justify-center"
           >
             {profile?.invite_code ? (
-              <QRCode value={inviteLink} size={160} />
+              <QRCode value={inviteLink} size={140} />
             ) : (
-              <div className="h-40 w-40 flex flex-col items-center justify-center bg-muted/30 rounded-xl">
+              <div className="h-36 w-36 flex flex-col items-center justify-center bg-muted/30 rounded-2xl">
                 <QrCode className="h-8 w-8 text-muted-foreground/50" />
-                <span className="text-xs text-muted-foreground mt-2">
+                <span className="text-xs text-muted-foreground mt-2 font-medium">
                   No Tag
                 </span>
               </div>
@@ -377,12 +425,12 @@ export default function SettingsPage() {
                     <Input
                       readOnly
                       value={inviteLink}
-                      className="h-12 bg-muted/30 font-mono text-xs rounded-xl"
+                      className="h-12 bg-muted/30 font-mono text-xs rounded-xl border-transparent focus:bg-background"
                     />
                     <Button
                       size="icon"
                       variant="outline"
-                      className="h-12 w-12 rounded-xl"
+                      className="h-12 w-12 rounded-xl border-border hover:bg-muted"
                       onClick={copyToClipboard}
                     >
                       <Copy className="h-4 w-4" />
@@ -398,7 +446,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-destructive/5 p-4 border border-destructive/10 flex items-center justify-between">
+                <div className="rounded-2xl bg-destructive/5 p-4 border border-destructive/10 flex items-center justify-between">
                   <p className="text-xs text-destructive/80 font-medium">
                     Need to invalidate old links?
                   </p>
@@ -426,7 +474,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={() => rotateCode()}
                   disabled={isRotating}
-                  className="h-12 rounded-xl"
+                  className="h-12 rounded-xl shadow-lg shadow-primary/20"
                 >
                   {isRotating && (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -440,7 +488,7 @@ export default function SettingsPage() {
       </div>
 
       {/* --- SECTION 3: DANGER ZONE --- */}
-      <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-8">
+      <div className="rounded-[2.5rem] border border-destructive/20 bg-destructive/5 p-8">
         <h2 className="text-lg font-bold text-destructive mb-2 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" /> Danger Zone
         </h2>
@@ -450,7 +498,7 @@ export default function SettingsPage() {
         </p>
         <Button
           variant="destructive"
-          className="h-12 px-6 rounded-xl shadow-sm"
+          className="h-12 px-6 rounded-xl shadow-sm hover:bg-destructive/90"
         >
           Delete Account
         </Button>
