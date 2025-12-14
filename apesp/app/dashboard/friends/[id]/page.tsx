@@ -100,7 +100,7 @@ const PendingGroupsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-6 space-y-3 max-h-[300px] overflow-y-auto pr-2">
+        <div className="mt-6 space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
           {groups.map((group) => (
             <div
               key={group.id}
@@ -318,7 +318,7 @@ export default function FriendDetailsPage() {
           onClick={() => router.push("/dashboard/friends")}
           className="rounded-xl"
         >
-          Back to Friends
+          Back
         </Button>
       </div>
     );
@@ -338,7 +338,7 @@ export default function FriendDetailsPage() {
               onClick={() => router.back()}
               className="text-muted-foreground hover:text-foreground -ml-2 hover:bg-muted rounded-xl"
             >
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Friends
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
           </div>
 
@@ -443,6 +443,13 @@ export default function FriendDetailsPage() {
                         : "bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-secondary/20"
                     )}
                   >
+                    {isReminding ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : isReminded ? (
+                      <Check className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Bell className="h-4 w-4 mr-2" />
+                    )}
                     {isReminded ? "Reminded" : "Remind"}
                   </Button>
                 )}

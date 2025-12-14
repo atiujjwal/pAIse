@@ -46,17 +46,26 @@ export interface GroupExpenseItem extends ExpenseItem {
   group: { id: string; name: string; avatar: string | null };
 }
 
+interface FriendQueryParams {
+  search?: string;
+  sort_by?: "balance" | "status" | "name";
+  sort_order?: "asc" | "desc";
+}
+
 // --- QUERIES ---
 
 // Fetch Accepted Friends
-export const useFriends = () => {
+export const useFriends = (params?: FriendQueryParams) => {
   return useQuery({
-    queryKey: ["friends", "list"],
+    queryKey: ["friends", params],
     queryFn: async () => {
-      const { data } = await api.get<ApiResponse<{ friends: User[] }>>(
-        "/friends"
-      );
-      return data.data!.friends;
+      const query = new URLSearchParams();
+      if (params?.search) query.append("search", params.search);
+      if (params?.sort_by) query.append("sort_by", params.sort_by);
+      if (params?.sort_order) query.append("sort_order", params.sort_order);
+
+      const { data } = await api.get(`/friends?${query.toString()}`);
+      return data.data.friends;
     },
   });
 };

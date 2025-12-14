@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   useFriends,
@@ -9,6 +9,7 @@ import {
 } from "@/src/features/friends/api/friend-queries";
 import { AddFriendCard } from "@/src/features/friends/components/AddFriendCard";
 import { Button } from "@/src/components/ui/Button";
+import { Input } from "@/src/components/ui/Input";
 import {
   Tabs,
   TabsContent,
@@ -16,7 +17,6 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import {
-  UserPlus,
   Check,
   X,
   Users,
@@ -28,6 +28,9 @@ import {
   TrendingDown,
   CheckCircle2,
   Clock,
+  Search,
+  ArrowUpDown,
+  Wallet,
 } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import {
@@ -37,6 +40,7 @@ import {
 } from "@/src/components/ui/Avatar";
 import { cn, formatCurrency } from "@/src/lib/utils";
 import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
+import { useDebounce } from "@/src/hooks/use-debounce";
 
 // Define the interface based on your API response
 interface FriendListItem {
@@ -50,25 +54,37 @@ interface FriendListItem {
 }
 
 export default function FriendsPage() {
+  // --- STATE FOR FILTERS ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  // Fixed to 'balance' as per requirement
+  const [sortBy] = useState<"balance">("balance");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
   const [requestType, setRequestType] = useState<"incoming" | "outgoing">(
     "incoming"
   );
+  const [showSettlement, setShowSettlement] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendListItem | null>(
     null
   );
-  const [showSettlement, setShowSettlement] = useState(false);
 
-  // Cast response to the new interface
-  const { data: friendsData, isLoading: loadingFriends } = useFriends();
-  const friends = friendsData as unknown as FriendListItem[];
+  // --- QUERIES ---
+  const { data: friendsData, isLoading: loadingFriends } = useFriends({
+    search: debouncedSearch,
+    sort_by: sortBy,
+    sort_order: sortOrder,
+  });
 
+  const friends = (friendsData as unknown as FriendListItem[]) || [];
   const { data: requests, isLoading: loadingRequests } =
     useFriendRequests(requestType);
   const { acceptRequest, rejectRequest, cancelRequest } = useFriendActions();
 
   return (
     <div className="space-y-8 h-full flex flex-col pb-20 max-w-7xl mx-auto">
-      {/* Header */}
+      {/* --- HEADER --- */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
@@ -77,6 +93,48 @@ export default function FriendsPage() {
           <p className="text-muted-foreground mt-1">
             Manage your connections and balances.
           </p>
+        </div>
+      </div>
+
+      {/* --- STICKY FILTER BAR --- */}
+      <div className="sticky top-4 z-20">
+        <div className="bg-card/80 backdrop-blur-xl p-2 rounded-2xl border border-border shadow-sm ring-1 ring-border/50 flex flex-col sm:flex-row gap-2 max-w-2xl">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search friends..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-11 h-12 bg-transparent border-transparent focus:bg-background rounded-xl transition-all"
+            />
+          </div>
+
+          {/* Sort Control (Only Balance) */}
+          <div className="flex items-center gap-2 px-2 border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0">
+            {/* Static Label for 'Net Balance' since it's the only option */}
+            <div className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-xl bg-muted/40 border border-border/50 text-xs font-bold uppercase tracking-wide text-muted-foreground cursor-default select-none">
+              <Wallet className="h-3.5 w-3.5" />
+              <span>Net Balance</span>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+              }
+              className="h-10 w-10 rounded-xl hover:bg-muted text-muted-foreground"
+              title={sortOrder === "asc" ? "Sort Ascending" : "Sort Descending"}
+            >
+              <ArrowUpDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  sortOrder === "desc" && "rotate-180"
+                )}
+              />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -113,24 +171,26 @@ export default function FriendsPage() {
               {loadingFriends ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-40 rounded-3xl" />
+                    <Skeleton key={i} className="h-40 rounded-[2.5rem]" />
                   ))}
                 </div>
-              ) : friends?.length === 0 ? (
+              ) : friends.length === 0 ? (
                 <div className="py-20 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
                   <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Users className="h-10 w-10 text-muted-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground">
-                    No friends yet
+                    {searchTerm ? "No friends found" : "No friends yet"}
                   </h3>
                   <p className="text-muted-foreground max-w-sm mx-auto mt-2">
-                    Add friends using their email or pAIse Tag on the right.
+                    {searchTerm
+                      ? `We couldn't find anyone matching "${searchTerm}"`
+                      : "Add friends using their email or pAIse Tag on the right."}
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  {friends?.map((friend) => {
+                  {friends.map((friend) => {
                     const isOwe = friend.status === "owe";
                     const isOwed = friend.status === "owed";
                     const isSettled = friend.status === "settled";
@@ -139,7 +199,7 @@ export default function FriendsPage() {
                       <Link
                         key={friend.id}
                         href={`/dashboard/friends/${friend.id}`}
-                        className="group relative flex flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
+                        className="group relative flex flex-col justify-between rounded-[2.5rem] border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
                       >
                         {/* Top: Info */}
                         <div className="flex items-center gap-4">
@@ -251,7 +311,10 @@ export default function FriendsPage() {
                 {loadingRequests ? (
                   <div className="space-y-4">
                     {[1, 2].map((i) => (
-                      <Skeleton key={i} className="h-24 w-full rounded-3xl" />
+                      <Skeleton
+                        key={i}
+                        className="h-24 w-full rounded-[2.5rem]"
+                      />
                     ))}
                   </div>
                 ) : requests?.length === 0 ? (
@@ -378,12 +441,12 @@ export default function FriendsPage() {
         </div>
       </div>
 
-      {/* Settle Modal (If needed from query param or derived state later) */}
+      {/* Settle Modal */}
       {showSettlement && selectedFriend && (
         <SettlementModal
           isOpen={showSettlement}
           onClose={() => setShowSettlement(false)}
-          currentUser={{ id: "me", name: "Me" }} // In real app, get from store
+          currentUser={{ id: "me", name: "Me" }}
           counterparty={{
             id: selectedFriend.id,
             name: selectedFriend.name,
