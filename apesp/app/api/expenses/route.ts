@@ -178,9 +178,10 @@ const postHandler = async (
  * GET /expenses
  * Retrieves expenses with pagination, filtering, and search.
  * Context-aware:
- * - If group_id provided: Returns expenses for that group (verifies membership).
+ * - If group_id provided: Returns expenses for that group.
  * - If friend_id provided: Returns expenses between user and friend.
  * - Global: Returns all expenses involving the user.
+ * - Filter: expense_type ('friend', 'group', 'all')
  */
 const getHandler = async (
   request: NextRequest,
@@ -192,6 +193,8 @@ const getHandler = async (
     // Parse Query Parameters
     const { searchParams } = new URL(request.url);
     const rawQuery = Object.fromEntries(searchParams.entries());
+
+    const expense_type = searchParams.get("expense_type"); // 'friend' | 'group' | 'all'
 
     const query = GetExpensesQuerySchema.safeParse(rawQuery);
 
@@ -247,6 +250,13 @@ const getHandler = async (
         { payers: { some: { user_id: userId } } },
         { splits: { some: { user_id: userId } } },
       ];
+
+      if (expense_type === "friend") {
+        whereClause.group_id = null;
+      } else if (expense_type === "group") {
+        whereClause.group_id = { not: null };
+      }
+      // Default is 'all', so we don't add restrictions otherwise
     }
 
     // --- Filter Logic ---
@@ -270,7 +280,7 @@ const getHandler = async (
     if (search) {
       whereClause.description = {
         contains: search,
-        mode: "insensitive", // Case insensitive search
+        mode: "insensitive",
       };
     }
 

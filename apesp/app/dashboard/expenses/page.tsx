@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Plus,
   Receipt,
@@ -11,6 +11,7 @@ import {
   Calendar,
   SlidersHorizontal,
   ArrowRight,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/Button";
@@ -131,6 +132,11 @@ const ExpenseCard = ({ expense }: { expense: any }) => {
 
 export default function ExpensesPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Get active type from URL, default to 'all'
+  const activeType = searchParams.get("expense_type") || "all";
 
   const queryParams = useMemo(
     () => ({
@@ -148,12 +154,29 @@ export default function ExpensesPage() {
       to_date: searchParams.get("to_date")
         ? new Date(searchParams.get("to_date")!).toISOString()
         : undefined,
+      // Pass the new filter to the query
+      expense_type: activeType !== "all" ? activeType : undefined,
     }),
-    [searchParams]
+    [searchParams, activeType]
   );
 
   const { data, isLoading, isError } = useExpenses(queryParams);
   const expenses = data?.data || [];
+
+  // Helper to update URL without losing other filters
+  const handleTypeChange = useCallback(
+    (type: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (type === "all") {
+        params.delete("expense_type");
+      } else {
+        params.set("expense_type", type);
+      }
+      params.set("page", "1"); // Reset pagination on filter change
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, pathname, router]
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20 max-w-5xl mx-auto">
@@ -180,7 +203,39 @@ export default function ExpensesPage() {
       </div>
 
       {/* --- CONTROL PANEL (Sticky Filter Bar) --- */}
-      <div className="sticky top-4 z-20">
+      <div className="sticky top-4 z-20 space-y-3">
+        {/* New Expense Type Toggles */}
+        <div className="flex p-1 bg-muted/80 backdrop-blur-md rounded-2xl w-fit border border-border shadow-sm">
+          {[
+            { id: "all", label: "All Expenses", icon: Receipt },
+            { id: "group", label: "Groups", icon: Users },
+            { id: "friend", label: "Friends", icon: User },
+          ].map((type) => {
+            const isActive = activeType === type.id;
+            return (
+              <button
+                key={type.id}
+                onClick={() => handleTypeChange(type.id)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200",
+                  isActive
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                <type.icon
+                  className={cn(
+                    "h-4 w-4",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                />
+                {type.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Existing Filter Bar */}
         <div className="bg-background/80 backdrop-blur-xl p-3 rounded-2xl border border-border shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:border-primary/20">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
             {/* Visual Label */}
@@ -245,7 +300,10 @@ export default function ExpensesPage() {
             </p>
             <Button
               variant="secondary"
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                handleTypeChange("all");
+                router.push("/dashboard/expenses");
+              }}
               className="rounded-xl"
             >
               Clear All Filters
