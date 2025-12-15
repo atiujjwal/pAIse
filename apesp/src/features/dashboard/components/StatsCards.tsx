@@ -1,138 +1,212 @@
 "use client";
 
-import { Wallet, CreditCard, PieChart } from "lucide-react";
-import { useDashboardSummary } from "../api/dashboard-queries";
-import { formatCurrency, cn } from "@/src/lib/utils";
+import {
+  Wallet,
+  CreditCard,
+  Users,
+  User,
+  ArrowUpRight,
+  ArrowDownLeft,
+} from "lucide-react";
 import { Skeleton } from "@/src/components/ui/Skeleton";
+import { formatCurrency, cn } from "@/src/lib/utils";
+import { DashboardSnapshot, DashboardTrends } from "../api/dashboard-queries";
 
-export function StatsCards() {
-  const { data, isLoading } = useDashboardSummary();
+interface StatsCardsProps {
+  snapshot?: DashboardSnapshot;
+  trends?: DashboardTrends;
+  isLoadingSnapshot: boolean;
+  isLoadingTrends: boolean;
+}
 
-  if (isLoading)
-    return (
-      <div className="grid gap-6 md:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-44 rounded-[2rem]" />
-        ))}
-      </div>
-    );
+export function StatsCards({
+  snapshot,
+  trends,
+  isLoadingSnapshot,
+  isLoadingTrends,
+}: StatsCardsProps) {
+  // Parse Snapshot Data
+  const netBalance = parseFloat(snapshot?.total_balance || "0");
+  const groupNet = parseFloat(snapshot?.group_net_balance || "0");
+  const friendNet = parseFloat(snapshot?.friend_net_balance || "0");
 
-  const totalSpent = data?.monthly_metrics?.total_spent ?? 0;
-  const balance = data?.total_balance ?? 0;
-  const budgetUsed = data?.monthly_metrics?.budget_used_percent ?? 0;
-  const currency = "INR";
-  const isPositive = Number(balance) >= 0;
+  // Parse Trends Data
+  const totalSpent = trends?.spending_analysis?.total_money_spent || 0;
+  const groupSpent = trends?.spending_analysis?.group_money_spent || 0;
+  const friendSpent = trends?.spending_analysis?.friend_money_spent || 0;
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      {/* 1. Total Spent */}
-      <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border hover:shadow-lg transition-all duration-300">
-        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-          <CreditCard className="h-24 w-24 text-primary" />
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* --- CARD : BALANCE OVERVIEW (Static) --- */}
+      {isLoadingSnapshot ? (
+        <Skeleton className="h-[280px] rounded-[2.5rem]" />
+      ) : (
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-violet-600 to-indigo-700 p-8 text-white shadow-xl flex flex-col justify-between min-h-[280px]">
+          {/* Decorative Background */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+          {/* Top Section: Total Net */}
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-white/20 backdrop-blur-md rounded-2xl shadow-sm border border-white/10">
+                <Wallet className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-widest opacity-80">
+                Total Net Balance
+              </span>
+            </div>
+
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-5xl font-mono font-bold tracking-tighter drop-shadow-sm">
+                {formatCurrency(String(netBalance), "INR")}
+              </h3>
+            </div>
+            <p className="text-sm text-white/70 mt-1 font-medium flex items-center gap-1.5">
+              {netBalance >= 0 ? (
+                <>
+                  <ArrowUpRight className="h-4 w-4 text-emerald-300" /> You are
+                  owed overall
+                </>
+              ) : (
+                <>
+                  <ArrowDownLeft className="h-4 w-4 text-rose-300" /> You owe
+                  overall
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* Bottom Section: Breakdown Grid */}
+          <div className="relative z-10 mt-8 grid grid-cols-2 gap-4">
+            {/* Groups Block */}
+            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col gap-1 transition-colors hover:bg-black/30">
+              <div className="flex items-center gap-2 mb-1">
+                <Users className="h-3.5 w-3.5 opacity-70" />
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">
+                  Groups
+                </span>
+              </div>
+              <span
+                className={cn(
+                  "text-xl font-mono font-bold",
+                  groupNet >= 0 ? "text-emerald-300" : "text-rose-300"
+                )}
+              >
+                {groupNet > 0 ? "+" : ""}
+                {formatCurrency(String(groupNet), "INR")}
+              </span>
+            </div>
+
+            {/* Friends Block */}
+            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col gap-1 transition-colors hover:bg-black/30">
+              <div className="flex items-center gap-2 mb-1">
+                <User className="h-3.5 w-3.5 opacity-70" />
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">
+                  Friends
+                </span>
+              </div>
+              <span
+                className={cn(
+                  "text-xl font-mono font-bold",
+                  friendNet >= 0 ? "text-emerald-300" : "text-rose-300"
+                )}
+              >
+                {friendNet > 0 ? "+" : ""}
+                {formatCurrency(String(friendNet), "INR")}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CARD: SPENDING ANALYSIS (Filtered) --- */}
+      <div className="rounded-[2.5rem] border border-border bg-card p-8 shadow-sm flex flex-col justify-between min-h-[280px]">
+        <div className="flex items-start justify-between mb-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-rose-500/10 rounded-2xl text-rose-500">
                 <CreditCard className="h-5 w-5" />
               </div>
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Total Spent
+                Total Spending
               </span>
             </div>
-            <h3 className="text-3xl font-bold text-foreground tracking-tight">
-              {formatCurrency(String(totalSpent), currency)}
-            </h3>
+            {isLoadingTrends ? (
+              <Skeleton className="h-10 w-48 mt-3 rounded-lg" />
+            ) : (
+              <h3 className="text-4xl font-bold text-foreground mt-3 font-mono tracking-tight animate-in fade-in">
+                {formatCurrency(String(totalSpent), "INR")}
+              </h3>
+            )}
           </div>
-          <div className="mt-6 pt-4 border-t border-border/50">
-            <p className="text-xs text-muted-foreground">
-              Across all groups this month
-            </p>
-          </div>
-        </div>
-      </div>
 
-      {/* 2. Net Balance */}
-      <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border hover:shadow-lg transition-all duration-300">
-        <div
-          className={cn(
-            "absolute top-0 right-0 p-6 opacity-10 transition-opacity",
-            isPositive ? "text-secondary" : "text-destructive"
-          )}
-        >
-          <Wallet className="h-24 w-24" />
+          {/* Period Badge */}
+          <span className="px-3 py-1.5 bg-muted rounded-xl text-[10px] font-bold text-muted-foreground uppercase tracking-wide border border-border">
+            {trends?.spending_analysis?.period?.replace("_", " ") ||
+              "This Month"}
+          </span>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div
-                className={cn(
-                  "p-2.5 rounded-xl",
-                  isPositive
-                    ? "bg-secondary/10 text-secondary"
-                    : "bg-destructive/10 text-destructive"
-                )}
-              >
-                <Wallet className="h-5 w-5" />
+        {isLoadingTrends ? (
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-full rounded-full" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-12 rounded-xl" />
+              <Skeleton className="h-12 rounded-xl" />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                <span>Distribution</span>
+                <span>{totalSpent > 0 ? "100%" : "0%"}</span>
               </div>
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Net Balance
-              </span>
-            </div>
-            <h3
-              className={cn(
-                "text-3xl font-bold tracking-tight",
-                isPositive ? "text-secondary" : "text-destructive"
-              )}
-            >
-              {isPositive ? "+" : ""}
-              {formatCurrency(String(balance), currency)}
-            </h3>
-          </div>
-          <div className="mt-6 pt-4 border-t border-border/50">
-            <p className="text-xs text-muted-foreground">
-              {isPositive ? "You are owed in total" : "You owe in total"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Budget Used */}
-      <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border hover:shadow-lg transition-all duration-300">
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-500">
-                <PieChart className="h-5 w-5" />
+              {/* Progress Bar */}
+              <div className="w-full bg-muted/50 h-3 rounded-full overflow-hidden flex">
+                <div
+                  className="bg-primary h-full transition-all duration-500"
+                  style={{
+                    width: `${
+                      totalSpent > 0 ? (groupSpent / totalSpent) * 100 : 0
+                    }%`,
+                  }}
+                />
+                <div
+                  className="bg-secondary h-full transition-all duration-500"
+                  style={{
+                    width: `${
+                      totalSpent > 0 ? (friendSpent / totalSpent) * 100 : 0
+                    }%`,
+                  }}
+                />
               </div>
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Budget Used
-              </span>
             </div>
-            <h3 className="text-3xl font-bold text-foreground tracking-tight">
-              {budgetUsed}%
-            </h3>
-          </div>
 
-          <div className="mt-6 space-y-2">
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-1000",
-                  budgetUsed > 100
-                    ? "bg-destructive"
-                    : "bg-gradient-to-r from-amber-400 to-orange-500"
-                )}
-                style={{ width: `${Math.min(budgetUsed, 100)}%` }}
-              />
+            {/* Legend Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  Group Expenses
+                </div>
+                <span className="text-lg font-bold text-foreground pl-4">
+                  {formatCurrency(String(groupSpent), "INR")}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <span className="w-2 h-2 rounded-full bg-secondary" />
+                  Direct Expenses
+                </div>
+                <span className="text-lg font-bold text-foreground pl-4">
+                  {formatCurrency(String(friendSpent), "INR")}
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground text-right">
-              {budgetUsed > 100 ? "Over budget" : "On track"}
-            </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { Decimal } from "decimal.js";
 
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
 import { errorResponse, successResponse } from "@/src/lib/response";
 import { formatPublicUser } from "@/src/lib/formatter";
+
+Decimal.set({ precision: 12 });
 
 const getHandler = async (
   request: NextRequest,
@@ -14,13 +15,6 @@ const getHandler = async (
   try {
     const { userId } = payload;
     const now = new Date();
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const currentMonthStr = `${now.getFullYear()}-${String(
-      now.getMonth() + 1
-    ).padStart(2, "0")}`;
-
     const upcomingDate = new Date();
     upcomingDate.setDate(now.getDate() + 30);
 
@@ -35,6 +29,9 @@ const getHandler = async (
     });
 
     let totalBalance = new Decimal(0);
+    let groupNetBalance = new Decimal(0);
+    let friendNetBalance = new Decimal(0);
+
     const netBalanceMap = new Map<string, Decimal>();
     const userMap = new Map<string, any>();
 
@@ -55,6 +52,13 @@ const getHandler = async (
       }
 
       totalBalance = totalBalance.add(netChange);
+
+      if (b.group_id) {
+        groupNetBalance = groupNetBalance.add(netChange);
+      } else {
+        friendNetBalance = friendNetBalance.add(netChange);
+      }
+
       const currentFriendNet = netBalanceMap.get(otherUserId) || new Decimal(0);
       netBalanceMap.set(otherUserId, currentFriendNet.add(netChange));
     }
@@ -75,7 +79,7 @@ const getHandler = async (
           ...friendDetails,
           net_balance: net.abs().toFixed(2),
           status,
-          currency: "INR", // TODO: Fetch from preferences if needed
+          currency: "INR",
         });
       } else {
         status = "owed";
@@ -88,56 +92,6 @@ const getHandler = async (
       }
     }
 
-    const userMonthlySplits = await prisma.expenseSplit.findMany({
-      where: {
-        user_id: userId,
-        expense: {
-          date: { gte: startOfMonth, lte: endOfMonth },
-          status: "ACTIVE",
-        },
-      },
-      include: {
-        expense: {
-          select: { category: true },
-        },
-      },
-    });
-
-    let totalSpent = new Decimal(0);
-    const categoryMap = new Map<string, Decimal>();
-
-    userMonthlySplits.forEach((split) => {
-      const amount = split.amount_owed;
-      const category = split.expense.category;
-      totalSpent = totalSpent.add(amount);
-      const currentCatTotal = categoryMap.get(category) || new Decimal(0);
-      categoryMap.set(category, currentCatTotal.add(amount));
-    });
-
-
-    const monthlyBudgetAgg = await prisma.budget.aggregate({
-      where: {
-        user_id: userId,
-        month: currentMonthStr,
-      },
-      _sum: {
-        budget_amount: true,
-      },
-    });
-
-    const budgetLimit = monthlyBudgetAgg._sum.budget_amount || new Decimal(0);
-    const remainingBudget = budgetLimit.sub(totalSpent);
-
-    let budgetUsedPercent = 0;
-    if (!budgetLimit.isZero()) {
-      budgetUsedPercent = totalSpent
-        .div(budgetLimit)
-        .mul(100)
-        .toDecimalPlaces(1)
-        .toNumber();
-    } else if (totalSpent.gt(0)) {
-      budgetUsedPercent = 100;
-    }
 
     const upcomingSubscriptions = await prisma.subscription.findMany({
       where: {
@@ -210,12 +164,8 @@ const getHandler = async (
 
     const summary = {
       total_balance: totalBalance.toFixed(2),
-      monthly_metrics: {
-        total_spent: totalSpent.toNumber(),
-        budget_limit: budgetLimit.toNumber(),
-        remaining: remainingBudget.toNumber(),
-        budget_used_percent: budgetUsedPercent,
-      },
+      group_net_balance: groupNetBalance.toFixed(2),
+      friend_net_balance: friendNetBalance.toFixed(2),
       upcoming_subscriptions: upcomingSubscriptions.map((sub) => ({
         id: sub.id,
         name: sub.name,
@@ -230,9 +180,6 @@ const getHandler = async (
     return successResponse("Dashboard summary fetched successfully", summary);
   } catch (error) {
     console.error("Error fetching dashboard summary:", error);
-    if (error instanceof z.ZodError) {
-      return errorResponse("Invalid input", 400, "BAD_REQUEST", error.issues);
-    }
     return errorResponse("Internal server error");
   }
 };

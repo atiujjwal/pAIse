@@ -1,51 +1,54 @@
+import { useQuery, keepPreviousData } from "@tanstack/react-query"; // Import keepPreviousData
 import { api } from "@/src/lib/api";
-import { ApiResponse } from "@/src/types/api";
-import { useQuery } from "@tanstack/react-query";
 
-// Matches the JSON you provided
-export interface DashboardSummary {
-  total_balance: string | number; // Backend sends string (toFixed(2))
-  monthly_metrics: {
-    total_spent: number;
-    budget_limit: number;
-    remaining: number;
-    budget_used_percent: number;
-  };
+// --- Types ---
+export interface DashboardSnapshot {
+  total_balance: string;
+  group_net_balance: string;
+  friend_net_balance: string;
   upcoming_subscriptions: any[];
   recent_expenses: any[];
-  // Added these because your Backend sends them!
   you_owe: any[];
   you_are_owed: any[];
 }
 
-export const useDashboardSummary = () => {
-  const result = useQuery({
-    queryKey: ["dashboard", "summary"],
+export interface DashboardTrends {
+  spending_analysis: {
+    total_money_spent: number;
+    group_money_spent: number;
+    friend_money_spent: number;
+    period: string;
+  };
+  spending_by_category: {
+    category: string;
+    amount: number;
+    percentage: number;
+  }[];
+  granularity: "day" | "week" | "month" | "year";
+  trends: { date: string; amount: number; display_date: string }[];
+}
+
+// Static Data Hook (Balances, Recents)
+export const useDashboardSnapshot = () => {
+  return useQuery<DashboardSnapshot>({
+    queryKey: ["dashboard", "snapshot"],
     queryFn: async () => {
-      //   [cite_start]; // Integration: GET /api/dashboard/summary [cite: 196]
-      const { data } = await api.get<ApiResponse<DashboardSummary>>(
-        "/dashboard/summary"
-      );
-      return data.data!;
+      const { data } = await api.get("/dashboard/summary");
+      return data.data;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 mins
   });
-  return result;
 };
 
-export const useRecentExpenses = () => {
-  return useQuery({
-    queryKey: ["expenses", "recent"],
+// Filtered Data Hook (Charts, Trends)
+export const useDashboardTrends = (range: string) => {
+  return useQuery<DashboardTrends>({
+    queryKey: ["dashboard", "trends", range],
     queryFn: async () => {
-      //   [cite_start]; // Integration: GET /api/expenses?limit=5 [cite: 319]
-      // FIXED: Accessing data.data.data based on your JSON response
-      const { data } = await api.get<ApiResponse<{ data: any[] }>>(
-        "/expenses",
-        {
-          params: { limit: 5, sort_by: "date", sort_order: "desc" },
-        }
-      );
-      return data.data!.data;
+      const { data } = await api.get(`/dashboard/trends?range=${range}`);
+      return data.data;
     },
+    // Use the new v5 syntax for keeping previous data
+    placeholderData: keepPreviousData,
   });
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -11,6 +12,7 @@ import {
   User,
   Calendar,
   Receipt,
+  CalendarRange,
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/Button";
@@ -20,10 +22,21 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/Avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/Select";
 import { formatCurrency, cn } from "@/src/lib/utils";
-import { useDashboardSummary } from "@/src/features/dashboard/api/dashboard-queries";
+import {
+  useDashboardSnapshot,
+  useDashboardTrends,
+} from "@/src/features/dashboard/api/dashboard-queries";
 import { useAuthStore } from "@/src/features/auth/store";
 import { StatsCards } from "@/src/features/dashboard/components/StatsCards";
+import { DashboardCharts } from "@/src/features/dashboard/components/DashboardCharts";
 
 // --- LOCAL UI COMPONENTS ---
 
@@ -31,7 +44,6 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
   const { user } = useAuthStore();
   const isGroupExpense = !!expense.group;
 
-  // Resolve Avatar & Name Logic
   let avatarUrl: string | null | undefined = null;
   let displayName: string = "";
   let FallbackIcon = User;
@@ -61,7 +73,6 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
       className="group flex items-center justify-between p-4 rounded-2xl border border-border bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200"
     >
       <div className="flex items-center gap-4 overflow-hidden">
-        {/* Dynamic Avatar Section */}
         <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
           <AvatarImage src={avatarUrl || undefined} className="object-cover" />
           <AvatarFallback
@@ -78,7 +89,6 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
           </AvatarFallback>
         </Avatar>
 
-        {/* Main Content */}
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
@@ -108,15 +118,10 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
             </div>
             <span className="text-border">•</span>
             <span className="capitalize">{expense.category}</span>
-            <span className="text-border">•</span>
-            <span className="truncate max-w-[80px]">
-              {isGroupExpense ? expense.group.name : displayName}
-            </span>
           </div>
         </div>
       </div>
 
-      {/* Amount Section */}
       <div className="text-right pl-2">
         <span className="block font-mono font-bold text-foreground text-base">
           {formatCurrency(expense.amount, expense.currency)}
@@ -172,35 +177,19 @@ const BalanceRow = ({ user, type }: { user: any; type: "owe" | "owed" }) => (
 // --- MAIN PAGE ---
 
 export default function DashboardPage() {
-  const { data: summary, isLoading, isError } = useDashboardSummary();
+  const [range, setRange] = useState("this_month");
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-10 w-48 rounded-xl" />
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-32 rounded-xl" />
-            <Skeleton className="h-10 w-32 rounded-xl" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-48 rounded-3xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Skeleton className="h-96 rounded-3xl" />
-          <div className="space-y-6">
-            <Skeleton className="h-40 rounded-3xl" />
-            <Skeleton className="h-40 rounded-3xl" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Snapshot Query (Static - No Filter)
+  const {
+    data: snapshot,
+    isLoading: loadingSnapshot,
+    isError: errorSnapshot,
+  } = useDashboardSnapshot();
 
-  if (isError || !summary) {
+  // Trends Query (Filtered - Reacts to 'range')
+  const { data: trends, isLoading: loadingTrends } = useDashboardTrends(range);
+
+  if (errorSnapshot || (!loadingSnapshot && !snapshot)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4">
         <p className="text-muted-foreground">Failed to load dashboard data.</p>
@@ -211,22 +200,43 @@ export default function DashboardPage() {
     );
   }
 
-  const recentExpenses = summary.recent_expenses || [];
-  const youOwe = summary.you_owe || [];
-  const youAreOwed = summary.you_are_owed || [];
+  const recentExpenses = snapshot?.recent_expenses || [];
+  const youOwe = snapshot?.you_owe || [];
+  const youAreOwed = snapshot?.you_are_owed || [];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* --- HEADER --- */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Your financial snapshot at a glance.
-          </p>
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Your financial snapshot at a glance.
+            </p>
+          </div>
+
+          {/* Time Range Filter - Controls 'Trends' Query */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted text-muted-foreground">
+              <CalendarRange className="h-4 w-4" />
+            </div>
+            <Select value={range} onValueChange={setRange}>
+              <SelectTrigger className="h-9 w-[160px] rounded-xl bg-card border-border text-sm font-semibold shadow-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="this_week">This Week</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="this_year">This Year</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
         <div className="flex gap-3">
           <Button
             asChild
@@ -250,10 +260,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* --- STATS CARDS (Imported Component) --- */}
-      <StatsCards />
+      {/* --- STATS CARDS --- */}
+      <StatsCards
+        snapshot={snapshot}
+        trends={trends}
+        isLoadingSnapshot={loadingSnapshot}
+        isLoadingTrends={loadingTrends}
+      />
 
-      {/* --- MAIN GRID --- */}
+      {/* --- CHARTS SECTION (Replaced 'Analytics' Page) --- */}
+      <DashboardCharts data={trends} isLoading={loadingTrends} currency="INR" />
+
+      {/* --- ACTIVITY & BALANCES GRID --- */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* LEFT COLUMN: Recent Activity */}
         <div className="space-y-5">
@@ -271,12 +289,16 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {recentExpenses.length > 0 ? (
+            {loadingSnapshot ? (
+              [1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20 rounded-2xl" />
+              ))
+            ) : recentExpenses.length > 0 ? (
               recentExpenses.map((expense: any) => (
                 <RecentActivityCard key={expense.id} expense={expense} />
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center text-center py-16 rounded-3xl border-2 border-dashed border-border bg-muted/10">
+              <div className="flex flex-col items-center justify-center text-center py-12 rounded-[2.5rem] border-2 border-dashed border-border bg-muted/10">
                 <div className="p-4 bg-muted/50 rounded-full mb-3">
                   <Receipt className="h-6 w-6 text-muted-foreground" />
                 </div>
@@ -296,14 +318,16 @@ export default function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-secondary" />
               Who owes you
             </h2>
-            {youAreOwed.length > 0 ? (
+            {loadingSnapshot ? (
+              <Skeleton className="h-24 w-full rounded-2xl" />
+            ) : youAreOwed.length > 0 ? (
               <div className="space-y-3">
                 {youAreOwed.map((user: any) => (
                   <BalanceRow key={user.id} user={user} type="owed" />
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center border border-border rounded-3xl bg-card shadow-sm">
+              <div className="p-8 text-center border border-border rounded-[2.5rem] bg-card shadow-sm">
                 <p className="text-sm text-muted-foreground font-medium">
                   You are all settled up! No one owes you.
                 </p>
@@ -317,14 +341,16 @@ export default function DashboardPage() {
               <TrendingDown className="h-5 w-5 text-destructive" />
               You owe
             </h2>
-            {youOwe.length > 0 ? (
+            {loadingSnapshot ? (
+              <Skeleton className="h-24 w-full rounded-2xl" />
+            ) : youOwe.length > 0 ? (
               <div className="space-y-3">
                 {youOwe.map((user: any) => (
                   <BalanceRow key={user.id} user={user} type="owe" />
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center border border-border rounded-3xl bg-card shadow-sm">
+              <div className="p-8 text-center border border-border rounded-[2.5rem] bg-card shadow-sm">
                 <p className="text-sm text-muted-foreground font-medium">
                   You don't owe anyone anything. Great job!
                 </p>
