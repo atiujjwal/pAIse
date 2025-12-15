@@ -39,6 +39,16 @@ enum ChatRole {
   ASSISTANT
 }
 
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  GROUP_INVITE
+  EXPENSE_ADDED
+  SETTLEMENT_RECORDED
+  REMINDER
+  SYSTEM_ANNOUNCEMENT
+}
+
 // ----------------------------------------
 // User & Authentication Models
 // ----------------------------------------
@@ -91,12 +101,13 @@ model User {
   groups        Group[] // as owner) (1 User → Many Groups): Creator ownership distinct from regular membership.
   expenses      Expense[] //
 
-
   spendingSummary ExpenseSummary[]
   spendingTrend   ExpenseTrend[]
 
-  AiChatSession   AiChatSession[]
-  AiChatMessage   AiChatMessage[]
+  AiChatSession AiChatSession[]
+  AiChatMessage AiChatMessage[]
+
+  notification Notification[]
 
   @@index([email])
   @@index([invite_code])
@@ -404,7 +415,6 @@ model ExpenseTrend {
   @@index([user_id, date])
 }
 
-
 // Track Usage Limits
 model ChatUsage {
   id        String   @id @default(cuid())
@@ -416,10 +426,10 @@ model ChatUsage {
 
 // Private Bot Memory (Rolling Summary)
 model AiChatSession {
-  id        String   @id @default(cuid())
-  user_id   String   @unique
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  summary   String?  @db.Text // Compressed context of long history
+  id          String   @id @default(cuid())
+  user_id     String   @unique
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  summary     String?  @db.Text // Compressed context of long history
   last_active DateTime @default(now())
 }
 
@@ -433,4 +443,19 @@ model AiChatMessage {
   createdAt DateTime @default(now())
 
   @@index([user_id, createdAt])
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  user_id    String // The Recipient
+  type       NotificationType
+  title      String
+  message    String
+  is_read    Boolean          @default(false)
+  data       Json?
+  created_at DateTime         @default(now())
+  user       User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read]) // Optimized for "Count Unread" queries
+  @@index([created_at])
 }
