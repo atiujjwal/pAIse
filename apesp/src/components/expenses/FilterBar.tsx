@@ -8,13 +8,17 @@ import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
 
 const CATEGORIES = [
-  "Food",
-  "Travel",
-  "Entertainment",
-  "Shopping",
-  "Bills",
-  "General",
-  "Pooja",
+  "Food & Dining",
+  "Housing & Utilities",
+  "Transportation",
+  "Travel & Accommodation",
+  "Shopping & Personal",
+  "Entertainment & Social",
+  "Health & Wellness",
+  "Education & Work",
+  "Family",
+  "Bills & Subscriptions",
+  "Other"
 ];
 
 const SORT_OPTIONS = [

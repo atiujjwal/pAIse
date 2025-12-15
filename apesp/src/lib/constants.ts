@@ -6,8 +6,8 @@ export const APP_NAME = "pAIse";
 export const APP_DESCRIPTION = "Smart Expense Tracking Made Simple";
 export const APP_VERSION = "1.0.0";
 
-
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export const API_ENDPOINTS = {
   // Auth
@@ -38,15 +38,72 @@ export const API_ENDPOINTS = {
  * Expense Categories
  */
 export const EXPENSE_CATEGORIES = [
-  { id: "DINING", label: "Dining", icon: "🍴", color: "#ef4444" },
-  { id: "TRAVEL", label: "Travel", icon: "✈️", color: "#f59e0b" },
-  { id: "SHOPPING", label: "Shopping", icon: "🛍️", color: "#8b5cf6" },
-  { id: "GROCERIES", label: "Groceries", icon: "🛒", color: "#10b981" },
-  { id: "UTILITIES", label: "Utilities", icon: "💡", color: "#3b82f6" },
-  { id: "ENTERTAINMENT", label: "Entertainment", icon: "🎬", color: "#ec4899" },
-  { id: "HEALTH", label: "Health", icon: "🏥", color: "#06b6d4" },
-  { id: "EDUCATION", label: "Education", icon: "📚", color: "#6366f1" },
-  { id: "OTHER", label: "Other", icon: "📌", color: "#6b7280" },
+  {
+    id: "FOOD_AND_DINING",
+    label: "Food & Dining",
+    icon: "🍽️",
+    color: "#ef4444",
+  },
+  {
+    id: "HOUSING_AND_UTILITIES",
+    label: "Housing & Utilities",
+    icon: "🏠",
+    color: "#3b82f6",
+  },
+  {
+    id: "TRANSPORTATION",
+    label: "Transportation",
+    icon: "🚗",
+    color: "#f59e0b",
+  },
+  {
+    id: "TRAVEL_AND_ACCOMMODATION",
+    label: "Travel & Accommodation",
+    icon: "✈️",
+    color: "#8b5cf6",
+  },
+  {
+    id: "SHOPPING_AND_PERSONAL",
+    label: "Shopping & Personal",
+    icon: "🛍️",
+    color: "#ec4899",
+  },
+  {
+    id: "ENTERTAINMENT_AND_SOCIAL",
+    label: "Entertainment & Social",
+    icon: "🎉",
+    color: "#f97316",
+  },
+  {
+    id: "HEALTH_AND_WELLNESS",
+    label: "Health & Wellness",
+    icon: "💊",
+    color: "#06b6d4",
+  },
+  {
+    id: "EDUCATION_AND_WORK",
+    label: "Education & Work",
+    icon: "🎓",
+    color: "#6366f1",
+  },
+  {
+    id: "FAMILY",
+    label: "Family",
+    icon: "👨‍👩‍👧‍👦",
+    color: "#10b981",
+  },
+  {
+    id: "BILLS_AND_SUBSCRIPTIONS",
+    label: "Bills & Subscriptions",
+    icon: "🧾",
+    color: "#84cc16",
+  },
+  {
+    id: "OTHER",
+    label: "Other",
+    icon: "📌",
+    color: "#6b7280",
+  },
 ] as const;
 
 /**
