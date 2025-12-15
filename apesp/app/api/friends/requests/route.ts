@@ -15,6 +15,7 @@ import {
 } from "@/src/lib/response";
 import { sendEmail } from "@/src/services/messageServices";
 import { generateToken } from "@/src/lib/auth";
+import { NotificationService } from "@/src/services/notificationService";
 
 const friendRequestSchema = z
   .object({
@@ -108,6 +109,12 @@ const postHandler = async (
         templateId: 5,
         data: { requesterName: newFriendship.requester.name, magicLink },
         subject: "New Friend Request",
+      });
+      await NotificationService.create({
+        recipientId: addressee_id,
+        type: "FRIEND_REQUEST",
+        title: "You have received a new friend request",
+        message: "Check the request in friends tab",
       });
     } catch (emailError) {
       console.error("Failed to send friend request email:", emailError);
