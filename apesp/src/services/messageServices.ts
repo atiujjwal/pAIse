@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import axios from "axios";
 import Handlebars from "handlebars";
 import { Twilio } from "twilio";
+import { NotificationData, NotificationService } from "./notificationService";
 
 const {
   SMTP_HOST,
@@ -46,6 +47,7 @@ interface SendTemplateOptions {
   templateId: number;
   data: Record<string, any>;
   subject?: string;
+  notificationData?: NotificationData;
 }
 
 /**
@@ -80,6 +82,7 @@ export const sendEmail = async ({
   templateId,
   data,
   subject: subjectOverride,
+  notificationData,
 }: SendTemplateOptions): Promise<boolean> => {
   try {
     const source = await getTemplateDetails(templateId);
@@ -97,13 +100,30 @@ export const sendEmail = async ({
     const subject = subjectTemplate(data);
 
     const mailOptions = {
-      from: `"pAIse App" <${SMTP_USER}>`,
+      from: `"pAIse App" <www.pAIse.com>`,
       to,
       subject,
       html: htmlContent,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    let info: any;
+    if (notificationData) {
+      const notificationType = notificationData.type;
+      if (
+        ["FRIEND_REQUEST", "FRIEND_ACCEPTED", "EXPENSE_ADDED", "REMINDER"].includes(
+          notificationType
+        )
+      ) {
+        info = await transporter.sendMail(mailOptions);
+        console.log("118: ", info);
+        
+        //TODO: on successful email
+        NotificationService.create(notificationData);
+      }
+    } else {
+      info = await transporter.sendMail(mailOptions);
+    }
+
     console.log(`Email sent to ${to}: ${info.messageId}`);
     return !!info;
   } catch (error: any) {
