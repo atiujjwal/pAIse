@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { FriendshipStatus } from "@prisma/client";
+import { FriendshipStatus, NotificationType } from "@prisma/client";
 import { prisma } from "@/src/lib/db";
 import { formatFriendshipResponse } from "@/src/lib/formatter";
 import { withAuth } from "@/src/middleware/auth";
@@ -9,6 +9,7 @@ import {
   successResponse,
   unauthorized,
 } from "@/src/lib/response";
+import { NotificationService } from "@/src/services/notificationService";
 
 /**
  * POST /friends/requests/{requestId}/accept
@@ -16,7 +17,7 @@ import {
  */
 const postHandler = async (
   request: NextRequest,
-  payload: { userId: string },
+  payload: { userId: string; name: string },
   context: { params: { requestId: string } }
 ) => {
   try {
@@ -56,6 +57,13 @@ const postHandler = async (
         requester: true,
         addressee: true,
       },
+    });
+
+    NotificationService.create({
+      recipientId: friendship.requester_id,
+      type: "FRIEND_ACCEPTED" as NotificationType,
+      title: `${payload.name} has accepted your friend request`,
+      message: `Start settling your pAIse with ${payload.name}`,
     });
 
     return successResponse(
