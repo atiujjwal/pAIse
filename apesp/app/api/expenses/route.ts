@@ -22,9 +22,60 @@ import {
 } from "@/src/services/expenseService";
 import { balanceService } from "@/src/services/balanceService";
 import { formatPublicUser } from "@/src/lib/formatter";
-import { Prisma } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
+import { sendEmail } from "@/src/services/messageServices";
 
 Decimal.set({ precision: 12 });
+
+const notifyParticipants = async (
+  memberIds: Set<string>,
+  creatorId: string,
+  creatorName: string,
+  isGroupExpense: boolean,
+  description: string,
+  totalAmount: string,
+  expenseWith: string,
+  dashboardLink: string
+) => {
+  const recipients = Array.from(memberIds).filter((id) => id !== creatorId);
+
+  await Promise.all(
+    recipients.map(async (memberId) => {
+      const member = await prisma.user.findUnique({
+        where: { id: memberId },
+        select: { email: true, name: true },
+      });
+
+      if (!member?.email) return;
+
+      const title = isGroupExpense
+        ? `${creatorName} added a group expense`
+        : `${creatorName} added an expense with you`;
+
+      const year = new Date().getFullYear();
+      let emailData = {
+        to: member.email,
+        templateId: 7,
+        data: {
+          recipientName: member.name,
+          creatorName,
+          description,
+          totalAmount,
+          expenseWith,
+          dashboardLink,
+          year,
+        },
+        notificationData: {
+          recipientId: memberId,
+          type: "EXPENSE_ADDED" as NotificationType,
+          title,
+          message: "Feel free to settle your pAIse with your friends.",
+        },
+      };
+      sendEmail(emailData);
+    })
+  );
+};
 
 /**
  * POST /expenses
@@ -33,10 +84,10 @@ Decimal.set({ precision: 12 });
  */
 const postHandler = async (
   request: NextRequest,
-  payload: { userId: string }
+  payload: { userId: string; name: string }
 ) => {
   try {
-    const { userId } = payload;
+    const { userId, name } = payload;
     const body = await request.json();
 
     const parsedBody = ExpenseBodySchema.parse(body);
@@ -44,14 +95,23 @@ const postHandler = async (
     let memberIds: Set<string>;
     let expenseGroupId: string | null = null;
     let friendId: string | null = null;
+    let groupName = "";
+    let friendName = "";
 
     if (parsedBody?.group_id) {
       expenseGroupId = parsedBody.group_id;
       await checkGroupMembership(userId, expenseGroupId);
-      const members = await prisma.groupMember.findMany({
-        where: { group_id: expenseGroupId },
-        select: { user_id: true },
-      });
+      const [members, group] = await Promise.all([
+        prisma.groupMember.findMany({
+          where: { group_id: expenseGroupId },
+          select: { user_id: true },
+        }),
+        prisma.group.findUnique({
+          where: { id: expenseGroupId },
+          select: { name: true },
+        }),
+      ]);
+      groupName = group?.name!;
       memberIds = new Set(members.map((m) => m.user_id));
     } else if (parsedBody?.friend_id) {
       friendId = parsedBody.friend_id;
@@ -68,6 +128,7 @@ const postHandler = async (
           },
         }),
       ]);
+      friendName = otherUser?.name!;
 
       if (!otherUser) return notFound("Friend user not found");
       if (!friendship) return forbidden("Users are not friends");
@@ -130,6 +191,19 @@ const postHandler = async (
 
     await balanceService.updateBalanceFromExpense(newExpense.id);
 
+    let expenseWith = groupName ? `in ${groupName}` : `with ${friendName}`;
+
+    notifyParticipants(
+      memberIds,
+      userId,
+      name,
+      !!expenseGroupId,
+      parsedBody.description,
+      parsedBody.amount,
+      expenseWith,
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/expenses/${newExpense.id}`
+    );
+
     const completeExpense = await prisma.expense.findUnique({
       where: { id: newExpense.id },
       include: {
@@ -151,24 +225,19 @@ const postHandler = async (
       return errorResponse("Invalid input", 400, "BAD_REQUEST", error.issues);
     }
 
-    if (error.message.includes("token")) {
-      return errorResponse("Unauthorized");
-    }
+    if (error.message.includes("token")) return errorResponse("Unauthorized");
 
-    if (error.message === "NOT_FOUND_OR_UNAUTHORIZED") {
+    if (error.message === "NOT_FOUND_OR_UNAUTHORIZED")
       return errorResponse("Group not found or unauthorized");
-    }
 
     if (
       error.message.includes("sum") ||
       error.message.includes("is not in the group")
-    ) {
+    )
       return errorResponse(error.message, 400);
-    }
 
-    if (error.message.includes("not friends")) {
-      return errorResponse("Users are not friends", 403, "FORBIDDEN");
-    }
+    if (error.message.includes("not friends"))
+      return forbidden("Users are not friends");
 
     return errorResponse("Internal server error");
   }
