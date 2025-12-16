@@ -9,6 +9,7 @@ import {
   badRequest,
 } from "@/src/lib/response";
 import { sendEmail } from "@/src/services/messageServices";
+import { NotificationType } from "@prisma/client";
 
 // Validation Schema
 const remindSchema = z.object({
@@ -64,13 +65,10 @@ const postHandler = async (
     if (!friend || !friend.email) {
       return badRequest("Friend does not have a valid email");
     }
-
-    // Send Email 
-    //TODO: add rate limiter
     sendEmail({
-    //   to: friend.email,
-      to: "anujhatiya900@gmail.com",
-      templateId: 6, 
+        to: friend.email,
+      // to: "anujhatiya900@gmail.com",
+      templateId: 6,
       data: {
         friendName: sender.name.trim().split(" ")[0],
         recipientName: friend.name.trim().split(" ")[0],
@@ -79,6 +77,12 @@ const postHandler = async (
         dashboardLink: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/friends/${userId}`,
       },
       subject: `Reminder: You owe ${sender.name} ${amount}`,
+      notificationData: {
+        recipientId: friendId,
+        type: "REMINDER" as NotificationType,
+        title: "Mere pAIse?!",
+        message: message || `You owe ${amount} to ${sender.name}!`,
+      },
     });
 
     return successResponse("Reminder sent successfully");
