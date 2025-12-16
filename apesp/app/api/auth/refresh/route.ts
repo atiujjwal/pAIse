@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (!payload) return unauthorized();
 
     // Lookup session
-    const { userId, email, inviteCode, sessionId, avatar } = payload;
+    const { name, userId, email, phone, inviteCode, sessionId, avatar, currency, country } = payload;
 
     const tokenRecord = await prisma.userToken.findFirst({
       where: {
@@ -34,8 +34,12 @@ export async function POST(request: NextRequest) {
       return unauthorized();
 
     const tokenPayload = {
+      name,
       userId,
       email,
+      phone,
+      currency,
+      country,
       inviteCode,
       avatar,
       sessionId,

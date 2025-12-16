@@ -46,14 +46,6 @@ export const comparePassword = async (
   return bcrypt.compare(password, hash);
 };
 
-type TokenPayload = {
-  userId: string;
-  email: string;
-  inviteCode: string;
-  avatar?: string;
-  sessionId: string;
-};
-
 type TokenType = "accessToken" | "refreshToken" | "friendRequest";
 
 export const generateToken = (payload: any, type: TokenType): string => {
