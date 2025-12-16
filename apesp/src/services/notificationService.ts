@@ -1,5 +1,22 @@
 import { prisma } from "@/src/lib/db";
 
+export type NotificationType =
+  | "FRIEND_REQUEST"
+  | "FRIEND_ACCEPTED"
+  | "GROUP_INVITE"
+  | "EXPENSE_ADDED"
+  | "SETTLEMENT_RECORDED"
+  | "REMINDER"
+  | "SYSTEM_ANNOUNCEMENT";
+
+export interface NotificationData {
+  recipientId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: any;
+}
+
 export class NotificationService {
   /**
    * Universal method to trigger a notification
@@ -10,22 +27,12 @@ export class NotificationService {
     title,
     message,
     data = {},
-  }: {
-    recipientId: string;
-    type:
-      | "FRIEND_REQUEST"
-      | "EXPENSE_ADDED"
-      | "SETTLEMENT_RECORDED"
-      | "GROUP_INVITE"; // match Enum
-    title: string;
-    message: string;
-    data?: any;
-  }) {
+  }: NotificationData) {
     try {
       await prisma.notification.create({
         data: {
           user_id: recipientId,
-          type: type as any, // Cast to Prisma Enum
+          type,
           title,
           message,
           data,
