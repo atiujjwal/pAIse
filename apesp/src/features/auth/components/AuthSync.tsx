@@ -35,27 +35,38 @@ export function AuthSync() {
     };
 
     const accessToken = getCookie("accessToken");
-    
-    if (accessToken && (!user || !user?.name)) {
-      const decoded = decodeToken(accessToken);
-      console.log("41: ", decoded);
-      
-      if (decoded) {
-        setAuth(
-          {
-            id: decoded.userId,
-            email: decoded.email,
-            name: decoded.name,
-            avatar: decoded.avatar,
-            invite_code: decoded.inviteCode,
-            currency: "INR",
-            timezone: "Asia/Kolkata",
-          },
-          accessToken,
-          ""
-        );
-        router.refresh();
+
+    if (!accessToken) return;
+
+    const decoded = decodeToken(accessToken);
+
+    if (decoded) {
+      const isIdMatch = user?.id === decoded.userId;
+
+      const isNameStale =
+        user?.name === "User" && decoded.name && decoded.name !== "User";
+
+      if (isIdMatch && !isNameStale) {
+        return;
       }
+
+      console.log("Syncing fresh data from token...");
+
+      setAuth(
+        {
+          id: decoded.userId,
+          email: decoded.email,
+          name: decoded.name || "User",
+          avatar: decoded.avatar,
+          invite_code: decoded.inviteCode,
+          currency: "INR",
+          timezone: "Asia/Kolkata"
+        },
+        accessToken,
+        ""
+      );
+
+      router.refresh();
     }
   }, [setAuth, user, router]);
 
