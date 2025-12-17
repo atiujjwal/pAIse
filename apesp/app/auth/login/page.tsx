@@ -1,9 +1,16 @@
+"use client";
+
 import { LoginForm } from "@/src/features/auth/components/LoginForm";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
+import Image from "next/image";
 
 export default function LoginPage() {
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
+  };
+
   return (
     <div className="relative bg-card border border-border shadow-2xl shadow-primary/5 rounded-[2.5rem] p-8 md:p-10 overflow-hidden">
       {/* Close Button */}
@@ -28,7 +35,34 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <LoginForm />
+        <div className="space-y-4">
+          <Button
+            variant="outline"
+            onClick={handleGoogleLogin}
+            className="w-full h-12 rounded-xl font-medium border-border hover:bg-muted/50 transition-all flex items-center justify-center gap-3"
+          >
+            <Image
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Continue with Google
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
+          <LoginForm />
+        </div>
 
         <div className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}

@@ -31,29 +31,43 @@ async function handler(
           where: { user_id: userId },
         }),
       ]);
-
-      return successResponse("Logged out from all devices.");
+    } else {
+      // Default: logout only from this device
+      await prisma.$transaction([
+        prisma.userToken.deleteMany({
+          where: { user_id: userId, session_id: sessionId },
+        }),
+        prisma.session.delete({
+          where: { id: sessionId },
+        }),
+      ]);
     }
 
-    // Default: logout only from this device
-    await prisma.$transaction([
-      prisma.userToken.deleteMany({
-        where: { user_id: userId, session_id: sessionId },
-      }),
-      prisma.session.delete({
-        where: { id: sessionId },
-      }),
-    ]);
+    const message = logoutAll
+      ? "Logged out from all devices."
+      : "Logged out from this device.";
 
-    return successResponse("Logged out from this device.");
+    // Create the response object
+    const response = successResponse(message);
+
+    // Clear the cookies by setting maxAge to 0
+    response.cookies.set("accessToken", "", { maxAge: 0, path: "/" });
+    response.cookies.set("refreshToken", "", { maxAge: 0, path: "/" });
+
+    return response;
   } catch (error) {
     console.error("Logout failed:", error);
 
     // Handle Prisma-specific errors:
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2025") {
-        // This means the session was already deleted. We can consider this a "success".
-        return errorResponse("Session already logged out.");
+        // Even if session record is missing, we should still clear cookies
+        const response = errorResponse(
+          "Session already invalid or logged out."
+        );
+        response.cookies.set("accessToken", "", { maxAge: 0, path: "/" });
+        response.cookies.set("refreshToken", "", { maxAge: 0, path: "/" });
+        return response;
       }
     }
 

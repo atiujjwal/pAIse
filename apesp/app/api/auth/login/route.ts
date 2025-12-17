@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
     const sessionId = session.id;
 
     const tokenPayload = {
+      name: user.name,
       userId: user.id,
       email: user.email,
       inviteCode: user.invite_code,

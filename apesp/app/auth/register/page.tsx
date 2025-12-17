@@ -3,16 +3,9 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import Link from "next/link";
-import {
-  Loader2,
-  X,
-  ArrowRight,
-  KeyRound,
-  Mail,
-  RefreshCw,
-} from "lucide-react";
+import Image from "next/image";
+import { Loader2, X, ArrowRight, KeyRound, RefreshCw } from "lucide-react";
 
 import {
   useRegister,
@@ -59,6 +52,10 @@ export default function RegisterPage() {
     }
     return () => clearInterval(interval);
   }, [timer]);
+
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
+  };
 
   const onFormSubmit = (data: RegisterInput) => {
     setFormData(data);
@@ -122,64 +119,98 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              {...register("name")}
-              placeholder="John Doe"
-              disabled={isSendingOtp}
-              className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
-            />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register("email")}
-              placeholder="name@example.com"
-              disabled={isSendingOtp}
-              className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              {...register("password")}
-              disabled={isSendingOtp}
-              className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
+        <div className="space-y-6">
+          {/* Google OAuth Button */}
           <Button
-            type="submit"
-            disabled={isSendingOtp || isRegistering}
-            className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.01] transition-all duration-200"
+            variant="outline"
+            onClick={handleGoogleLogin}
+            className="w-full h-12 rounded-xl font-medium border-border hover:bg-muted/50 transition-all flex items-center justify-center gap-3"
           >
-            {isSendingOtp ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              "Sign Up"
-            )}
+            <Image
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Sign up with Google
           </Button>
-        </form>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Or sign up with email
+              </span>
+            </div>
+          </div>
+
+          {/* Email Registration Form */}
+          <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                {...register("name")}
+                placeholder="John Doe"
+                disabled={isSendingOtp}
+                className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
+              />
+              {errors.name && (
+                <p className="text-xs text-destructive">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register("email")}
+                placeholder="name@example.com"
+                disabled={isSendingOtp}
+                className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
+              />
+              {errors.email && (
+                <p className="text-xs text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                {...register("password")}
+                disabled={isSendingOtp}
+                className="h-12 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50"
+              />
+              {errors.password && (
+                <p className="text-xs text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isSendingOtp || isRegistering}
+              className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.01] transition-all duration-200"
+            >
+              {isSendingOtp ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                "Sign Up"
+              )}
+            </Button>
+          </form>
+        </div>
 
         <div className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}

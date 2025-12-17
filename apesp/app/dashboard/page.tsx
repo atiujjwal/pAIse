@@ -192,6 +192,9 @@ export default function DashboardPage() {
   if (errorSnapshot || (!loadingSnapshot && !snapshot)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4">
+        <div className="p-4 bg-destructive/10 rounded-full mb-2">
+          <Receipt className="h-8 w-8 text-destructive" />
+        </div>
         <p className="text-muted-foreground">Failed to load dashboard data.</p>
         <Button onClick={() => window.location.reload()} variant="outline">
           Retry
@@ -224,7 +227,7 @@ export default function DashboardPage() {
               <CalendarRange className="h-4 w-4" />
             </div>
             <Select value={range} onValueChange={setRange}>
-              <SelectTrigger className="h-9 w-[160px] rounded-xl bg-card border-border text-sm font-semibold shadow-sm">
+              <SelectTrigger className="h-9 w-[160px] rounded-xl bg-card border-border text-sm font-semibold shadow-sm focus:ring-primary/20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
