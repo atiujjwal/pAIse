@@ -49,14 +49,18 @@ export default function EditExpensePage() {
     date: new Date(expense.date).toISOString().slice(0, 10),
     currency: expense.currency,
     group_id: expense.group_id ?? null,
-    friend_id: expense.friend_id ?? null,
+    friend_id: expense?.friend_id || expense.friend?.id || null,
     split_type: expense.split_type as SplitType,
     payers: expense.payers.map((p) => ({
       user_id: p.user.id,
       amount: p.amount.toString(),
+      avatar: p.user.avatar,
+      name: p.user.name,
     })),
     splits: expense.splits.map((s) => ({
       user_id: s.user.id,
+      avatar: s.user.avatar,
+      name: s.user.name,
       amount_owed: s.amount_owed ?? undefined,
       percent_owed:
         s.percent_owed !== undefined ? Number(s.percent_owed) : undefined,
@@ -65,9 +69,6 @@ export default function EditExpensePage() {
     })),
   };
 
-  if (!isGroupExpense) {
-    initialData.friend_id = expense?.friend_id!;
-  }
 
   return (
     <div className="max-w-2xl mx-auto pb-20 pt-6">
