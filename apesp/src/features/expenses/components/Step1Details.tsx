@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/src/components/ui/Input";
-import { VoiceExpenseInput } from "../../ai/components/VoiceExpenseInput";
+import { VoiceExpenseInput } from "../../../components/forms/expense/VoiceExpenseInput";
 import { useExpenseWizardStore } from "../store/wizard-store";
 import { Label } from "@/src/components/ui/label";
 

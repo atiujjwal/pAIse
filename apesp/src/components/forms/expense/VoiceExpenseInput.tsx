@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Mic, Square } from "lucide-react";
-import { useExpenseWizardStore } from "../../expenses/store/wizard-store";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { api } from "@/src/lib/api";
 import { Button } from "@/src/components/ui/Button";
+import { useExpenseWizardStore } from "@/src/features/expenses/store/wizard-store";
 
 export function VoiceExpenseInput() {
   const [isRecording, setIsRecording] = useState(false);
