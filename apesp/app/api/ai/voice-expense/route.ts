@@ -2,20 +2,14 @@ import { NextRequest } from "next/server";
 import { withAuth } from "@/src/middleware/auth";
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
 import { FileStorageService } from "@/src/services/storageService";
-import {
-  VoiceAiService,
-  VoiceExpenseFormDataSchema,
-} from "@/src/services/aiServices";
 import { prisma } from "@/src/lib/db";
+import { VoiceAiService, VoiceExpenseFormDataSchema } from "@/src/services/ai/voice-expense";
 
-// Before the user hits "Record," display these tips to ensure high accuracy. The AI needs Who, What, How Much, and With Whom.
-// "Tips for a perfect Voice Expense:"
-// Start with the Context: Say if it's for a Group (e.g., "Trip Group") or a Friend (e.g., "Rahul").
-// Say the Amount & Item: Clearly state the cost and what it was for.
-// Mention the Split: If it's not equal, specify (e.g., "I paid, but Rahul owes 500").
-// Mention Who Paid: If you didn't pay, say who did.
-// Example Script: "I paid 2000 rupees for Dinner with Rahul. Split it equally." "Added 500 to the Goa Trip group for snacks. I paid."
-
+/**
+ * POST /api/ai/voice-expense
+ * Processes voice notes into structured expense drafts.
+ * Requires: 'audio' (file) and 'context' (JSON string with participants).
+ */
 const postHandler = async (
   request: NextRequest,
   payload: { userId: string }
@@ -24,76 +18,81 @@ const postHandler = async (
     const { userId } = payload;
     const formData = await request.formData();
 
+    // 1. Extract Fields
     const contextValue = formData.get("context");
-    if (typeof contextValue !== "string") {
-      return badRequest("Invalid JSON for context");
-    }
-
-    let parsedContext: unknown;
-    try {
-      parsedContext = JSON.parse(contextValue);
-    } catch (err) {
-      console.error("Failed to parse context JSON:", err);
-      return badRequest("Invalid JSON for context");
-    }
-
-    // Get audio (assuming it should be a File from the form)
     const rawAudio = formData.get("audio");
+
+    if (!contextValue || typeof contextValue !== "string") {
+      return badRequest("Missing or invalid 'context' JSON string.");
+    }
     if (!(rawAudio instanceof File)) {
-      return badRequest("Audio file is required");
+      return badRequest("Missing audio file.");
     }
 
-    const rawData = {
+    // 2. Validate using Zod (Schema handles JSON parsing of context)
+    const validation = VoiceExpenseFormDataSchema.safeParse({
       audio: rawAudio,
       context: contextValue,
-    };
-
-    const validation = VoiceExpenseFormDataSchema.safeParse(rawData);
+    });
 
     if (!validation.success) {
-      const errorMessage = validation.error.issues;
       return errorResponse(
         "Invalid input data",
         400,
         "BAD_REQUEST",
-        errorMessage
+        validation.error.issues
       );
     }
 
     const { audio, context } = validation.data;
 
-    console.log("65: ", audio, context);
-    
+    // 3. Security Check: Ensure authenticated user is in the participants list
+    // (This prevents users from processing expenses for purely 3rd parties)
+    const currentUserInContext = context.participants.find(
+      (p) => p.id === userId
+    );
+    if (!currentUserInContext) {
+      // Auto-inject current user if missing, fetching from DB
+      const user = await prisma.user.findUnique({
+        where: { id: userId, is_deleted: false },
+        select: { id: true, name: true, avatar: true },
+      });
+      if (!user) return errorResponse("User not found", 404);
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId, is_deleted: false },
-    });
+      // Patch the context
+      context.current_user = {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar || null,
+      };
+      // Ensure they are in the participants list for mapping
+      if (!context.participants.some((p) => p.id === userId)) {
+        context.participants.push(context.current_user);
+      }
+    }
 
-    if (!user) return errorResponse("User not found", 404);
-
-    const fullContext = {
-      ...context,
-      current_user_id: userId,
-      current_user_name: user.name,
-    };
-
-    console.log("44: ", fullContext);
-
+    // 4. File Handling (Upload to temp storage or use buffer directly)
+    // Using a temp file path is safer for large files/libraries expecting paths
     const buffer = Buffer.from(await audio.arrayBuffer());
-    const filePath = await FileStorageService.upload(buffer, audio.name);
+    const filename = `voice_${userId}_${Date.now()}_${audio.name}`;
+    const filePath = await FileStorageService.upload(buffer, filename);
 
+    // 5. Process with AI
     const draftExpense = await VoiceAiService.processVoiceExpense(
       filePath,
       audio.type,
-      fullContext
+      context
     );
 
+    // 6. Cleanup
     await FileStorageService.delete(filePath);
 
-    return successResponse("Expense draft created", draftExpense);
+    return successResponse("Expense draft created successfully", draftExpense);
   } catch (error: any) {
     console.error("Voice API Error:", error);
-    if (error.message?.includes("token")) return errorResponse("Unauthorized");
+    if (error.message?.includes("token")) {
+      return errorResponse("Unauthorized", 401);
+    }
     return errorResponse("Internal server error");
   }
 };
