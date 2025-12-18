@@ -10,7 +10,7 @@ import {
 } from "@/src/components/ui/Popover";
 import { Button } from "@/src/components/ui/Button";
 import { ScrollArea } from "@/src/components/ui/Scroll-area";
-import { api } from "@/src/lib/api"; // Using your API helper
+import { api } from "@/src/lib/api";
 import { NotificationItem } from "./NotificationItem";
 
 interface Notification {
@@ -30,12 +30,9 @@ export default function NotificationBell() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // --- 1. Fetching Logic ---
   const fetchNotifications = useCallback(async () => {
     try {
-      // api.get automatically attaches auth headers/cookies based on your lib setup
       const { data } = await api.get("/notifications");
-
       if (data.success) {
         setNotifications(data.data.notifications);
         setUnreadCount(data.data.unreadCount);
@@ -47,18 +44,13 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Poll every 30 seconds
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(fetchNotifications, 30000); // 30s poll
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // --- 2. Action Handlers ---
-
-  // Mark specific item as read (Triggered by Scroll View or Click)
   const markAsRead = async (id: string) => {
-    // 1. Optimistic Update
     setNotifications((prev) =>
       prev.map((n) => {
         if (n.id === id && !n.is_read) {
@@ -68,8 +60,6 @@ export default function NotificationBell() {
         return n;
       })
     );
-
-    // 2. API Call (Silent)
     try {
       await api.post(`/notifications/${id}/read`);
     } catch (error) {
@@ -77,33 +67,23 @@ export default function NotificationBell() {
     }
   };
 
-  // Mark ALL as read
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return;
-
-    // 1. Optimistic Update
     setUnreadCount(0);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-
-    // 2. API Call
     try {
       await api.patch("/notifications");
     } catch (error) {
       console.error("Failed to mark all as read", error);
-      // Revert on error (optional, usually overkill for notifications)
       fetchNotifications();
     }
   };
 
-  // Handle Click Navigation
   const handleItemClick = (notification: Notification) => {
     setIsOpen(false);
-
-    // Ensure it's marked read if they clicked it before the observer caught it
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-
     if (notification.data?.url) {
       router.push(notification.data.url);
     }
@@ -119,7 +99,9 @@ export default function NotificationBell() {
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-2.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-destructive ring-2 ring-background animate-in zoom-in duration-300" />
+            <span className="absolute -top-1 -right-1 flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white ring-2 ring-background animate-in zoom-in duration-300">
+              {unreadCount > 10 ? "10+" : unreadCount}
+            </span>
           )}
         </Button>
       </PopoverTrigger>
@@ -128,7 +110,6 @@ export default function NotificationBell() {
         align="end"
         className="w-[380px] p-0 rounded-2xl border border-border shadow-xl bg-card overflow-hidden"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20 backdrop-blur-sm">
           <h4 className="font-bold text-sm text-foreground">Notifications</h4>
           <Button
@@ -143,7 +124,6 @@ export default function NotificationBell() {
           </Button>
         </div>
 
-        {/* Scrollable List */}
         <ScrollArea className="h-[400px]">
           {isLoading ? (
             <div className="py-12 flex justify-center">
