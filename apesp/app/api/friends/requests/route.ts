@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { FriendshipStatus } from "@prisma/client";
+import { FriendshipStatus, NotificationType } from "@prisma/client";
 import { prisma } from "@/src/lib/db";
 import { formatFriendshipResponse } from "@/src/lib/formatter";
 import { withAuth } from "@/src/middleware/auth";
@@ -15,6 +15,7 @@ import {
 } from "@/src/lib/response";
 import { sendEmail } from "@/src/services/messageServices";
 import { generateToken } from "@/src/lib/auth";
+import { NotificationService } from "@/src/services/notificationService";
 
 const friendRequestSchema = z
   .object({
@@ -31,7 +32,7 @@ const friendRequestSchema = z
  */
 const postHandler = async (
   request: NextRequest,
-  payload: { userId: string }
+  payload: { userId: string; name: string }
 ) => {
   try {
     const { userId: requesterId } = payload;
@@ -103,12 +104,19 @@ const postHandler = async (
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const magicLink = `${baseUrl}/dashboard/friends/accept?token=${token}`;
 
-      sendEmail({
+      let emailData = {
         to: addressee.email,
         templateId: 5,
         data: { requesterName: newFriendship.requester.name, magicLink },
         subject: "New Friend Request",
-      });
+        notificationData: {
+          recipientId: addressee_id,
+          type: "FRIEND_REQUEST" as NotificationType,
+          title: `${payload.name} has sent you a friend request`,
+          message: "Check the requests tab in friends.",
+        },
+      };
+      sendEmail(emailData);
     } catch (emailError) {
       console.error("Failed to send friend request email:", emailError);
     }

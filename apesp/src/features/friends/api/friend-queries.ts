@@ -129,7 +129,7 @@ export const useFriendActions = () => {
   // Accept Request
   const acceptRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      await api.patch(`/friends/requests/${requestId}/accept`);
+      await api.post(`/friends/requests/${requestId}/accept`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friends", "list"] });

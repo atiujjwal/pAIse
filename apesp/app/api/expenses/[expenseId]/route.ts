@@ -4,7 +4,7 @@ import { z } from "zod";
 
 Decimal.set({ precision: 12 });
 
-import { GroupRole, SplitType } from "@prisma/client";
+import { GroupRole, NotificationType, SplitType } from "@prisma/client";
 import { prisma } from "@/src/lib/db";
 import { withAuth } from "@/src/middleware/auth";
 import { checkGroupMembership } from "@/src/services/groupService";
@@ -23,6 +23,7 @@ import {
   validateAndProcessExpense,
 } from "@/src/services/expenseService";
 import { balanceService } from "@/src/services/balanceService";
+import { NotificationService } from "@/src/services/notificationService";
 
 /**
  * GET /expenses/{expenseId}
@@ -70,7 +71,7 @@ const getHandler = async (
     } else if (expense.friend_id) {
       const friendId = expense.friend_id;
       if (expense.created_by_id !== userId && friendId !== userId)
-        return forbidden("You are not allowed to view this friend expense")
+        return forbidden("You are not allowed to view this friend expense");
     }
 
     const formattedData = formatDetailedExpense(expense);
@@ -93,16 +94,15 @@ const getHandler = async (
 
 /**
  * PUT /expenses/{expenseId}
- * Updates an existing expense following the new POST flow.
- * Supports both group expenses and friend-to-friend expenses.
+ * Updates an existing expense.
  */
 const putHandler = async (
   request: NextRequest,
-  payload: { userId: string },
+  payload: { userId: string; name: string },
   context: { params: { expenseId: string } }
 ) => {
   try {
-    const { userId } = payload;
+    const { userId, name } = payload;
     const { expenseId } = context.params;
     const body = await request.json();
 
@@ -142,12 +142,10 @@ const putHandler = async (
 
     if (existing.group_id) {
       await checkGroupMembership(userId, existing.group_id);
-
       const members = await prisma.groupMember.findMany({
         where: { group_id: existing.group_id },
         select: { user_id: true },
       });
-
       memberIds = new Set(members.map((m) => m.user_id));
     } else if (existing.friend_id) {
       const isCreator = existing.created_by_id === userId;
@@ -157,7 +155,6 @@ const putHandler = async (
         return forbidden("You are not a participant in this friend expense");
       }
 
-      // Determine who the other person is for the memberIds set
       const otherPersonId = isCreator
         ? existing.friend_id
         : existing.created_by_id;
@@ -173,7 +170,6 @@ const putHandler = async (
       });
 
       if (!friendship) return forbidden("Friendship no longer exists");
-
       memberIds = new Set([userId, otherPersonId]);
     } else {
       return errorResponse(
@@ -240,7 +236,7 @@ const putHandler = async (
         },
       });
 
-      // Insert payers again
+      // Insert payers
       await tx.expensePayer.createMany({
         data: payerData.map((p) => ({
           expense_id: expense.id,
@@ -249,7 +245,7 @@ const putHandler = async (
         })),
       });
 
-      // Insert splits again
+      // Insert splits
       await tx.expenseSplit.createMany({
         data: splitData.map((s) => ({
           expense_id: expense.id,
@@ -263,7 +259,18 @@ const putHandler = async (
       return expense;
     });
 
+    // Update balances
     if (existing) await balanceService.editExpenseImpact(existing, existing.id);
+
+    for (const memberId of memberIds) {
+      if (memberId === userId) continue;
+      NotificationService.create({
+        recipientId: memberId,
+        type: "EXPENSE_ADDED" as NotificationType,
+        title: "Expense updated",
+        message: `${name} updated an expense with you`,
+      });
+    }
 
     const completeExpense = await prisma.expense.findUnique({
       where: { id: expenseId },
@@ -303,11 +310,11 @@ const putHandler = async (
  */
 const deleteHandler = async (
   request: NextRequest,
-  payload: { userId: string },
+  payload: { userId: string; name: string },
   context: { params: { expenseId: string } }
 ) => {
   try {
-    const { userId } = payload;
+    const { userId, name } = payload;
     const { expenseId } = context.params;
 
     const expense = await prisma.expense.findUnique({
@@ -327,7 +334,6 @@ const deleteHandler = async (
 
     if (expense.group_id) {
       const membership = await checkGroupMembership(userId, expense.group_id);
-
       if (
         expense.created_by_id !== userId &&
         membership.role !== GroupRole.ADMIN
@@ -343,12 +349,16 @@ const deleteHandler = async (
       }
     }
 
+    const splitWith = expense.splits.map((data) => data.user_id);
+    const payerWith = expense.payers.map((data) => data.user_id);
+    const memberIds = new Set([...splitWith, ...payerWith]);
+
     await prisma.expense.delete({
       where: { id: expenseId },
     });
 
     if (expense) {
-      balanceService.revertExpenseImpact({
+      await balanceService.revertExpenseImpact({
         id: expense.id,
         group_id: expense.group_id || null,
         friend_id: expense.friend_id || null,
@@ -360,6 +370,16 @@ const deleteHandler = async (
           user_id: split.user_id,
           amount_owed: split.amount_owed,
         })),
+      });
+    }
+
+    for (const memberId of memberIds) {
+      if (memberId === userId) continue;
+      NotificationService.create({
+        recipientId: memberId,
+        type: "EXPENSE_ADDED" as NotificationType,
+        title: "Expense updated",
+        message: `${name} deleted an expense with you`,
       });
     }
 

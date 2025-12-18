@@ -3,10 +3,9 @@
 import { useMemo } from "react";
 import { useAuthStore } from "@/src/features/auth/store";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
-import { Button } from "@/src/components/ui/Button";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 import { cn } from "@/src/lib/utils";
+import NotificationBell from "@/src/components/notifications/NotificationBell";
 
 export function TopNav() {
   const { user, accessToken } = useAuthStore((state) => state);
@@ -44,15 +43,8 @@ export function TopNav() {
         {/* Theme Switcher */}
         <ThemeToggle />
 
-        {/* Notification Bell */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-10 w-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
-        </Button>
+        {/* Notification Bell (Replaced static button) */}
+        <NotificationBell />
 
         {/* Divider */}
         <div className="h-8 w-px bg-border mx-2" />
