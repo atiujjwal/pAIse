@@ -12,6 +12,7 @@ import {
   Wallet,
   Loader2,
   Pencil,
+  ChevronRight,
 } from "lucide-react";
 import { useAuthStore } from "@/src/features/auth/store";
 import {
@@ -93,18 +94,21 @@ export default function ExpenseDetailsPage() {
   // 2. Prepare Display Data based strictly on Context
   let mainAvatarUrl: string | null | undefined = null;
   let mainAvatarName: string | undefined = "";
-  let MainFallbackIcon = User; // Default
+  let MainFallbackIcon = User;
+  let targetRoute = "";
 
   if (isGroupExpense) {
     // GROUP MODE
     mainAvatarUrl = expense.group?.avatar;
     mainAvatarName = expense.group?.name;
     MainFallbackIcon = Layers;
+    targetRoute = `/dashboard/groups/${expense.group?.id}`;
   } else {
     // FRIEND MODE
     mainAvatarUrl = expense.friend?.avatar;
     mainAvatarName = expense.friend?.name;
     MainFallbackIcon = User;
+    targetRoute = `/dashboard/friends/${expense.friend?.id}`;
   }
 
   const handleDelete = () => {
@@ -171,23 +175,34 @@ export default function ExpenseDetailsPage() {
             </div>
           </div>
 
-          {/* Icon & Avatar Section */}
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center relative">
-            <div className="relative h-full w-full">
+          {/* --- CLICKABLE AVATAR & NAME SECTION (UPDATED) --- */}
+          <div
+            onClick={() => router.push(targetRoute)}
+            className="mx-auto mb-6 flex flex-col items-center justify-center w-fit cursor-pointer group"
+          >
+            {/* Avatar Container with Hover Scale */}
+            <div className="relative h-24 w-24 mb-3 transition-transform duration-300 group-hover:scale-105">
               {mainAvatarUrl ? (
-                <Avatar className="h-24 w-24 border-4 border-card shadow-lg">
+                <Avatar className="h-24 w-24 border-4 border-card shadow-lg group-hover:border-primary/30 transition-colors">
                   <AvatarImage src={mainAvatarUrl} className="object-cover" />
                   <AvatarFallback className="bg-primary/10 text-primary text-3xl font-bold">
                     {mainAvatarName?.[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-card border-2 border-border shadow-sm text-muted-foreground">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-card border-2 border-border shadow-sm text-muted-foreground group-hover:text-primary group-hover:border-primary/50 transition-colors">
                   <MainFallbackIcon className="h-10 w-10" />
                 </div>
               )}
             </div>
+
+            {/* Name with Hover Color */}
+            <div className="flex items-center gap-1 text-foreground font-bold text-lg group-hover:text-primary transition-colors">
+              <span>{mainAvatarName}</span>
+              <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </div>
           </div>
+          {/* ------------------------------------------------ */}
 
           <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-2">
             {expense.description}
