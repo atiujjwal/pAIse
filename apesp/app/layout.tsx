@@ -26,7 +26,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* FIXED: Replaced inter.className with standard Tailwind classes */}
       {/* "font-sans" uses the native system font stack (San Francisco, Segoe UI, etc.) */}
       <body className={`${inter.variable} font-sans`}>
         <Providers>

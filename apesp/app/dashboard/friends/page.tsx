@@ -59,7 +59,6 @@ export default function FriendsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Fixed to 'balance' as per requirement
   const [sortBy] = useState<"balance">("balance");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 

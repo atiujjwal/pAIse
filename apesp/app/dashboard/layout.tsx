@@ -8,7 +8,6 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen bg-background">
-      {/* Fixed Sidebar */}
       <div className="hidden w-72 flex-col border-r border-border bg-card md:flex shadow-sm z-20">
         <Sidebar />
       </div>

@@ -6,7 +6,7 @@ import { useExpenseDetails } from "@/src/features/expenses/api/expense-queries";
 import ExpenseForm from "@/src/components/forms/expense/ExpenseForm";
 import { Button } from "@/src/components/ui/Button";
 import { useAuthStore } from "@/src/features/auth/store";
-import { User } from "@/src/types/api";
+import { SplitType } from "@prisma/client";
 
 export default function EditExpensePage() {
   const { id } = useParams();
@@ -40,9 +40,7 @@ export default function EditExpensePage() {
       </div>
     );
   }
-  
-  console.log("43: ", expense);
-  
+
   // Format Data for the Form
   const initialData = {
     amount: expense.amount.toString(),
@@ -50,23 +48,25 @@ export default function EditExpensePage() {
     category: expense.category,
     date: new Date(expense.date).toISOString().slice(0, 10),
     currency: expense.currency,
-    group_id: expense.group_id,
-    friend_id: expense.friend_id,
-    split_type: expense.split_type as any,
+    group_id: expense.group_id ?? null,
+    friend_id: expense.friend_id ?? null,
+    split_type: expense.split_type as SplitType,
     payers: expense.payers.map((p) => ({
       user_id: p.user.id,
       amount: p.amount.toString(),
     })),
     splits: expense.splits.map((s) => ({
       user_id: s.user.id,
-      amount_owed: s.amount_owed,
-      shares_owed: s.shares_owed,
-      percent_owed: s.percent_owed,
+      amount_owed: s.amount_owed ?? undefined,
+      percent_owed:
+        s.percent_owed !== undefined ? Number(s.percent_owed) : undefined,
+      shares_owed:
+        s.shares_owed !== undefined ? Number(s.shares_owed) : undefined,
     })),
   };
 
   if (!isGroupExpense) {
-    initialData.friend_id = expense.friend?.id;
+    initialData.friend_id = expense?.friend_id!;
   }
 
   return (

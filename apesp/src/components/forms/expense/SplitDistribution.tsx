@@ -11,6 +11,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/Avatar";
+import { ExpenseMember } from "./ExpenseForm";
 
 interface Split {
   user_id: string;
@@ -22,7 +23,7 @@ interface Split {
 interface SplitProps {
   splitType: "EQUAL" | "EXACT" | "PERCENTAGE" | "SHARE";
   amount: string;
-  members: User[];
+  members: ExpenseMember[];
   value?: Split[]; // Initial/Controlled value
   setValue: UseFormSetValue<CreateExpenseInput>;
 }

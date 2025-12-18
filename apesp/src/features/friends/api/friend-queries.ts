@@ -56,7 +56,7 @@ interface FriendQueryParams {
 
 // Fetch Accepted Friends
 export const useFriends = (params?: FriendQueryParams) => {
-  return useQuery({
+  return useQuery<User[]>({
     queryKey: ["friends", params],
     queryFn: async () => {
       const query = new URLSearchParams();
@@ -65,7 +65,7 @@ export const useFriends = (params?: FriendQueryParams) => {
       if (params?.sort_order) query.append("sort_order", params.sort_order);
 
       const { data } = await api.get(`/friends?${query.toString()}`);
-      return data.data.friends;
+      return data.data.friends as User[];
     },
   });
 };

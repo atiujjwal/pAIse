@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/src/lib/api";
 import { ApiResponse } from "@/src/types/api";
 
-// FIXED: Matches your specific API JSON response
 interface DashboardSummary {
   total_balance: number;
   monthly_metrics: {

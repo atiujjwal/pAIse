@@ -43,6 +43,9 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+    currency: "INR",
+  },
   });
 
   useEffect(() => {

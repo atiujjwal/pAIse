@@ -19,14 +19,12 @@ export const useUpdateProfile = () => {
 
   return useMutation({
     mutationFn: async (payload: UpdateProfilePayload) => {
-      // Integration: PATCH /api/users/me
       const { data } = await api.patch<{ data: User }>("/users/me", payload);
       return data.data;
     },
-    onSuccess: (updatedUser) => {
-      // Update global store and cache immediately
-      updatedUser(updatedUser);
-      queryClient.setQueryData(["user", "me"], { data: { user: updatedUser } });
+    onSuccess: (user) => {
+      updateUserStore(user);
+      queryClient.setQueryData(["user", "me"], { data: { user } });
       addToast("Profile updated successfully", "success");
     },
     onError: (err: any) => {

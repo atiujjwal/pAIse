@@ -19,7 +19,7 @@ const initialState = {
   currentStep: 1,
   totalSteps: 4,
   isMultiPayer: false,
-  currency: "INR", // Fixed: Removed artifact
+  currency: "INR",
   payers: [],
   splits: [],
   split_type: "EQUAL" as const,

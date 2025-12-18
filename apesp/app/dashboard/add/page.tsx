@@ -11,7 +11,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/Avatar";
-import { cn } from "@/src/lib/utils";
 
 export default function AddFriendPage() {
   const searchParams = useSearchParams();

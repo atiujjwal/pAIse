@@ -9,6 +9,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/Avatar";
+import { ExpenseMember } from "./ExpenseForm";
 
 interface Payer {
   user_id: string;
@@ -16,7 +17,7 @@ interface Payer {
 }
 
 interface PayerSelectorProps {
-  members: User[];
+  members: ExpenseMember[];
   totalAmount: string;
   currentUser: User | null;
   value?: Payer[]; // Controlled value
@@ -81,7 +82,6 @@ export function PayerSelector({
     0
   );
 
-  // Fix Float Precision
   const remaining = parseFloat((numericTotal - currentSum).toFixed(2));
   const isBalanced = Math.abs(remaining) === 0;
 

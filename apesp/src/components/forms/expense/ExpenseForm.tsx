@@ -48,6 +48,12 @@ interface ExpenseFormProps {
   preloadedMembers?: ApiUser[];
 }
 
+export interface ExpenseMember {
+  id: string;
+  name: string;
+  avatar?: string | null;
+}
+
 export default function ExpenseForm({
   mode = "create",
   expenseId,
@@ -129,8 +135,6 @@ export default function ExpenseForm({
   const payers = useWatch({ control, name: "payers" });
   const splits = useWatch({ control, name: "splits" });
 
-  // Context Switching
-  // FIX: Initialize based on explicit 'context' param or pre-selected friend ID
   const [activeTab, setActiveTab] = useState<"group" | "friend">(
     preSelectedFriendId || contextParam === "friend" ? "friend" : "group"
   );
@@ -144,18 +148,44 @@ export default function ExpenseForm({
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
-  // ... (Rest of logic: Member fetching, mutation, render - Unchanged) ...
-  // Keeping the rest identical to ensure stability
 
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
 
-  const activeMembers = useMemo(() => {
-    if (preloadedMembers.length > 0) return preloadedMembers;
-    if (selectedGroupId && groupMembers) return groupMembers;
+  const activeMembers = useMemo<ExpenseMember[]>(() => {
+    if (preloadedMembers.length > 0) {
+      return preloadedMembers.map((u) => ({
+        id: u.id,
+        name: u.name,
+        avatar: u.avatar,
+      }));
+    }
+
+    if (selectedGroupId && groupMembers) {
+      return groupMembers.map((m) => ({
+        id: m.id,
+        name: m.name,
+        avatar: m.avatar,
+      }));
+    }
+
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
-      return friend ? [currentUser, friend] : [];
+      return friend
+        ? [
+            {
+              id: currentUser.id,
+              name: currentUser.name,
+              avatar: currentUser.avatar,
+            },
+            {
+              id: friend.id,
+              name: friend.name,
+              avatar: friend.avatar,
+            },
+          ]
+        : [];
     }
+
     return [];
   }, [
     preloadedMembers,
@@ -309,7 +339,7 @@ export default function ExpenseForm({
                 }}
                 contextData={{
                   type: activeTab,
-                  id: selectedGroupId || selectedFriendId,
+                  id: selectedGroupId || selectedFriendId!,
                   name: "Context",
                 }}
               />

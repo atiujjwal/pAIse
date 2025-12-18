@@ -426,7 +426,6 @@ export class NlpService {
         },
       ],
       generationConfig: {
-        // 👇 CRITICAL FIX: You must enforce JSON MIME type here
         responseMimeType: "application/json",
 
         responseSchema: {

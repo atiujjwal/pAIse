@@ -23,7 +23,7 @@ export const registerSchema = z.object({
   password: z.string().min(10, "Password must be at least 10 characters"),
   phone: z.string().optional(),
   timezone: z.string().optional(),
-  currency: z.string().default("INR"),
+  currency: z.string(),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -83,7 +83,7 @@ export const createExpenseSchema = z
     amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
       message: "Amount must be greater than 0",
     }),
-    currency: z.string().default("INR"),
+    currency: z.string(),
     date: z.string().transform((val) => {
       const iso = new Date(val).toISOString();
       return iso;

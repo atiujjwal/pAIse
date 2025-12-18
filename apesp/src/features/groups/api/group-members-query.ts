@@ -21,13 +21,13 @@ export const useGroupMembers = (groupId: string | null | undefined) => {
       if (!groupId) return [];
 
       const { data } = await api.get<
-        ApiResponse<{ members: GroupMember[] }>
+        ApiResponse<GroupMember[]>
       >(`/groups/${groupId}/members`);
       const members = data.data! || [];
       return members.map<ExpenseParticipant>((m) => ({
         id: m.user.id,
         name: m.user.name,
-        avatar: m.user.avatar,
+        avatar: m.user?.avatar!,
         role: m.role,
       }));
     },
