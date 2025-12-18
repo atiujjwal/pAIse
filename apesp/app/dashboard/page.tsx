@@ -44,6 +44,14 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
   const { user } = useAuthStore();
   const isGroupExpense = !!expense.group;
 
+  // 1. Calculate User Specific Financials
+  const userPayment = expense.payers.find((p: any) => p.user.id === user?.id);
+  const userSplit = expense.splits.find((s: any) => s.user.id === user?.id);
+
+  const paidAmount = userPayment ? parseFloat(userPayment.amount) : 0;
+  const shareAmount = userSplit ? parseFloat(userSplit.amount_owed) : 0;
+
+  // 2. Determine Display Avatar & Name
   let avatarUrl: string | null | undefined = null;
   let displayName: string = "";
   let FallbackIcon = User;
@@ -122,13 +130,35 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
         </div>
       </div>
 
-      <div className="text-right pl-2">
+      {/* Amount & User Context Section */}
+      <div className="text-right pl-2 flex flex-col items-end">
+        {/* Total Amount */}
         <span className="block font-mono font-bold text-foreground text-base">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
-        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded-md mt-1 inline-block">
-          {expense.split_type}
-        </span>
+
+        {/* User Specific Details */}
+        <div className="flex flex-col items-end gap-0.5 mt-1">
+          {paidAmount > 0 && (
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              You paid {formatCurrency(String(paidAmount), expense.currency)}
+            </span>
+          )}
+
+          {shareAmount > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground">
+              Your share:{" "}
+              {formatCurrency(String(shareAmount), expense.currency)}
+            </span>
+          )}
+
+          {/* Fallback if user is neither payer nor splitter */}
+          {paidAmount === 0 && shareAmount === 0 && (
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded-md">
+              {expense.split_type}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
