@@ -1,13 +1,5 @@
 import { prisma } from "@/src/lib/db";
-
-export type NotificationType =
-  | "FRIEND_REQUEST"
-  | "FRIEND_ACCEPTED"
-  | "GROUP_INVITE"
-  | "EXPENSE_ADDED"
-  | "SETTLEMENT_RECORDED"
-  | "REMINDER"
-  | "SYSTEM_ANNOUNCEMENT";
+import { NotificationType } from "@prisma/client";
 
 export interface NotificationData {
   recipientId: string;

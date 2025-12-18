@@ -14,8 +14,6 @@ import {
   UserMinus,
   ArrowLeft,
   Receipt,
-  Check,
-  ChevronRight,
   Loader2,
   Calendar,
   Layers,
@@ -67,8 +65,16 @@ import { formatCurrency, cn } from "@/src/lib/utils";
 
 // --- LOCAL COMPONENT: Consistent Expense Card for Group View ---
 const GroupExpenseCard = ({ expense }: { expense: any }) => {
+  const { user } = useAuthStore();
   const avatarUrl = expense.created_by.avatar;
   const displayName = expense.created_by.name;
+
+  // 1. Calculate User Specific Financials
+  const userPayment = expense.payers.find((p: any) => p.user.id === user?.id);
+  const userSplit = expense.splits.find((s: any) => s.user.id === user?.id);
+
+  const paidAmount = userPayment ? parseFloat(userPayment.amount) : 0;
+  const shareAmount = userSplit ? parseFloat(userSplit.amount_owed) : 0;
 
   return (
     <Link
@@ -113,14 +119,35 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
         </div>
       </div>
 
-      {/* Amount Section */}
-      <div className="text-right">
+      {/* Amount & User Context Section */}
+      <div className="text-right pl-2 flex flex-col items-end">
+        {/* Total Expense Amount */}
         <span className="block font-bold text-foreground font-mono text-base">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
-        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide bg-muted/50 px-2 py-0.5 rounded-md mt-1 inline-block">
-          {expense.split_type}
-        </span>
+
+        {/* User Specific Details - Exact same logic as global list */}
+        <div className="flex flex-col items-end gap-0.5 mt-1">
+          {paidAmount > 0 && (
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              You paid {formatCurrency(String(paidAmount), expense.currency)}
+            </span>
+          )}
+
+          {shareAmount > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground">
+              Your share:{" "}
+              {formatCurrency(String(shareAmount), expense.currency)}
+            </span>
+          )}
+
+          {/* Fallback if user is neither payer nor splitter (rare watcher case) */}
+          {paidAmount === 0 && shareAmount === 0 && (
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-muted/50 px-2 py-0.5 rounded-md">
+              {expense.split_type}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
@@ -307,7 +334,7 @@ export default function GroupDetailsPage() {
               >
                 Balances
               </TabsTrigger>
-              
+
               <TabsTrigger
                 value="expenses"
                 className="rounded-xl h-full px-6 font-bold"

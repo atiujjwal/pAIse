@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
@@ -157,9 +157,17 @@ const PendingGroupsDialog = ({
 };
 
 const SharedExpenseCard = ({ expense }: { expense: any }) => {
+  const { user } = useAuthStore();
   const isGroup = !!expense.group;
   const avatarUrl = isGroup ? expense.group.avatar : expense.created_by.avatar;
   const name = isGroup ? expense.group.name : expense.created_by.name;
+
+  // --- Financial Context Logic ---
+  const userPayment = expense.payers.find((p: any) => p.user.id === user?.id);
+  const userSplit = expense.splits.find((s: any) => s.user.id === user?.id);
+
+  const paidAmount = userPayment ? parseFloat(userPayment.amount) : 0;
+  const shareAmount = userSplit ? parseFloat(userSplit.amount_owed) : 0;
 
   return (
     <Link
@@ -213,13 +221,34 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
         </div>
       </div>
 
-      <div className="text-right">
+      {/* Amount & User Context Section */}
+      <div className="text-right pl-2 flex flex-col items-end">
         <span className="block font-bold text-foreground font-mono text-base">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
-        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide bg-muted/50 px-2 py-0.5 rounded-md mt-1 inline-block">
-          {expense.split_type}
-        </span>
+
+        {/* User Specific Details */}
+        <div className="flex flex-col items-end gap-0.5 mt-1">
+          {paidAmount > 0 && (
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              You paid {formatCurrency(String(paidAmount), expense.currency)}
+            </span>
+          )}
+
+          {shareAmount > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground">
+              Your share:{" "}
+              {formatCurrency(String(shareAmount), expense.currency)}
+            </span>
+          )}
+
+          {/* Fallback if user is neither payer nor splitter */}
+          {paidAmount === 0 && shareAmount === 0 && (
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-muted/50 px-2 py-0.5 rounded-md">
+              {expense.split_type}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
@@ -655,7 +684,8 @@ export default function FriendDetailsPage() {
             </div>
             <DialogDescription className="text-muted-foreground pt-2 text-base leading-relaxed">
               Are you sure you want to remove <strong>{friend.name}</strong>?
-              Your personal (non-group) balances will be cleared. Make sure all group balances are settled before continuing.
+              Your personal (non-group) balances will be cleared. Make sure all
+              group balances are settled before continuing.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-3 sm:gap-0 mt-6">
