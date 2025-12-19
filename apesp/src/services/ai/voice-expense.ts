@@ -5,8 +5,8 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 
 Decimal.set({ precision: 12 });
 
-const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY || "");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY || "");
 
 const MAX_AUDIO_FILE_SIZE_MB = 10;
 const MAX_AUDIO_FILE_SIZE_BYTES = MAX_AUDIO_FILE_SIZE_MB * 1024 * 1024;
@@ -88,7 +88,7 @@ export class VoiceAiService {
     context: ExpenseContext
   ) {
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-lite",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {

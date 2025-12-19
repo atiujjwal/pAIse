@@ -1,15 +1,129 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { withAuth } from "@/src/middleware/auth";
 import { badRequest, errorResponse, successResponse } from "@/src/lib/response";
 import { FileStorageService } from "@/src/services/storageService";
-import { prisma } from "@/src/lib/db";
-import { VoiceAiService, VoiceExpenseFormDataSchema } from "@/src/services/ai/voice-expense";
+import { VoiceAiService } from "@/src/services/ai/voice-expense";
+
+// --- 1. Define Schemas (As per your request) ---
+
+const ParticipantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatar: z.string().nullable().optional(),
+  email: z.string().nullable().optional(), // Added email as it might be useful for 'friend' object
+});
+
+const ExpenseContextSchema = z.object({
+  mode: z.enum(["GROUP", "FRIEND"]),
+  current_user: ParticipantSchema,
+  participants: z.array(ParticipantSchema),
+  group_id: z.string().nullable().optional(),
+  friend_id: z.string().nullable().optional(),
+});
+
+// Helper type for the context
+type ExpenseContext = z.infer<typeof ExpenseContextSchema>;
+
+// Config constants
+const MAX_AUDIO_FILE_SIZE_MB = 10;
+const MAX_AUDIO_FILE_SIZE_BYTES = MAX_AUDIO_FILE_SIZE_MB * 1024 * 1024;
+const ACCEPTED_AUDIO_TYPES = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-m4a",
+  "audio/webm",
+  "audio/mp4", // iOS voice memos often record as mp4 audio
+];
+
+const VoiceExpenseFormDataSchema = z.object({
+  audio: z
+    .custom<File>((file) => file instanceof File, "Audio must be a file")
+    .refine((file) => file.size <= MAX_AUDIO_FILE_SIZE_BYTES, {
+      message: `File size must be less than ${MAX_AUDIO_FILE_SIZE_MB}MB`,
+    })
+    .refine((file) => ACCEPTED_AUDIO_TYPES.includes(file.type), {
+      message: "Invalid audio format.",
+    }),
+  context: z
+    .string()
+    .transform((str, ctx) => {
+      try {
+        return JSON.parse(str);
+      } catch (e) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid JSON format for context",
+        });
+        return z.NEVER;
+      }
+    })
+    .pipe(ExpenseContextSchema),
+});
+
+// --- 2. Hydration Helper ---
 
 /**
- * POST /api/ai/voice-expense
- * Processes voice notes into structured expense drafts.
- * Requires: 'audio' (file) and 'context' (JSON string with participants).
+ * Merges the AI raw result (ids and amounts) with the Frontend context (names, avatars)
  */
+function hydrateDraftExpense(
+  aiResult: any,
+  context: ExpenseContext,
+  currentUserId: string
+) {
+  const findUser = (id: string) => {
+    return (
+      context.participants.find((p) => p.id === id) || {
+        id,
+        name: "Unknown",
+        avatar: null,
+      }
+    );
+  };
+
+  // 1. Identify Creator
+  const creator = findUser(currentUserId);
+
+  // 2. Hydrate Payers
+  const hydratedPayers = aiResult.payers.map((payer: any) => ({
+    ...payer,
+    user: findUser(payer.user_id),
+  }));
+
+  // 3. Hydrate Splits
+  const hydratedSplits = aiResult.splits.map((split: any) => ({
+    ...split,
+    user: findUser(split.user_id),
+  }));
+
+  // 4. Determine Target (Friend or Group details)
+  let targetDetails = null;
+  if (context.mode === "FRIEND" && context.friend_id) {
+    targetDetails = findUser(context.friend_id);
+  } else if (context.mode === "GROUP" && context.group_id) {
+    // If you pass group name in context, map it here.
+    // Otherwise returning simple object or null.
+    targetDetails = { id: context.group_id, name: "Group Expense" };
+  }
+
+  return {
+    description: aiResult.description,
+    amount: aiResult.amount.toString(),
+    date: new Date().toISOString(),
+    category: aiResult.category || "Other",
+    group_id: context.group_id || null,
+    split_type: aiResult.split_type || "EQUAL",
+    created_at: new Date().toISOString(),
+    created_by: creator,
+    payers: hydratedPayers,
+    splits: hydratedSplits,
+    [context.mode === "FRIEND" ? "friend" : "group"]: targetDetails,
+  };
+}
+
+// --- 3. Main Handler ---
+
 const postHandler = async (
   request: NextRequest,
   payload: { userId: string }
@@ -18,7 +132,6 @@ const postHandler = async (
     const { userId } = payload;
     const formData = await request.formData();
 
-    // 1. Extract Fields
     const contextValue = formData.get("context");
     const rawAudio = formData.get("audio");
 
@@ -46,48 +159,20 @@ const postHandler = async (
 
     const { audio, context } = validation.data;
 
-    // 3. Security Check: Ensure authenticated user is in the participants list
-    // (This prevents users from processing expenses for purely 3rd parties)
-    const currentUserInContext = context.participants.find(
-      (p) => p.id === userId
-    );
-    if (!currentUserInContext) {
-      // Auto-inject current user if missing, fetching from DB
-      const user = await prisma.user.findUnique({
-        where: { id: userId, is_deleted: false },
-        select: { id: true, name: true, avatar: true },
-      });
-      if (!user) return errorResponse("User not found", 404);
-
-      // Patch the context
-      context.current_user = {
-        id: user.id,
-        name: user.name,
-        avatar: user.avatar || null,
-      };
-      // Ensure they are in the participants list for mapping
-      if (!context.participants.some((p) => p.id === userId)) {
-        context.participants.push(context.current_user);
-      }
-    }
-
-    // 4. File Handling (Upload to temp storage or use buffer directly)
-    // Using a temp file path is safer for large files/libraries expecting paths
     const buffer = Buffer.from(await audio.arrayBuffer());
     const filename = `voice_${userId}_${Date.now()}_${audio.name}`;
     const filePath = await FileStorageService.upload(buffer, filename);
 
-    // 5. Process with AI
-    const draftExpense = await VoiceAiService.processVoiceExpense(
+    const aiDraftResult = await VoiceAiService.processVoiceExpense(
       filePath,
       audio.type,
       context
     );
-
-    // 6. Cleanup
     await FileStorageService.delete(filePath);
 
-    return successResponse("Expense draft created successfully", draftExpense);
+    const richResponse = hydrateDraftExpense(aiDraftResult, context, userId);
+
+    return successResponse("Expense draft created successfully", richResponse);
   } catch (error: any) {
     console.error("Voice API Error:", error);
     if (error.message?.includes("token")) {
