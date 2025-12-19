@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Play, Pause, Trash2, Check } from "lucide-react";
+import {
+  Mic,
+  Square,
+  Play,
+  Pause,
+  Trash2,
+  Check,
+  RefreshCcw,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
 
@@ -17,6 +25,7 @@ export function VoiceRecorder({
   isSubmitting,
 }: VoiceRecorderProps) {
   const [permissionError, setPermissionError] = useState(false);
+  // States: idle -> recording -> review
   const [recordingState, setRecordingState] = useState<
     "idle" | "recording" | "review"
   >("idle");
@@ -29,6 +38,7 @@ export function VoiceRecorder({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Cleanup URL on unmount
   useEffect(() => {
     return () => {
       if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -53,6 +63,8 @@ export function VoiceRecorder({
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
         setRecordingState("review");
+
+        // Stop all tracks to release microphone
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -65,6 +77,7 @@ export function VoiceRecorder({
         setDuration((prev) => prev + 1);
       }, 1000);
     } catch (err) {
+      console.error("Mic Error:", err);
       setPermissionError(true);
     }
   };
@@ -88,11 +101,20 @@ export function VoiceRecorder({
   };
 
   const handleAudioEnded = () => setIsPlaying(false);
+
   const handleSubmit = () => {
     if (!audioUrl) return;
     const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     onSubmit(audioBlob);
   };
+
+  const handleReset = () => {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioUrl(null);
+    setRecordingState("idle");
+    setDuration(0);
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -113,103 +135,124 @@ export function VoiceRecorder({
   }
 
   return (
-    <div className="flex flex-col items-center p-6 bg-card border border-border rounded-3xl shadow-sm animate-in fade-in slide-in-from-top-2">
-      {/* Timer / Visualizer */}
-      <div className="flex items-center justify-center w-full mb-8">
+    <div className="flex flex-col items-center p-6 bg-card border border-border rounded-3xl shadow-sm animate-in fade-in slide-in-from-top-2 mb-6">
+      {/* 1. VISUALIZER / TIMER AREA */}
+      <div className="flex items-center justify-center w-full mb-8 h-16">
         {recordingState === "recording" ? (
-          <div className="flex items-center gap-4">
-            <span className="relative flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive/60 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-destructive"></span>
-            </span>
-            <span className="text-3xl font-mono font-medium text-foreground tabular-nums">
+          <div className="flex items-center gap-4 animate-pulse">
+            <div className="h-3 w-3 rounded-full bg-red-500" />
+            <span className="text-4xl font-mono font-medium text-foreground tabular-nums">
               {formatTime(duration)}
             </span>
           </div>
         ) : recordingState === "review" ? (
-          <div className="flex items-center gap-3 w-full bg-muted/40 p-3 rounded-2xl border border-border">
+          <div className="flex items-center gap-3 w-full bg-muted/40 p-2 pr-4 rounded-full border border-border">
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full"
+              className="h-10 w-10 rounded-full shrink-0"
               onClick={togglePlayback}
             >
               {isPlaying ? (
                 <Pause className="h-5 w-5 fill-current" />
               ) : (
-                <Play className="h-5 w-5 fill-current" />
+                <Play className="h-5 w-5 fill-current ml-0.5" />
               )}
             </Button>
-            <audio
-              ref={audioRef}
-              src={audioUrl!}
-              onEnded={handleAudioEnded}
-              className="hidden"
-            />
-            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full bg-primary transition-all duration-300",
-                  isPlaying ? "w-full opacity-70 animate-pulse" : "w-0"
-                )}
+
+            <div className="flex-1 flex flex-col justify-center h-full gap-1">
+              {/* Hidden Audio Element */}
+              <audio
+                ref={audioRef}
+                src={audioUrl!}
+                onEnded={handleAudioEnded}
+                className="hidden"
               />
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden w-full">
+                <div
+                  className={cn(
+                    "h-full bg-primary transition-all duration-300",
+                    isPlaying
+                      ? "w-full opacity-70 animate-[progress_linear]"
+                      : "w-0"
+                  )}
+                  style={{
+                    animationDuration: `${duration}s`,
+                    animationPlayState: isPlaying ? "running" : "paused",
+                  }}
+                />
+              </div>
             </div>
-            <span className="text-xs font-mono text-muted-foreground">
+            <span className="text-xs font-mono text-muted-foreground tabular-nums shrink-0">
               {formatTime(duration)}
             </span>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground font-medium">
-            Ready to record details...
+            Ready to record...
           </p>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-4">
+      {/* 2. CONTROLS AREA */}
+      <div className="flex items-center gap-6">
         {recordingState === "idle" && (
-          <div className="flex gap-4">
-            <Button
-              variant="ghost"
-              onClick={onCancel}
-              className="text-muted-foreground"
-            >
+          <>
+            <Button variant="ghost" onClick={onCancel} className="rounded-full">
               Cancel
             </Button>
             <Button
               onClick={startRecording}
-              className="bg-destructive hover:bg-destructive/90 text-white rounded-full px-8 h-12 shadow-lg shadow-destructive/20"
+              className="h-14 px-8 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform"
             >
               <Mic className="w-5 h-5 mr-2" /> Start Recording
             </Button>
-          </div>
+          </>
         )}
 
         {recordingState === "recording" && (
           <Button
             onClick={stopRecording}
-            className="h-16 w-16 rounded-full border-4 border-destructive/20 bg-destructive hover:bg-destructive/90 text-white shadow-xl transition-transform hover:scale-105 active:scale-95"
+            className="h-16 w-16 rounded-full border-4 border-red-500/20 bg-red-500 hover:bg-red-600 text-white shadow-xl transition-all hover:scale-105"
           >
             <Square className="w-6 h-6 fill-current" />
           </Button>
         )}
 
         {recordingState === "review" && (
-          <div className="flex gap-3 w-full">
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
+              onClick={handleReset}
+              disabled={isSubmitting}
+              className="h-12 w-12 rounded-full p-0"
+              title="Record Again"
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </Button>
+
+            <Button
+              variant="destructive"
+              // variant="ghost"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+              className="h-12 px-6 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
-              <Trash2 className="w-4 h-4 mr-2" /> Discard
+              Discard
             </Button>
+
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex-1 bg-primary hover:bg-primary/90 shadow-md"
+              className="h-12 px-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
             >
-              <Check className="w-4 h-4 mr-2" /> Submit
+              {isSubmitting ? (
+                "Processing..."
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" /> Submit
+                </>
+              )}
             </Button>
           </div>
         )}

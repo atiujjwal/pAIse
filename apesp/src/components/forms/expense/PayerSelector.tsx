@@ -44,6 +44,7 @@ export function PayerSelector({
 
   const lastEmittedRef = useRef<string>("");
   const isInitialized = useRef(false);
+  const lastValueRef = useRef<string>("");
 
   const sortedMembers = [
     ...(currentUser ? [currentUser] : []),
@@ -51,6 +52,22 @@ export function PayerSelector({
   ];
 
   const numericTotal = parseFloat(totalAmount) || 0;
+
+  // Sync with incoming value prop changes (for AI draft data)
+  useEffect(() => {
+    const valueSignature = JSON.stringify(value);
+
+    // Only update if value prop has actually changed
+    if (valueSignature !== lastValueRef.current && value && value.length > 0) {
+      console.log("PayerSelector: Syncing with new value prop", value);
+      const newAmounts: Record<string, string> = {};
+      value.forEach((p) => {
+        newAmounts[p.user_id] = p.amount;
+      });
+      setAmounts(newAmounts);
+      lastValueRef.current = valueSignature;
+    }
+  }, [value]);
 
   // Auto-fill "Me" on first load ONLY if it's a new creation (value is empty)
   useEffect(() => {

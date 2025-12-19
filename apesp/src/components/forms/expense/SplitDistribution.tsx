@@ -67,7 +67,35 @@ export function SplitDistribution({
   });
 
   const lastUpdateRef = useRef<string>("");
+  const lastValueRef = useRef<string>("");
   const totalAmount = parseFloat(amount) || 0;
+
+  // Sync with incoming value prop changes (for AI draft data)
+  useEffect(() => {
+    const valueSignature = JSON.stringify(value);
+
+    // Only update if value prop has actually changed and has data
+    if (valueSignature !== lastValueRef.current && value && value.length > 0) {
+      console.log("SplitDistribution: Syncing with new value prop", value);
+
+      const newInputs: Record<string, string> = {};
+      const newSelected: Record<string, boolean> = {};
+
+      value.forEach((s) => {
+        // Mark as selected for EQUAL split
+        newSelected[s.user_id] = true;
+
+        // Set input values based on split type
+        if (s.amount_owed) newInputs[s.user_id] = s.amount_owed;
+        if (s.percent_owed) newInputs[s.user_id] = s.percent_owed.toString();
+        if (s.shares_owed) newInputs[s.user_id] = s.shares_owed.toString();
+      });
+
+      setInputs(newInputs);
+      setSelectedForEqual(newSelected);
+      lastValueRef.current = valueSignature;
+    }
+  }, [value]);
 
   // Fallback for first render if empty (Reset logic)
   useEffect(() => {

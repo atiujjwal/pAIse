@@ -13,6 +13,7 @@ import {
   Calendar,
   FileText,
   Lock,
+  Sparkles,
 } from "lucide-react";
 
 import { api } from "@/src/lib/api";
@@ -72,6 +73,14 @@ export default function ExpenseForm({
   const preSelectedFriendId = searchParams.get("friendId");
   const contextParam = searchParams.get("context");
 
+  const [draftMembers, setDraftMembers] = useState<ExpenseMember[]>([]);
+
+  // Pending Data Queue
+  const [pendingDraftData, setPendingDraftData] = useState<{
+    payers: any[];
+    splits: any[];
+  } | null>(null);
+
   const { data: groups, isLoading: loadingGroups } = useGroupsList();
   const { data: friends, isLoading: loadingFriends } = useFriends();
 
@@ -116,7 +125,6 @@ export default function ExpenseForm({
       if (wizardStore.amount) setValue("amount", wizardStore.amount);
       if (wizardStore.description)
         setValue("description", wizardStore.description);
-
       if (wizardStore.group_id) setValue("group_id", wizardStore.group_id);
       if (wizardStore.friend_id) setValue("friend_id", wizardStore.friend_id);
     }
@@ -131,7 +139,6 @@ export default function ExpenseForm({
   const selectedFriendId = useWatch({ control, name: "friend_id" });
   const splitType = useWatch({ control, name: "split_type" });
   const amount = useWatch({ control, name: "amount" });
-
   const payers = useWatch({ control, name: "payers" });
   const splits = useWatch({ control, name: "splits" });
 
@@ -148,10 +155,13 @@ export default function ExpenseForm({
     (activeTab === "group" && !!selectedGroupId) ||
     (activeTab === "friend" && !!selectedFriendId);
 
-
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
 
   const activeMembers = useMemo<ExpenseMember[]>(() => {
+    // Draft Members 
+    if (draftMembers.length > 0) return draftMembers;
+
+    // Preloaded
     if (preloadedMembers.length > 0) {
       return preloadedMembers.map((u) => ({
         id: u.id,
@@ -160,6 +170,7 @@ export default function ExpenseForm({
       }));
     }
 
+    // Group
     if (selectedGroupId && groupMembers) {
       return groupMembers.map((m) => ({
         id: m.id,
@@ -168,6 +179,7 @@ export default function ExpenseForm({
       }));
     }
 
+    // Friend
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
       return friend
@@ -188,6 +200,7 @@ export default function ExpenseForm({
 
     return [];
   }, [
+    draftMembers,
     preloadedMembers,
     selectedGroupId,
     groupMembers,
@@ -195,6 +208,151 @@ export default function ExpenseForm({
     friends,
     currentUser,
   ]);
+
+  useEffect(() => {
+    if (pendingDraftData && activeMembers.length > 0) {
+
+      // console.log("Flushing Pending Data to Form...", pendingDraftData);
+
+      setValue("payers", pendingDraftData.payers, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      setValue("splits", pendingDraftData.splits, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      setPendingDraftData(null); // Clear queue
+      addToast("Expense details populated successfully!", "success");
+    }
+  }, [activeMembers, pendingDraftData, setValue, addToast]);
+
+  const handleDraftReceived = useCallback(
+    (draft: any) => {
+      console.log("AI Draft Processing:", draft);
+      if (!draft) return;
+
+      // HYDRATE MEMBERS INSTANTLY
+      const tempMap = new Map();
+      const extractUser = (u: any) => {
+        if (u && u.id) {
+          tempMap.set(u.id, {
+            id: u.id,
+            name: u.name || "Unknown",
+            avatar: u.avatar,
+          });
+        }
+      };
+
+      if (draft.created_by) extractUser(draft.created_by);
+      if (draft.friend) extractUser(draft.friend);
+      if (Array.isArray(draft.payers)) {
+        draft.payers.forEach((p: any) => p.user && extractUser(p.user));
+      }
+      if (Array.isArray(draft.splits)) {
+        draft.splits.forEach((s: any) => s.user && extractUser(s.user));
+      }
+      if (currentUser) extractUser(currentUser);
+
+      const hydratedMembers = Array.from(tempMap.values());
+      if (hydratedMembers.length > 0) {
+        setDraftMembers(hydratedMembers);
+      }
+
+      // SET CONTEXT (Trigger Form Mount)
+      if (draft.group_id) {
+        setActiveTab("group");
+        setValue("group_id", draft.group_id, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      } else if (draft.friend && draft.friend.id) {
+        setActiveTab("friend");
+        setValue("friend_id", draft.friend.id, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+
+      // SET BASIC FIELDS
+      const draftAmount = parseFloat(draft.amount || "0");
+      if (draft.amount)
+        setValue("amount", String(draftAmount), {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      if (draft.description)
+        setValue("description", draft.description, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      if (draft.category)
+        setValue("category", draft.category, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      if (draft.date)
+        setValue("date", draft.date.split("T")[0], {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      if (draft.split_type)
+        setValue("split_type", draft.split_type, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+
+      // SET PAYERS & SPLITS
+      // Allow a render cycle for members to be available
+      setTimeout(() => {
+        // PAYERS: Map correctly to { user_id, amount }
+        if (draft.payers && Array.isArray(draft.payers)) {
+          const mappedPayers = draft.payers.map((p: any) => ({
+            user_id: p.user_id,
+            amount: String(parseFloat(p.amount || "0")),
+          }));
+
+          console.log("Setting payers:", mappedPayers);
+          setValue("payers", mappedPayers, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+        }
+
+        // SPLITS: Map correctly based on split_type
+        if (draft.splits && Array.isArray(draft.splits)) {
+          const mappedSplits = draft.splits.map((s: any) => {
+            const baseSplit = { user_id: s.user_id }; // ✅ Correct field name
+
+            // Add the appropriate field based on what exists in the data
+            if (s.amount_owed) {
+              return { ...baseSplit, amount_owed: String(s.amount_owed) };
+            } else if (
+              s.percent_owed !== null &&
+              s.percent_owed !== undefined
+            ) {
+              return { ...baseSplit, percent_owed: s.percent_owed };
+            } else if (s.shares_owed !== null && s.shares_owed !== undefined) {
+              return { ...baseSplit, shares_owed: s.shares_owed };
+            }
+
+            // For EQUAL split, just return user_id
+            return baseSplit;
+          });
+
+          console.log("Setting splits:", mappedSplits);
+          setValue("splits", mappedSplits, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+        }
+
+        addToast("Expense details populated successfully!", "success");
+      }, 100); // Increased to 100ms for stability
+    },
+    [setValue, addToast, currentUser]
+  );
 
   const handlePayerChange = useCallback(
     (newPayers: any[]) => {
@@ -217,16 +375,13 @@ export default function ExpenseForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-
       if (expenseId) {
         queryClient.invalidateQueries({ queryKey: ["expense", expenseId] });
       }
-
       addToast(
         mode === "edit" ? "Expense updated!" : "Expense created!",
         "success"
       );
-
       if (mode === "edit") {
         router.back();
       } else {
@@ -242,7 +397,6 @@ export default function ExpenseForm({
 
   return (
     <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* SECTION 1: CONTEXT */}
       <div className="mb-10 space-y-6">
         <div className="flex items-center justify-between">
           <Label className="text-lg font-bold text-foreground">
@@ -328,20 +482,22 @@ export default function ExpenseForm({
         >
           {mode === "create" && (
             <div>
-              <Label className="mb-4 block text-base font-bold text-foreground">
-                Smart Entry
-              </Label>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <Label className="block text-base font-bold text-foreground">
+                  Smart Entry
+                </Label>
+              </div>
+
               <SmartInputs
-                onDraftReceived={(draft) => {
-                  if (draft.amount) setValue("amount", draft.amount);
-                  if (draft.description)
-                    setValue("description", draft.description);
-                }}
-                contextData={{
-                  type: activeTab,
-                  id: selectedGroupId || selectedFriendId!,
-                  name: "Context",
-                }}
+                onDraftReceived={handleDraftReceived}
+                currentUser={currentUser}
+                activeMembers={activeMembers}
+                activeGroupId={selectedGroupId || null}
+                activeFriendId={selectedFriendId || null}
+                mode={activeTab}
               />
             </div>
           )}
@@ -353,7 +509,7 @@ export default function ExpenseForm({
                 <FileText className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
                 <Input
                   {...register("description")}
-                  placeholder="e.g. Dinner"
+                  placeholder="e.g. Dinner at Paradise"
                   className="pl-12 h-12 rounded-xl text-base bg-background"
                 />
               </div>
