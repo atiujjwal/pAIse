@@ -1,100 +1,123 @@
-"use client";
-
-import { useEffect, useRef } from "react";
+import {
+  UserPlus,
+  UserCheck,
+  Receipt,
+  Clock,
+  Bell,
+  Circle,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import { Bell } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  type: string;
+  data?: { url?: string };
+}
 
 interface NotificationItemProps {
-  notification: any;
+  notification: Notification;
   onRead: (id: string) => void;
-  onClick: (notification: any) => void;
+  onClick: (notification: Notification) => void;
 }
+
+const getNotificationConfig = (type: string) => {
+  switch (type) {
+    case "FRIEND_REQUEST":
+      return {
+        icon: UserPlus,
+        colorClass: "text-blue-500 bg-blue-500/10",
+      };
+    case "FRIEND_ACCEPTED":
+      return {
+        icon: UserCheck,
+        colorClass: "text-emerald-500 bg-emerald-500/10",
+      };
+    case "EXPENSE_ADDED":
+      return {
+        icon: Receipt,
+        colorClass: "text-orange-500 bg-orange-500/10",
+      };
+    case "REMINDER":
+      return {
+        icon: Clock,
+        colorClass: "text-purple-500 bg-purple-500/10",
+      };
+    default:
+      return {
+        icon: Bell,
+        colorClass: "text-muted-foreground bg-muted",
+      };
+  }
+};
 
 export function NotificationItem({
   notification,
   onRead,
   onClick,
 }: NotificationItemProps) {
-  const itemRef = useRef<HTMLButtonElement>(null);
+  const config = getNotificationConfig(notification.type);
+  const Icon = config.icon;
 
-  useEffect(() => {
-    // Only set up observer if the notification is unread
-    if (notification.is_read) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Trigger read action
-            onRead(notification.id);
-            // Stop observing once marked
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        root: null, // viewport
-        threshold: 0.6, // Trigger when 60% of the item is visible
-      }
-    );
-
-    if (itemRef.current) {
-      observer.observe(itemRef.current);
+  const timeAgo = new Date(notification.created_at).toLocaleDateString(
+    undefined,
+    {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [notification.id, notification.is_read, onRead]);
+  );
 
   return (
-    <button
-      ref={itemRef}
+    <div
       onClick={() => onClick(notification)}
       className={cn(
-        "w-full text-left px-4 py-3.5 transition-all hover:bg-muted/40 flex gap-3 group relative border-b border-border last:border-0",
-        !notification.is_read ? "bg-primary/5 hover:bg-primary/10" : "bg-card"
+        "relative flex w-full cursor-pointer items-start gap-3 p-4 transition-colors hover:bg-muted/50 border-b border-border/50 last:border-0",
+        !notification.is_read && "bg-muted/30"
       )}
     >
-      {/* Unread Indicator Dot */}
-      {!notification.is_read && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full transition-all duration-300" />
-      )}
-
+      {/* Icon Section */}
       <div
         className={cn(
-          "mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-colors",
-          !notification.is_read
-            ? "bg-primary/10 border-primary/20 text-primary"
-            : "bg-muted border-transparent text-muted-foreground"
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full mt-0.5",
+          config.colorClass
         )}
       >
-        <Bell className="w-4 h-4" />
+        <Icon className="h-4 w-4" />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline mb-0.5">
+      {/* Content Section - with Text Wrapping */}
+      <div className="flex-1 space-y-1 min-w-0">
+        {" "}
+        {/* min-w-0 is crucial for flex text wrap */}
+        <div className="flex items-center justify-between gap-2">
           <p
             className={cn(
-              "text-sm truncate pr-2",
-              !notification.is_read
-                ? "font-bold text-foreground"
-                : "font-medium text-foreground/80"
+              "text-sm font-medium leading-none text-foreground break-words", // break-words handles long names
+              !notification.is_read && "font-bold"
             )}
           >
             {notification.title}
           </p>
-          <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
-            {new Date(notification.created_at).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-            })}
+          <span className="shrink-0 text-[10px] text-muted-foreground">
+            {timeAgo}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+        <p className="text-xs text-muted-foreground line-clamp-3 break-words whitespace-normal leading-relaxed">
           {notification.message}
         </p>
       </div>
-    </button>
+
+      {/* Unread Indicator */}
+      {!notification.is_read && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex h-full items-center">
+          <div className="h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
+        </div>
+      )}
+    </div>
   );
 }

@@ -46,11 +46,12 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // 90s poll
+    const interval = setInterval(fetchNotifications, 20000); // 20s poll
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
   const markAsRead = async (id: string) => {
+    // Optimistic Update
     setNotifications((prev) =>
       prev.map((n) => {
         if (n.id === id && !n.is_read) {
@@ -69,22 +70,26 @@ export default function NotificationBell() {
 
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return;
+
+    // Optimistic Update
     setUnreadCount(0);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+
     try {
       await api.patch("/notifications");
     } catch (error) {
       console.error("Failed to mark all as read", error);
-      fetchNotifications();
+      fetchNotifications(); // Re-fetch to sync state on error
     }
   };
 
-  // console.log("83: ", notifications);
   const handleItemClick = (notification: Notification) => {
     setIsOpen(false);
+
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
+
     if (notification.data?.url) {
       router.push(notification.data.url);
     }
@@ -101,7 +106,7 @@ export default function NotificationBell() {
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white ring-2 ring-background animate-in zoom-in duration-300">
-              {unreadCount > 10 ? "10+" : unreadCount}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Button>
@@ -111,36 +116,44 @@ export default function NotificationBell() {
         align="end"
         className="w-[380px] p-0 rounded-2xl border border-border shadow-xl bg-card overflow-hidden"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20 backdrop-blur-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 backdrop-blur-sm">
           <h4 className="font-bold text-sm text-foreground">Notifications</h4>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleMarkAllRead}
             disabled={unreadCount === 0}
-            className="h-auto p-0 px-2 py-1 text-[10px] font-bold text-primary hover:text-primary/80 uppercase tracking-wide transition-colors hover:bg-primary/5 disabled:opacity-50"
+            className="h-auto p-0 px-2 py-1 text-[10px] font-bold text-primary hover:text-primary/80 uppercase tracking-wide transition-colors hover:bg-primary/5 disabled:opacity-50 disabled:hover:bg-transparent"
           >
             <CheckCheck className="w-3 h-3 mr-1.5" />
             Mark all read
           </Button>
         </div>
 
-        <ScrollArea className="h-[400px]">
+        {/* Scrollable List */}
+        <ScrollArea className="h-[400px] w-full">
           {isLoading ? (
-            <div className="py-12 flex justify-center">
+            <div className="py-12 flex flex-col items-center justify-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                Loading updates...
+              </p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="py-12 px-6 text-center">
-              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+            <div className="py-12 px-6 text-center flex flex-col items-center justify-center h-full">
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
                 <Bell className="w-5 h-5 text-muted-foreground/50" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">
-                You're all caught up!
+              <p className="text-sm font-medium text-foreground">
+                All caught up!
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                No new notifications at the moment.
               </p>
             </div>
           ) : (
-            <div>
+            <div className="flex flex-col">
               {notifications.map((n) => (
                 <NotificationItem
                   key={n.id}

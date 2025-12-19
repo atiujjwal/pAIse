@@ -118,7 +118,6 @@ export const sendEmail = async ({
         ].includes(notificationType)
       ) {
         info = await transporter.sendMail(mailOptions);
-        console.log("121: ", notificationData);
         
         NotificationService.create(notificationData);
       }
