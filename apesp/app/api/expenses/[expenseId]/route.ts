@@ -269,6 +269,9 @@ const putHandler = async (
         type: "EXPENSE_ADDED" as NotificationType,
         title: "Expense updated",
         message: `${name} updated an expense with you`,
+        data: {
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/expenses/${expenseId}`,
+        },
       });
     }
 
@@ -380,6 +383,9 @@ const deleteHandler = async (
         type: "EXPENSE_ADDED" as NotificationType,
         title: "Expense updated",
         message: `${name} deleted an expense with you`,
+        data: {
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/expenses/${expenseId}`,
+        },
       });
     }
 

@@ -114,6 +114,9 @@ const postHandler = async (
           type: "FRIEND_REQUEST" as NotificationType,
           title: `${payload.name} has sent you a friend request`,
           message: "Check the requests tab in friends.",
+          data: {
+            url: `${baseUrl}/dashboard/friends`,
+          },
         },
       };
       sendEmail(emailData);

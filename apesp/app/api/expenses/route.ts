@@ -53,6 +53,7 @@ const notifyParticipants = async (
         : `${creatorName} added an expense with you`;
 
       const year = new Date().getFullYear();
+
       let emailData = {
         to: member.email,
         templateId: 7,
@@ -70,6 +71,7 @@ const notifyParticipants = async (
           type: "EXPENSE_ADDED" as NotificationType,
           title,
           message: "Feel free to settle your pAIse with your friends.",
+          data: { url: dashboardLink },
         },
       };
       sendEmail(emailData);

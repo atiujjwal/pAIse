@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
         case "login":
           await sendEmail({
             to: email,
-            templateId: 3, // Login OTP Template
+            templateId: 9, // Login OTP Template
             data: { otp, name },
             subject: "Your Login Code - pAIse",
           });
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
         case "forgot_password":
           await sendEmail({
             to: email,
-            templateId: 4, // Forgot Password Template
+            templateId: 3, // Forgot Password Template
             data: { otp, name },
             subject: "Reset Password Request - pAIse",
           });

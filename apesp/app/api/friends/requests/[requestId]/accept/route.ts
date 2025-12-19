@@ -64,6 +64,7 @@ const postHandler = async (
       type: "FRIEND_ACCEPTED" as NotificationType,
       title: `${payload.name} has accepted your friend request`,
       message: `Start settling your pAIse with ${payload.name}`,
+      data: { url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/friends/${userId}` },
     });
 
     return successResponse(

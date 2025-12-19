@@ -110,14 +110,16 @@ export const sendEmail = async ({
     if (notificationData) {
       const notificationType = notificationData.type;
       if (
-        ["FRIEND_REQUEST", "FRIEND_ACCEPTED", "EXPENSE_ADDED", "REMINDER"].includes(
-          notificationType
-        )
+        [
+          "FRIEND_REQUEST",
+          "FRIEND_ACCEPTED",
+          "EXPENSE_ADDED",
+          "REMINDER",
+        ].includes(notificationType)
       ) {
         info = await transporter.sendMail(mailOptions);
-        console.log("118: ", info);
+        console.log("121: ", notificationData);
         
-        //TODO: on successful email
         NotificationService.create(notificationData);
       }
     } else {

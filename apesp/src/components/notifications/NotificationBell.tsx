@@ -46,7 +46,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // 30s poll
+    const interval = setInterval(fetchNotifications, 30000); // 90s poll
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
@@ -79,6 +79,7 @@ export default function NotificationBell() {
     }
   };
 
+  // console.log("83: ", notifications);
   const handleItemClick = (notification: Notification) => {
     setIsOpen(false);
     if (!notification.is_read) {

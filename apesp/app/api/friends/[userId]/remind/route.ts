@@ -65,8 +65,9 @@ const postHandler = async (
     if (!friend || !friend.email) {
       return badRequest("Friend does not have a valid email");
     }
+
     sendEmail({
-        to: friend.email,
+      to: friend.email,
       // to: "anujhatiya900@gmail.com",
       templateId: 6,
       data: {
@@ -82,6 +83,9 @@ const postHandler = async (
         type: "REMINDER" as NotificationType,
         title: "Mere pAIse?!",
         message: message || `You owe ${amount} to ${sender.name}!`,
+        data: {
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/friends/${userId}`,
+        },
       },
     });
 
