@@ -22,11 +22,13 @@ import {
   UserMinus,
   AlertTriangle,
   ExternalLink,
+  Ban,
 } from "lucide-react";
 
 import {
   useFriendDetails,
   useRemindFriend,
+  useBlockUser,
 } from "@/src/features/friends/api/friend-queries";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
 import { useAuthStore } from "@/src/features/auth/store";
@@ -73,13 +75,16 @@ const PendingGroupsDialog = ({
   onClose,
   groups,
   friendName,
+  actionType = "remove",
 }: {
   isOpen: boolean;
   onClose: () => void;
   groups: PendingGroup[];
   friendName: string;
+  actionType?: "remove" | "block";
 }) => {
   const router = useRouter();
+  const actionLabel = actionType === "block" ? "Block" : "Remove";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -90,13 +95,13 @@ const PendingGroupsDialog = ({
               <AlertTriangle className="h-6 w-6" />
             </div>
             <DialogTitle className="text-xl font-extrabold text-foreground">
-              Cannot Remove Friend
+              Cannot {actionLabel} Friend
             </DialogTitle>
           </div>
           <DialogDescription className="text-muted-foreground pt-2 text-base leading-relaxed">
             You have unsettled balances with <strong>{friendName}</strong> in
-            the following groups. Please settle them before removing this
-            friend.
+            the following groups. Please settle them before{" "}
+            {actionLabel.toLowerCase()}ing this friend.
           </DialogDescription>
         </DialogHeader>
 
@@ -162,7 +167,6 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
   const avatarUrl = isGroup ? expense.group.avatar : expense.created_by.avatar;
   const name = isGroup ? expense.group.name : expense.created_by.name;
 
-  // --- Financial Context Logic ---
   const userPayment = expense.payers.find((p: any) => p.user.id === user?.id);
   const userSplit = expense.splits.find((s: any) => s.user.id === user?.id);
 
@@ -221,13 +225,11 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
         </div>
       </div>
 
-      {/* Amount & User Context Section */}
       <div className="text-right pl-2 flex flex-col items-end">
         <span className="block font-bold text-foreground font-mono text-base">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
 
-        {/* User Specific Details */}
         <div className="flex flex-col items-end gap-0.5 mt-1">
           {paidAmount > 0 && (
             <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
@@ -242,7 +244,6 @@ const SharedExpenseCard = ({ expense }: { expense: any }) => {
             </span>
           )}
 
-          {/* Fallback if user is neither payer nor splitter */}
           {paidAmount === 0 && shareAmount === 0 && (
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-muted/50 px-2 py-0.5 rounded-md">
               {expense.split_type}
@@ -269,10 +270,15 @@ export default function FriendDetailsPage() {
   });
 
   const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
+  const { mutate: blockFriend, isPending: isBlocking } = useBlockUser();
 
   const [showSettlement, setShowSettlement] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const [showBlockerDialog, setShowBlockerDialog] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false); // New state
+  const [showPendingGroupsDialog, setShowPendingGroupsDialog] = useState(false);
+  const [pendingDialogType, setPendingDialogType] = useState<
+    "remove" | "block"
+  >("remove");
   const [pendingGroups, setPendingGroups] = useState<PendingGroup[]>([]);
   const [isReminded, setIsReminded] = useState(false);
 
@@ -287,20 +293,41 @@ export default function FriendDetailsPage() {
     },
     onError: (err: any) => {
       const errorData = err?.response?.data;
-
-      // Handle Blocking Condition
       if (
         errorData?.code === "PENDING_GROUP_BALANCES" &&
         errorData?.data?.groups
       ) {
         setPendingGroups(errorData.data.groups);
-        setShowRemoveDialog(false); // Close confirmation
-        setShowBlockerDialog(true); // Open blocker list
+        setPendingDialogType("remove");
+        setShowRemoveDialog(false);
+        setShowPendingGroupsDialog(true);
       } else {
         addToast(errorData?.message || "Failed to remove friend", "error");
       }
     },
   });
+
+  // --- HANDLER: BLOCK FRIEND ---
+  const handleBlockFriend = () => {
+    blockFriend(friendId, {
+      onSuccess: () => {
+        addToast("User blocked successfully", "success");
+        router.push("/dashboard/friends");
+      },
+      onError: (err: any) => {
+        if (err?.response?.status === 403) {
+          addToast(
+            err?.response?.data?.message ||
+              "Cannot block user due to outstanding debts.",
+            "error"
+          );
+          setShowBlockDialog(false);
+        } else {
+          addToast("Failed to block user", "error");
+        }
+      },
+    });
+  };
 
   const isOwe = friend?.status === "owe";
   const isOwed = friend?.status === "owed";
@@ -357,6 +384,7 @@ export default function FriendDetailsPage() {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* --- HEADER SECTION --- */}
       <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 relative overflow-hidden">
+        {/* ... (Header Visuals) ... */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 z-0 pointer-events-none" />
 
         <div className="relative z-10">
@@ -433,11 +461,23 @@ export default function FriendDetailsPage() {
               </div>
 
               <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                {/* Block Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowBlockDialog(true)}
+                  className="h-12 w-12 rounded-xl border border-border text-muted-foreground hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all"
+                  title="Block User"
+                >
+                  <Ban className="h-5 w-5" />
+                </Button>
+
+                {/* Remove Button */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowRemoveDialog(true)}
-                  className="h-12 w-12 rounded-xl border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-all"
+                  className="h-12 w-12 rounded-xl border border-border text-muted-foreground hover:text-orange-600 hover:bg-orange-50 hover:border-orange-200 transition-all"
                   title="Remove Friend"
                 >
                   <UserMinus className="h-5 w-5" />
@@ -530,7 +570,6 @@ export default function FriendDetailsPage() {
                 </div>
               )}
             </TabsContent>
-
             <TabsContent
               value="groups"
               className="space-y-4 animate-in fade-in"
@@ -548,7 +587,6 @@ export default function FriendDetailsPage() {
                 </div>
               )}
             </TabsContent>
-
             <TabsContent
               value="history"
               className="space-y-4 animate-in fade-in"
@@ -712,12 +750,57 @@ export default function FriendDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* BLOCKER DIALOG */}
+      {/* BLOCK FRIEND DIALOG */}
+      <Dialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-8 bg-card border-border">
+          <DialogHeader>
+            <div className="flex items-center gap-3 text-red-600 mb-2">
+              <div className="p-3 bg-red-100 rounded-full">
+                <Ban className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-xl font-bold text-foreground">
+                Block User?
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-muted-foreground pt-2 text-base leading-relaxed">
+              Are you sure you want to block <strong>{friend.name}</strong>?
+              <br />
+              <br />
+              They will not be able to send you requests, see your profile, or
+              expense details. Any zero-balance history will be removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3 sm:gap-0 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowBlockDialog(false)}
+              className="rounded-xl h-12 border-border flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBlockFriend}
+              disabled={isBlocking}
+              className="rounded-xl h-12 flex-1 shadow-lg shadow-red-500/20 bg-red-600 hover:bg-red-700"
+            >
+              {isBlocking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Block User"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PENDING GROUPS / CANNOT PROCEED DIALOG */}
       <PendingGroupsDialog
-        isOpen={showBlockerDialog}
-        onClose={() => setShowBlockerDialog(false)}
+        isOpen={showPendingGroupsDialog}
+        onClose={() => setShowPendingGroupsDialog(false)}
         groups={pendingGroups}
         friendName={friend.name}
+        actionType={pendingDialogType}
       />
     </div>
   );

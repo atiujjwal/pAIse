@@ -6,6 +6,9 @@ import {
   useFriends,
   useFriendRequests,
   useFriendActions,
+  useBlockedUsers,
+  useUnblockUser,
+  useBlockUser,
 } from "@/src/features/friends/api/friend-queries";
 import { AddFriendCard } from "@/src/features/friends/components/AddFriendCard";
 import { Button } from "@/src/components/ui/Button";
@@ -32,6 +35,8 @@ import {
   ArrowUpDown,
   Wallet,
   Plus,
+  Loader2,
+  Unlock,
 } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import {
@@ -42,6 +47,7 @@ import {
 import { cn, formatCurrency } from "@/src/lib/utils";
 import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
 import { useDebounce } from "@/src/hooks/use-debounce";
+import { useToastStore } from "@/src/hooks/use-toast";
 
 // Define the interface based on your API response
 interface FriendListItem {
@@ -54,7 +60,15 @@ interface FriendListItem {
   currency: string;
 }
 
+interface BlockedUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+}
+
 export default function FriendsPage() {
+  const { addToast } = useToastStore();
   // --- STATE FOR FILTERS ---
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
@@ -81,6 +95,26 @@ export default function FriendsPage() {
   const { data: requests, isLoading: loadingRequests } =
     useFriendRequests(requestType);
   const { acceptRequest, rejectRequest, cancelRequest } = useFriendActions();
+
+  // --- BLOCKING QUERIES ---
+  const { data: blockedUsers, isLoading: loadingBlocked } = useBlockedUsers();
+  const { mutate: unblockUser, isPending: isUnblocking } = useUnblockUser();
+  const { mutate: blockUser, isPending: isBlocking } = useBlockUser();
+
+  const handleBlockRequest = (userId: string) => {
+    blockUser(userId, {
+      onSuccess: () => addToast("User blocked", "success"),
+      onError: (e: any) =>
+        addToast(e?.response?.data?.message || "Failed to block", "error"),
+    });
+  };
+
+  const handleUnblock = (userId: string) => {
+    unblockUser(userId, {
+      onSuccess: () => addToast("User unblocked", "success"),
+      onError: (e: any) => addToast("Failed to unblock", "error"),
+    });
+  };
 
   return (
     <div className="space-y-8 h-full flex flex-col pb-20 max-w-7xl mx-auto">
@@ -174,6 +208,12 @@ export default function FriendsPage() {
                       {requests.length}
                     </span>
                   )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="blocked"
+                className="rounded-xl h-full px-6 transition-all text-sm font-bold text-muted-foreground data-[state=active]:text-foreground"
+              >
+                Blocked
               </TabsTrigger>
             </TabsList>
 
@@ -295,7 +335,6 @@ export default function FriendsPage() {
 
             {/* --- TAB: REQUESTS --- */}
             <TabsContent value="requests" className="mt-8 space-y-6">
-              {/* ... (Requests content unchanged) ... */}
               <div className="flex p-1 bg-muted rounded-xl w-fit">
                 <button
                   onClick={() => setRequestType("incoming")}
@@ -415,7 +454,7 @@ export default function FriendsPage() {
                                 variant="outline"
                                 onClick={() => rejectRequest.mutate(req.id)}
                                 disabled={rejectRequest.isPending}
-                                className="flex-1 sm:flex-none border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-10 rounded-xl"
+                                className="flex-1 sm:flex-none border-border text-muted-foreground hover:bg-muted h-10 rounded-xl"
                               >
                                 <X className="h-4 w-4 mr-1" /> Decline
                               </Button>
@@ -426,6 +465,19 @@ export default function FriendsPage() {
                                 className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground h-10 rounded-xl shadow-md"
                               >
                                 <Check className="h-4 w-4 mr-1" /> Accept
+                              </Button>
+                              {/* Block Button for Incoming Request */}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() =>
+                                  handleBlockRequest(displayUser.id)
+                                }
+                                disabled={isBlocking}
+                                className="h-10 w-10 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                                title="Block User"
+                              >
+                                <Ban className="h-4 w-4" />
                               </Button>
                             </>
                           ) : (
@@ -445,6 +497,71 @@ export default function FriendsPage() {
                   })
                 )}
               </div>
+            </TabsContent>
+
+            {/* --- TAB: BLOCKED --- */}
+            <TabsContent
+              value="blocked"
+              className="mt-8 animate-in fade-in slide-in-from-bottom-2"
+            >
+              {loadingBlocked ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-[2rem]" />
+                  ))}
+                </div>
+              ) : !blockedUsers || blockedUsers.length === 0 ? (
+                <div className="py-20 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                  <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Ban className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">
+                    No blocked users
+                  </h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto mt-2">
+                    You haven't blocked anyone yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {(blockedUsers as unknown as BlockedUser[]).map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex flex-col sm:flex-row items-center justify-between p-5 rounded-3xl border border-border bg-card shadow-sm gap-4"
+                    >
+                      <div className="flex items-center gap-4 w-full">
+                        <Avatar className="h-12 w-12 grayscale opacity-80">
+                          <AvatarImage src={user.avatar || undefined} />
+                          <AvatarFallback>{user.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-bold text-foreground text-base strike-through decoration-muted-foreground/50">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnblock(user.id)}
+                        disabled={isUnblocking}
+                        className="w-full sm:w-auto border-border text-foreground hover:bg-muted h-10 rounded-xl"
+                      >
+                        {isUnblocking ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Unlock className="h-4 w-4 mr-2" />
+                        )}
+                        Unblock
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

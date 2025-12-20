@@ -192,3 +192,41 @@ export const useRemindFriend = () => {
     },
   });
 };
+
+export const useBlockedUsers = () => {
+  return useQuery({
+    queryKey: ["blocked-users"],
+    queryFn: async () => {
+      const { data } = await api.get("/users/me/blocked");
+      return data.success ? data.data.blocked_users : [];
+    },
+  });
+};
+
+export const useBlockUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      await api.post(`/users/${userId}/block`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["blocked-users"] });
+      queryClient.invalidateQueries({ queryKey: ["friend-details"] });
+    },
+  });
+};
+
+export const useUnblockUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      await api.delete(`/users/${userId}/unblock`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blocked-users"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+    },
+  });
+};
