@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
+import { EXPENSE_CATEGORIES } from "./ai/voice-expense";
 
 Decimal.set({ precision: 12 });
 
@@ -300,7 +301,11 @@ export class VoiceAiService {
             amount: { type: SchemaType.STRING },
             currency: { type: SchemaType.STRING },
             date: { type: SchemaType.STRING },
-            category: { type: SchemaType.STRING },
+            category: {
+              type: SchemaType.STRING,
+              format: "enum",
+              enum: EXPENSE_CATEGORIES,
+            },
             split_type: {
               type: SchemaType.STRING,
               format: "enum",
@@ -445,7 +450,11 @@ export class NlpService {
             parameters: {
               type: SchemaType.OBJECT,
               properties: {
-                category: { type: SchemaType.STRING, nullable: true },
+                category: {
+                  type: SchemaType.STRING,
+                  format: "enum",
+                  enum: EXPENSE_CATEGORIES,
+                },
                 friend_name: { type: SchemaType.STRING, nullable: true },
                 group_name: { type: SchemaType.STRING, nullable: true },
                 date_range: {

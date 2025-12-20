@@ -64,7 +64,7 @@ export const VoiceExpenseFormDataSchema = z.object({
     .pipe(ExpenseContextSchema),
 });
 
-const EXPENSE_CATEGORIES = [
+export const EXPENSE_CATEGORIES = [
   "Food & Dining",
   "Housing & Utilities",
   "Transportation",
@@ -100,10 +100,12 @@ export class VoiceAiService {
             date: { type: SchemaType.STRING, description: "ISO 8601 Date" },
             category: {
               type: SchemaType.STRING,
+              format: "enum",
               enum: EXPENSE_CATEGORIES,
             },
             split_type: {
               type: SchemaType.STRING,
+              format: "enum",
               enum: ["EQUAL", "EXACT", "PERCENTAGE", "SHARES"],
             },
             payers: {
