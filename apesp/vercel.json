@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "build": {
+    "env": {
+      "DATABASE_URL": "@DATABASE_URL",
+      "DIRECT_URL": "@DIRECT_URL"
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
