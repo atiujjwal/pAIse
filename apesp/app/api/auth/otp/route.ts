@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     if (email) {
       switch (type) {
         case "register":
-          sendEmail({
+          await sendEmail({
             to: email,
             templateId: 2, // Welcome/Verify Template
             data: { otp, name },
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
           });
           break;
         case "login":
-          sendEmail({
+          await sendEmail({
             to: email,
             templateId: 9, // Login OTP Template
             data: { otp, name },
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
           });
           break;
         case "forgot_password":
-          sendEmail({
+          await sendEmail({
             to: email,
             templateId: 3, // Forgot Password Template
             data: { otp, name },
