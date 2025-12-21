@@ -1,8 +1,16 @@
 import nodemailer from "nodemailer";
 import axios from "axios";
 import Handlebars from "handlebars";
+import fs from "fs";
+import path from "path";
 import { Twilio } from "twilio";
 import { NotificationData, NotificationService } from "./notificationService";
+import { WELCOME_USER_TEMPLATE } from "./templates/welcomeUser";
+import { LOGIN_OTP_TEMPLATE } from "./templates/loginOtp";
+import { FORGOT_PASSWORD_TEMPLATE } from "./templates/forgotPassword";
+import { EXPENSE_ADDED_TEMPLATE } from "./templates/expenseCreated";
+import { FRIENDLY_REMINDER_TEMPLATE } from "./templates/friendlyReminder";
+import { FRIEND_REQUEST_TEMPLATE } from "./templates/friendRequest";
 
 const {
   SMTP_HOST,
@@ -85,24 +93,62 @@ export const sendEmail = async ({
   notificationData,
 }: SendTemplateOptions): Promise<boolean> => {
   try {
-    const source = await getTemplateDetails(templateId);
-    if (!source?.htmlContent) {
-      console.log(`No template content found for templateId: ${templateId}`);
+    // const source = await getTemplateDetails(templateId);
+    // if (!source?.htmlContent) {
+    //   console.log(`No template content found for templateId: ${templateId}`);
+    //   return false;
+    // }
+
+    // const template = Handlebars.compile(source.htmlContent);
+    // const htmlContent = template(data);
+
+    // const subjectTemplate = Handlebars.compile(
+    //   subjectOverride || source.subject
+    // );
+    // const subject = subjectTemplate(data);
+
+    let htmlContent = "";
+    let source = "";
+    let defaultSubject = "";
+
+    switch (Number(templateId)) {
+      case 2:
+        source = WELCOME_USER_TEMPLATE;
+        defaultSubject = "Welcome to pAIse!";
+        break;
+      case 9:
+        source = LOGIN_OTP_TEMPLATE;
+        defaultSubject = "OTP for login to pAIse";
+        break;
+      case 3:
+        source = FORGOT_PASSWORD_TEMPLATE;
+        defaultSubject = "Forgot Password OTP for pAIse";
+        break;
+      case 7:
+        source = EXPENSE_ADDED_TEMPLATE;
+        defaultSubject = "New Expense Added on pAIse";
+        break;
+      case 6:
+        source = FRIEND_REQUEST_TEMPLATE;
+        defaultSubject = "Friend request received on pAIse";
+        break;
+      default:
+        console.error("Invalid templateId:", templateId);
+        return false;
+    }
+
+    try {
+      const template = Handlebars.compile(source);
+      htmlContent = template(data);
+    } catch (error) {
+      console.error("Error compiling Handlebars template:", error);
       return false;
     }
 
-    const template = Handlebars.compile(source.htmlContent);
-    const htmlContent = template(data);
-
-    const subjectTemplate = Handlebars.compile(
-      subjectOverride || source.subject
-    );
-    const subject = subjectTemplate(data);
-
     const mailOptions = {
-      from: `"pAIse App" <www.pAIse.com>`,
+      from: `"pAIse App" <paise-apesp.vercel.app>`,
       to,
-      subject,
+      subject: subjectOverride || defaultSubject,
       html: htmlContent,
     };
 
@@ -118,7 +164,6 @@ export const sendEmail = async ({
         ].includes(notificationType)
       ) {
         info = await transporter.sendMail(mailOptions);
-        
         NotificationService.create(notificationData);
       }
     } else {

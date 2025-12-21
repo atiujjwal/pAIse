@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
     const accessToken = generateToken(tokenPayload, "accessToken"); // 2h
     const refreshToken = generateToken(tokenPayload, "refreshToken"); // 7d
 
-    sendEmail({
-      to: user.email,
-      templateId: 2,
-      data: { name: user.name },
-    });
+    // sendEmail({
+    //   to: user.email,
+    //   templateId: 2,
+    //   data: { name: user.name },
+    // });
 
     // Save the refresh token in DB for this session
     await prisma.userToken.create({
