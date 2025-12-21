@@ -70,6 +70,12 @@ export function LoginForm() {
     clearErrors();
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const handleSendOtp = async () => {
     const isEmailValid = await trigger("email");
     if (!isEmailValid) return;
@@ -79,7 +85,7 @@ export function LoginForm() {
       {
         onSuccess: () => {
           setOtpSent(true);
-          setTimer(60);
+          setTimer(90);
         },
       }
     );
@@ -189,7 +195,7 @@ export function LoginForm() {
                   {timer > 0 ? (
                     <span className="text-xs text-muted-foreground flex items-center">
                       <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
-                      Resend in {timer}s
+                      Resend in {formatTime(timer)}s
                     </span>
                   ) : (
                     <button

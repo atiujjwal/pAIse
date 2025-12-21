@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const check = await RateLimitService.checkLimit(limitKey, limitType);
 
     if (!check.allowed) {
-      return successResponse("Limit reached", {
+      return successResponse("You have Ai Chat Limit reached for today", {
         content: check.message,
         role: "ASSISTANT",
         isLimitReached: true,

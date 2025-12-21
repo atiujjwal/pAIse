@@ -55,6 +55,12 @@ export function ForgotPasswordForm() {
     return () => clearInterval(interval);
   }, [timer]);
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const handleSendOtp = (data: { email: string }) => {
     sendOtp(
       { email: data.email, type: "forgot_password" },
@@ -62,7 +68,7 @@ export function ForgotPasswordForm() {
         onSuccess: () => {
           setEmail(data.email);
           setStep("RESET");
-          setTimer(60);
+          setTimer(90);
         },
       }
     );
@@ -73,7 +79,7 @@ export function ForgotPasswordForm() {
     sendOtp(
       { email, type: "forgot_password" },
       {
-        onSuccess: () => setTimer(60),
+        onSuccess: () => setTimer(90),
       }
     );
   };
@@ -166,7 +172,7 @@ export function ForgotPasswordForm() {
                   : "text-primary hover:underline"
               }`}
             >
-              {timer > 0 ? `Resend code in ${timer}s` : "Resend code"}
+              {timer > 0 ? `Resend code in ${formatTime(timer)}s` : "Resend code"}
             </button>
           </div>
         </div>

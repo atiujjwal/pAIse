@@ -44,8 +44,8 @@ export default function RegisterPage() {
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-    currency: "INR",
-  },
+      currency: "INR",
+    },
   });
 
   useEffect(() => {
@@ -55,6 +55,12 @@ export default function RegisterPage() {
     }
     return () => clearInterval(interval);
   }, [timer]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google";
@@ -67,7 +73,7 @@ export default function RegisterPage() {
       {
         onSuccess: () => {
           setShowVerifyDialog(true);
-          setTimer(60);
+          setTimer(90);
         },
       }
     );
@@ -77,7 +83,7 @@ export default function RegisterPage() {
     if (!formData?.email) return;
     sendOtp(
       { email: formData.email, type: "register" },
-      { onSuccess: () => setTimer(60) }
+      { onSuccess: () => setTimer(90) }
     );
   };
 
@@ -289,7 +295,7 @@ export default function RegisterPage() {
                 {timer > 0 ? (
                   <>
                     <RefreshCw className="h-3 w-3 animate-spin" /> Resend code
-                    in {timer}s
+                    in {formatTime(timer)}
                   </>
                 ) : (
                   "Resend Verification Code"

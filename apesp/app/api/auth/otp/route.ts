@@ -66,18 +66,18 @@ export async function GET(req: NextRequest) {
     let expiresAt = new Date();
 
     if (existingOtp && existingOtp.expires_at > oneMinuteFromNow) {
-      console.log(`[OTP] Reusing existing valid OTP for ${email || phone}`);
+      // console.log(`[OTP] Reusing existing valid OTP for ${email || phone}`); 
       otp = existingOtp.otp;
       expiresAt = existingOtp.expires_at;
     } else {
       if (existingOtp) {
-        await prisma.userOtp.delete({ where: { id: existingOtp.id } });
+        prisma.userOtp.delete({ where: { id: existingOtp.id } });
       }
 
       otp = generateOtp();
-      expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes validity
+      expiresAt = new Date(now.getTime() + 90 * 1000); // 90 secs validity
 
-      await prisma.userOtp.create({
+      prisma.userOtp.create({
         data: {
           email,
           phone,
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     if (email) {
       switch (type) {
         case "register":
-          await sendEmail({
+          sendEmail({
             to: email,
             templateId: 2, // Welcome/Verify Template
             data: { otp, name },
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
           });
           break;
         case "login":
-          await sendEmail({
+          sendEmail({
             to: email,
             templateId: 9, // Login OTP Template
             data: { otp, name },
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
           });
           break;
         case "forgot_password":
-          await sendEmail({
+          sendEmail({
             to: email,
             templateId: 3, // Forgot Password Template
             data: { otp, name },
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
           return badRequest("Invalid OTP type");
       }
     } else if (phone) {
-      await sendSms({
+      sendSms({
         mobile: phone,
         body: `Your pAIse verification code is ${otp}. Valid for 5 mins.`,
       });
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse("OTP sent successfully", {
       message: "OTP sent",
-      otp, // REMOVE in production for security!
+      // otp, // REMOVE in production for security!
       expiresAt,
     });
   } catch (error) {

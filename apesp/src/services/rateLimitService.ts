@@ -1,7 +1,7 @@
 import { prisma } from "@/src/lib/db";
 
-const PUBLIC_LIMIT = 25;
-const PRIVATE_LIMIT = 100;
+const PUBLIC_LIMIT = 5;
+const PRIVATE_LIMIT = 15;
 const RESET_PERIOD = 24 * 60 * 60 * 1000;
 
 export class RateLimitService {
