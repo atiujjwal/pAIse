@@ -372,7 +372,7 @@ export default function LandingPage() {
               </Link>
 
               <Link
-                href="mailto:atiujjwalkashyap@gmail.com"
+                href="mailto:paiseapesp@gmail.com"
                 target="_blank"
                 className="hover:text-primary transition-colors"
               >
