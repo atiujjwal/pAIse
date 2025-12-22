@@ -36,11 +36,11 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      sendEmail({
-        to: user.email,
-        templateId: 2,
-        data: { name: user.name },
-      }).catch(console.error);
+      // sendEmail({
+      //   to: user.email,
+      //   templateId: 2,
+      //   data: { name: user.name },
+      // }).catch(console.error);
     }
 
     const userAgent = req.headers.get("user-agent");
