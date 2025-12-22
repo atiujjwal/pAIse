@@ -1,38 +1,36 @@
-// export const pAIse_LOGO = "https://res.cloudinary.com/do1f9qqik/image/upload/v1765724538/BackgroundEraser_20251214_202719717_zhsfnu.png";
-
-export const pAIse_LOGO = "https://res.cloudinary.com/do1f9qqik/image/upload/v1766399248/BackgroundEraser_20251222_155232954_lhdxwt.png";
-
+export const pAIse_LOGO =
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766405993/pAIse_logo_n7jtzp.png";
 
 export const GROUP_AVATARS = [
-  "https://img.freepik.com/premium-vector/poster-family-with-banner-that-says-year_1187092-20771.jpg",
-  "https://img.freepik.com/premium-vector/group-people-are-posing-photo-with-word-one-middle_1187092-35883.jpg",
-  "https://img.freepik.com/premium-psd/lets-go-join-party_383807-85.jpg",
-  "https://img.freepik.com/premium-vector/group-people-are-posing-photo-with-one-them-holding-cup_1187092-20132.jpg",
-  "https://img.freepik.com/premium-vector/kids-moments-vector-illustration-concept_1253202-48468.jpg",
-  "https://img.freepik.com/free-vector/gradient-background-international-youth-day-celebration_23-2150598142.jpg",
-  "https://img.freepik.com/free-vector/background-international-friendship-day-celebration_52683-116718.jpg",
-  "https://img.freepik.com/premium-photo/diverss00010-99_1288896-4019.jpg"
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404633/1_sr7yhj.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404632/2_jc8uq4.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404633/3_ai5arg.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404633/4_ftrhzm.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404633/5_rf0qlm.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404633/6_tdho88.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404634/7_w4pgy6.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404635/8_j1mi1a.avif",
 ];
 
 export const PROFILE_AVATARS = [
-  "https://img.freepik.com/premium-vector/young-man-avatar-character-due-avatar-man-vector-icon-cartoon-illustration_1186924-4422.jpg",
-  "https://img.freepik.com/premium-photo/portrait-man-with-beard-glasses_1410957-1065134.jpg",
-  "https://img.freepik.com/premium-photo/illustration-cute-girl-avatar-graphic-white-background-created-with-generative-ai-technology_67092-4956.jpg",
-  "https://img.freepik.com/premium-vector/acupuncturist-vector-character-illustration-flat-style_1033579-56645.jpg",
-  "https://img.freepik.com/premium-vector/people-avatar-profile-icon-female-face-with-different-face-expressions_1246656-679.jpg",
-  "https://img.freepik.com/premium-photo/avatar-resourcing-company_1254967-6690.jpg",
-  "https://img.freepik.com/premium-psd/woman-holding-kitten-pet-cat_1015654-84.jpg",
-  "https://img.freepik.com/premium-photo/illustration-cute-boy-avatar-graphic-white-background-created-with-generative-ai-technology_67092-4588.jpg",
-  "https://img.freepik.com/premium-photo/womens-day_927089-12294.jpg",
-  "https://img.freepik.com/premium-photo/portrait-ginger-haired-man-with-serious-expression_1410957-88486.jpg",
-  "https://img.freepik.com/premium-vector/urban-monster-fusion-street-culture-fantasy_1230457-32297.jpg",
-  "https://img.freepik.com/premium-vector/flat-vector-illustration-actress_1033579-64182.jpg",
-  "https://img.freepik.com/premium-psd/woman-with-pet-dog-happy-puppy-happy-woman_1015654-85.jpg",
-  "https://img.freepik.com/premium-vector/portrait-men-business-photo-vector-illustration_943898-16676.jpg",
-  "https://img.freepik.com/premium-vector/young-man-avatar-character-due-avatar-man-vector-icon-cartoon-illustration_1186924-4432.jpg",
-  "https://img.freepik.com/premium-vector/young-man-avatar-character-due-avatar-man-vector-icon-cartoon-illustration_1186924-4415.jpg",
-  "https://img.freepik.com/premium-photo/drawing-girl-with-long-brown-hair_1267893-16187.jpg?w=1060",
-  "https://img.freepik.com/premium-psd/smiling-woman-with-black-hair-girl-illustration_1015654-65.jpg",
-  "https://img.freepik.com/premium-vector/modern-flat-woman-stylish-illustration-contemporary-female_462491-573.jpg",
-  "https://img.freepik.com/premium-vector/dracula-vampire-flat-vector-illustration-7_1095608-3233.jpg",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404560/1_e4trko.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/2_j4qrqk.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/3_rwhd90.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/4_vkeicn.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/5_m9axza.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/6_azoesr.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/7_jttr1j.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404561/8_jv34fn.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404562/9_uukqp9.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404562/10_ju6c5v.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404564/11_nzbdbn.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404564/12_mprqww.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404564/13_vvzlvt.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404565/14_qxgfon.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404565/15_daqgws.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404568/16_hpp7ju.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404568/17_gmk8al.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404569/18_bk5adz.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404569/19_dffnld.avif",
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404569/20_zuduhh.avif",
 ];
