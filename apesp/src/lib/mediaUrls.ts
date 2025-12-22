@@ -1,4 +1,7 @@
-export const pAIse_LOGO = "https://res.cloudinary.com/do1f9qqik/image/upload/v1765724538/BackgroundEraser_20251214_202719717_zhsfnu.png";
+// export const pAIse_LOGO = "https://res.cloudinary.com/do1f9qqik/image/upload/v1765724538/BackgroundEraser_20251214_202719717_zhsfnu.png";
+
+export const pAIse_LOGO = "https://res.cloudinary.com/do1f9qqik/image/upload/v1766399248/BackgroundEraser_20251222_155232954_lhdxwt.png";
+
 
 export const GROUP_AVATARS = [
   "https://img.freepik.com/premium-vector/poster-family-with-banner-that-says-year_1187092-20771.jpg",

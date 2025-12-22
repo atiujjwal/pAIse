@@ -1,3 +1,5 @@
+import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+
 export const FRIEND_REQUEST_TEMPLATE = `<!DOCTYPE html>
 <html>
 <head>
@@ -30,7 +32,7 @@ export const FRIEND_REQUEST_TEMPLATE = `<!DOCTYPE html>
             <td align="center" style="padding-bottom: 32px;">
               <a href="#" target="_blank" style="text-decoration: none;">
                 <img 
-                  src="https://res.cloudinary.com/do1f9qqik/image/upload/v1765724538/BackgroundEraser_20251214_202719717_zhsfnu.png" 
+                  src=${pAIse_LOGO} 
                   alt="pAIse Logo" 
                   width="100" 
                   class="logo-img"

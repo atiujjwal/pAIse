@@ -1,3 +1,5 @@
+import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+
 export const WELCOME_USER_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,7 +43,7 @@ export const WELCOME_USER_TEMPLATE = `<!DOCTYPE html>
           <tr>
             <td align="center" style="padding-bottom: 32px;">
               <img 
-                src="https://res.cloudinary.com/do1f9qqik/image/upload/v1765724538/BackgroundEraser_20251214_202719717_zhsfnu.png" 
+                src=${pAIse_LOGO} 
                 alt="pAIse" 
                 width="80"
                 height="80"

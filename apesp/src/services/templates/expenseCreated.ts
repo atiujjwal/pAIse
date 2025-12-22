@@ -1,3 +1,5 @@
+import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+
 export const EXPENSE_ADDED_TEMPLATE = `<!DOCTYPE html>
 <html>
 <head>
@@ -23,7 +25,7 @@ export const EXPENSE_ADDED_TEMPLATE = `<!DOCTYPE html>
           <tr>
             <td align="center" style="padding-bottom: 32px;">
               <a href="#" target="_blank" style="text-decoration: none;">
-                <img src="https://res.cloudinary.com/do1f9qqik/image/upload/v1765724538/BackgroundEraser_20251214_202719717_zhsfnu.png" alt="pAIse Logo" width="100" class="logo-img" style="display: block; width: 100px; height: auto; border: 0; margin-bottom: 12px;" />
+                <img src=${pAIse_LOGO} alt="pAIse Logo" width="100" class="logo-img" style="display: block; width: 100px; height: auto; border: 0; margin-bottom: 12px;" />
                 <span style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 800; color: #7C5CFF; letter-spacing: -0.5px;">pAIse</span>
               </a>
             </td>
