@@ -118,21 +118,25 @@ export const sendEmail = async ({
         source = WELCOME_USER_TEMPLATE;
         defaultSubject = "Welcome to pAIse!";
         break;
-      case 9:
-        source = LOGIN_OTP_TEMPLATE;
-        defaultSubject = "OTP for login to pAIse";
-        break;
       case 3:
         source = FORGOT_PASSWORD_TEMPLATE;
         defaultSubject = "Forgot Password OTP for pAIse";
+        break;
+      case 5:
+        source = FRIEND_REQUEST_TEMPLATE;
+        defaultSubject = "Friend request received on pAIse";
+        break;
+      case 6:
+        source = FRIENDLY_REMINDER_TEMPLATE;
+        defaultSubject = "Friendly reminder received on pAIse";
         break;
       case 7:
         source = EXPENSE_ADDED_TEMPLATE;
         defaultSubject = "New Expense Added on pAIse";
         break;
-      case 6:
-        source = FRIEND_REQUEST_TEMPLATE;
-        defaultSubject = "Friend request received on pAIse";
+      case 9:
+        source = LOGIN_OTP_TEMPLATE;
+        defaultSubject = "OTP for login to pAIse";
         break;
       default:
         console.error("Invalid templateId:", templateId);
