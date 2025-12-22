@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Users,
   Receipt,
-  PieChart,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -23,7 +22,6 @@ const NAV_ITEMS = [
   { label: "Expenses", href: "/dashboard/expenses", icon: Receipt },
   { label: "Groups", href: "/dashboard/groups", icon: Users },
   { label: "Friends", href: "/dashboard/friends", icon: Users },
-  // { label: "Analytics", href: "/dashboard/analytics", icon: PieChart },  // showing analytics on dashboard page
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -61,10 +59,13 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="flex h-full flex-col bg-background border-r border-border shadow-[2px_0_24px_-12px_rgba(0,0,0,0.02)] transition-colors">
+      <aside className="relative flex h-full flex-col bg-background/95 backdrop-blur-sm transition-colors">
+        {/* --- Modern Vertical Separator (Corrected Fade) --- */}
+        {/* Changed 'h-full top-0' to 'top-10 bottom-10' to force a visible fade at corners */}
+        <div className="absolute right-0 top-10 bottom-10 w-[1px] bg-gradient-to-b from-transparent via-border/40 to-transparent" />
+
         {/* --- Brand Header --- */}
-        {/* --- HEADER / LOGO --- */}
-        <div className="flex h-20 items-center px-6 border-b border-border/40">
+        <div className="relative flex h-20 items-center px-6">
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
               <img
@@ -77,6 +78,9 @@ export function Sidebar() {
               pAIse
             </span>
           </Link>
+
+          {/* Header Separator */}
+          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/40 to-transparent" />
         </div>
 
         {/* --- Navigation --- */}
@@ -121,11 +125,14 @@ export function Sidebar() {
         </nav>
 
         {/* --- Footer / Logout --- */}
-        <div className="p-4 border-t border-border space-y-2">
+        <div className="relative p-4 space-y-2">
+          {/* Footer Separator */}
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/40 to-transparent" />
+
           <Button
             variant="ghost"
             disabled={isPending}
-            className="w-full !justify-start gap-3 rounded-xl px-4 py-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all group"
+            className="w-full !justify-start gap-3 rounded-xl px-2 py-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all group"
             onClick={() => logoutUser()}
           >
             <div className="p-1.5 rounded-lg bg-muted group-hover:bg-destructive/20 transition-colors">

@@ -38,16 +38,19 @@ export function TopNav() {
   }, [user, accessToken]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center justify-end border-b border-border bg-background/80 px-8 backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-30 flex h-20 items-center justify-end bg-background/80 px-8 backdrop-blur-md transition-colors relative">
+      {/* --- Modern Gradient Separator --- */}
+      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
       <div className="flex items-center gap-2">
         {/* Theme Switcher */}
         <ThemeToggle />
 
-        {/* Notification Bell (Replaced static button) */}
+        {/* Notification Bell */}
         <NotificationBell />
 
         {/* Divider */}
-        <div className="h-8 w-px bg-border mx-2" />
+        <div className="h-8 w-px bg-border/40 mx-2" />
 
         {/* Profile Section */}
         <button
@@ -65,7 +68,7 @@ export function TopNav() {
 
           <div
             className={cn(
-              "relative flex h-10 w-10 items-center justify-center rounded-full border border-border shadow-sm transition-transform group-hover:scale-105",
+              "relative flex h-10 w-10 items-center justify-center rounded-full border border-border/50 shadow-sm transition-transform group-hover:scale-105",
               "bg-muted overflow-hidden"
             )}
           >
