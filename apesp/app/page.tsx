@@ -16,6 +16,7 @@ import {
 import { Button } from "@/src/components/ui/Button";
 import { pAIse_LOGO } from "@/src/lib/mediaUrls";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
+import { FeedbackForm } from "@/src/components/forms/FeedbackForm"; // New Import
 
 export default function LandingPage() {
   return (
@@ -243,6 +244,68 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* --- Feedback & Contact Section (NEW) --- */}
+        <section
+          id="contact"
+          className="py-24 px-6 bg-muted/30 border-y border-border"
+        >
+          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+            {/* Left: Context & Links */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
+                Beta Feedback
+              </div>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+                Help us shape the future of pAIse.
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We are constantly improving. Whether you've spotted a glitch or
+                have a brilliant idea for a new feature, we want to hear from
+                you directly.
+              </p>
+
+              <div className="flex flex-col gap-4 pt-4">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="h-10 w-10 rounded-full bg-background border border-border flex items-center justify-center shrink-0">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">Direct Email</p>
+                    <a
+                      href="mailto:paiseapesp@gmail.com"
+                      className="hover:text-primary hover:underline"
+                    >
+                      paiseapesp@gmail.com
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="h-10 w-10 rounded-full bg-background border border-border flex items-center justify-center shrink-0">
+                    <Github className="h-5 w-5 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">Open Source</p>
+                    <a
+                      href="https://github.com/atiujjwal/pAIse"
+                      target="_blank"
+                      className="hover:text-primary hover:underline"
+                    >
+                      Contribute on GitHub
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Form Component */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-purple-500/20 blur-3xl -z-10 rounded-full opacity-60 transform scale-90" />
+              <FeedbackForm />
+            </div>
+          </div>
+        </section>
+
         {/* --- CTA Section --- */}
         <section className="py-20 px-6">
           <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-gradient-to-br from-primary to-violet-700 px-6 py-16 md:px-12 text-center text-white shadow-2xl relative overflow-hidden">
@@ -260,7 +323,7 @@ export default function LandingPage() {
               </p>
               <Button
                 size="lg"
-                className="h-54 px-8 rounded-full bg-white text-violet-600 hover:bg-slate-50 font-bold text-lg shadow-xl hover:scale-105 transition-all"
+                className="h-14 px-8 rounded-full bg-white text-violet-600 hover:bg-slate-50 font-bold text-lg shadow-xl hover:scale-105 transition-all"
                 asChild
               >
                 <Link href="/auth/register">Create Free Account</Link>
@@ -286,7 +349,7 @@ export default function LandingPage() {
                 pAIse
               </span>
             </Link>
-            <p className="text-muted-foreground max-w-xs leading-relaxed">
+            <p className="text-muted-foreground max-w-xs leading-relaxed mt-4">
               The smartest way to split bills and track shared expenses with
               friends, roommates, and family.
             </p>
@@ -310,11 +373,6 @@ export default function LandingPage() {
                   Security
                 </Link>
               </li>
-              <li>
-                {/* <Link href="#" className="hover:text-primary transition-colors">
-                  Changelog
-                </Link> */}
-              </li>
             </ul>
           </div>
 
@@ -325,16 +383,6 @@ export default function LandingPage() {
                 <Link href="#" className="hover:text-primary transition-colors">
                   About Us
                 </Link>
-              </li>
-              <li>
-                {/* <Link href="#" className="hover:text-primary transition-colors">
-                  Careers
-                </Link> */}
-              </li>
-              <li>
-                {/* <Link href="#" className="hover:text-primary transition-colors">
-                  Blog
-                </Link> */}
               </li>
               <li>
                 <Link href="#" className="hover:text-primary transition-colors">
