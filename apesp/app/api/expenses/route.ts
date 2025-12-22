@@ -73,7 +73,7 @@ const notifyParticipants = async (
           data: { url: dashboardLink },
         },
       };
-      sendEmail(emailData);
+      await sendEmail(emailData);
     })
   );
 };

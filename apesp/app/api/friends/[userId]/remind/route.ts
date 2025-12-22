@@ -66,7 +66,7 @@ const postHandler = async (
       return badRequest("Friend does not have a valid email");
     }
 
-    sendEmail({
+    await sendEmail({
       to: friend.email,
       // to: "anujhatiya900@gmail.com",
       templateId: 6,

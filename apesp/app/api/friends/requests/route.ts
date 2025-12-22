@@ -119,7 +119,7 @@ const postHandler = async (
           },
         },
       };
-      sendEmail(emailData);
+      await sendEmail(emailData);
     } catch (emailError) {
       console.error("Failed to send friend request email:", emailError);
     }
