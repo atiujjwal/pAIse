@@ -14,7 +14,7 @@ export function withAuth(handler: AppRouteHandler) {
     if (!token) return unauthorized("Unauthorized - No token");
 
     try {
-      const payload = verifyToken(token, "accessToken");
+      const payload = await verifyToken(token, "accessToken");
       if (!payload) return unauthorized("Unauthorized - Invalid token");
       const resolvedParams = await context.params;
       return handler(req, payload, { params: resolvedParams });

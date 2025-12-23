@@ -1,5 +1,6 @@
 import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { prisma } from "./db";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -18,20 +19,19 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as `${number}${
 const JWT_REFRESH_EXPIRES_IN = process.env
   .JWT_REFRESH_EXPIRES_IN as `${number}${"s" | "m" | "h" | "d"}`;
 
-
 export const tokenSecretMap = {
-  "accessToken":{
-    "expiresIn" : JWT_EXPIRES_IN,
-    "secretKey" : JWT_SECRET
+  accessToken: {
+    expiresIn: JWT_EXPIRES_IN,
+    secretKey: JWT_SECRET,
   },
-  "refreshToken":{
-      "expiresIn" : JWT_REFRESH_EXPIRES_IN,
-      "secretKey" : JWT_REFRESH_SECRET
-    },
-    "friendRequest":{
-      "expiresIn" : JWT_EXPIRES_IN,
-      "secretKey" : JWT_DATA_SECRET
-    },
+  refreshToken: {
+    expiresIn: JWT_REFRESH_EXPIRES_IN,
+    secretKey: JWT_REFRESH_SECRET,
+  },
+  friendRequest: {
+    expiresIn: JWT_EXPIRES_IN,
+    secretKey: JWT_DATA_SECRET,
+  },
 };
 
 export const hashPassword = async (password: string): Promise<string> => {
@@ -49,19 +49,28 @@ export const comparePassword = async (
 type TokenType = "accessToken" | "refreshToken" | "friendRequest";
 
 export const generateToken = (payload: any, type: TokenType): string => {
-
   const options: SignOptions = { expiresIn: tokenSecretMap[type].expiresIn };
   return jwt.sign(payload, tokenSecretMap[type].secretKey, options);
 };
 
-// ✅ Verify JWT token safely
-export const verifyToken = (
+interface AuthTokenPayload extends JwtPayload {
+  userId: string;
+}
+
+export const verifyToken = async (
   token: string,
   type: TokenType
-): any => {
+): Promise<any> => {
   try {
     const secret = tokenSecretMap[type].secretKey;
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret) as AuthTokenPayload;
+    if (["accessToken", "refreshToken"].includes(type)) {
+      const userId = decoded.userId;
+      const user = await prisma.user.findFirst({
+        where: { id: userId, is_deleted: false },
+      });
+      if (!user) return null;
+    }
     return decoded;
   } catch {
     return null;

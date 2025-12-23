@@ -25,7 +25,7 @@ const postHandler = async (
 
     let decoded;
     try {
-      decoded = verifyToken(token, "friendRequest");
+      decoded = await verifyToken(token, "friendRequest");
     } catch (e) {
       return badRequest("Invalid or expired link");
     }

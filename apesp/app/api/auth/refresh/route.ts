@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const refreshToken = getTokenFromRequest(request);
     if (!refreshToken) return unauthorized();
 
-    const payload = verifyToken(refreshToken, "refreshToken");
+    const payload = await verifyToken(refreshToken, "refreshToken");
     if (!payload) return unauthorized();
 
     // Lookup session
