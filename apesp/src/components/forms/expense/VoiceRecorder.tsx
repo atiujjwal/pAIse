@@ -9,6 +9,7 @@ import {
   Trash2,
   Check,
   RefreshCcw,
+  Info, // Import Info icon for instructions
 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
@@ -127,12 +128,7 @@ export function VoiceRecorder({
         <p className="text-destructive font-medium mb-2">
           Microphone access denied
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          size="sm"
-        >
+        <Button type="button" variant="outline" onClick={onCancel} size="sm">
           Cancel
         </Button>
       </div>
@@ -142,7 +138,7 @@ export function VoiceRecorder({
   return (
     <div className="flex flex-col items-center p-6 bg-card border border-border rounded-[2rem] shadow-sm animate-in fade-in slide-in-from-top-2 mb-6 w-full">
       {/* 1. VISUALIZER / TIMER AREA */}
-      <div className="flex items-center justify-center w-full mb-8 h-16">
+      <div className="flex items-center justify-center w-full mb-6 h-16">
         {recordingState === "recording" ? (
           <div className="flex items-center gap-4 animate-pulse">
             <div className="h-4 w-4 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]" />
@@ -200,6 +196,35 @@ export function VoiceRecorder({
           </p>
         )}
       </div>
+
+      {/* --- INSTRUCTION TEXT --- */}
+      {recordingState === "idle" && (
+        <div className="mb-8 flex items-start gap-2 bg-blue-500/5 border border-blue-500/10 px-4 py-3 rounded-xl max-w-md">
+          <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Please mention the{" "}
+            <span className="font-semibold text-foreground">description</span>,{" "}
+            <span className="font-semibold text-foreground">total amount</span>,{" "}
+            <span className="font-semibold text-foreground">who paid</span>, and{" "}
+            <span className="font-semibold text-foreground">how to split</span>{" "}
+            (e.g., "
+            <i>
+              <strong>
+                Dhurandhar movie tickets cost ₹1500, paid by Shivam and split
+                equally among everyone
+              </strong>
+            </i>{" "}
+            Or{" "}
+            <i>
+              <strong>
+                Lunch at McDonald's cost ₹800 — I paid ₹500, Kanchan paid ₹300.
+                My share is ₹450 and Kanchan's share is ₹350
+              </strong>
+            </i>
+            ").
+          </p>
+        </div>
+      )}
 
       {/* 2. CONTROLS AREA */}
       <div className="flex items-center justify-center gap-6 w-full">
