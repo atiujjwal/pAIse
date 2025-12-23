@@ -14,6 +14,8 @@ import {
   FileText,
   Lock,
   Sparkles,
+  PlusCircle,
+  UserPlus,
 } from "lucide-react";
 
 import { api } from "@/src/lib/api";
@@ -32,6 +34,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from "@/src/components/ui/Select";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { CreateExpenseInput, createExpenseSchema } from "@/src/lib/schemas";
@@ -211,9 +214,6 @@ export default function ExpenseForm({
 
   useEffect(() => {
     if (pendingDraftData && activeMembers.length > 0) {
-
-      // console.log("Flushing Pending Data to Form...", pendingDraftData);
-
       setValue("payers", pendingDraftData.payers, {
         shouldValidate: true,
         shouldDirty: true,
@@ -222,18 +222,16 @@ export default function ExpenseForm({
         shouldValidate: true,
         shouldDirty: true,
       });
-
-      setPendingDraftData(null); // Clear queue
+      setPendingDraftData(null);
       addToast("Expense details populated successfully!", "success");
     }
   }, [activeMembers, pendingDraftData, setValue, addToast]);
 
   const handleDraftReceived = useCallback(
     (draft: any) => {
-      console.log("AI Draft Processing:", draft);
+      // console.log("AI Draft Processing:", draft);
       if (!draft) return;
 
-      // HYDRATE MEMBERS INSTANTLY
       const tempMap = new Map();
       const extractUser = (u: any) => {
         if (u && u.id) {
@@ -260,7 +258,6 @@ export default function ExpenseForm({
         setDraftMembers(hydratedMembers);
       }
 
-      // SET CONTEXT (Trigger Form Mount)
       if (draft.group_id) {
         setActiveTab("group");
         setValue("group_id", draft.group_id, {
@@ -275,7 +272,6 @@ export default function ExpenseForm({
         });
       }
 
-      // SET BASIC FIELDS
       const draftAmount = parseFloat(draft.amount || "0");
       if (draft.amount)
         setValue("amount", String(draftAmount), {
@@ -312,20 +308,15 @@ export default function ExpenseForm({
             user_id: p.user_id,
             amount: String(parseFloat(p.amount || "0")),
           }));
-
-          console.log("Setting payers:", mappedPayers);
           setValue("payers", mappedPayers, {
             shouldValidate: true,
             shouldDirty: true,
           });
         }
 
-        // SPLITS: Map correctly based on split_type
         if (draft.splits && Array.isArray(draft.splits)) {
           const mappedSplits = draft.splits.map((s: any) => {
-            const baseSplit = { user_id: s.user_id }; // ✅ Correct field name
-
-            // Add the appropriate field based on what exists in the data
+            const baseSplit = { user_id: s.user_id };
             if (s.amount_owed) {
               return { ...baseSplit, amount_owed: String(s.amount_owed) };
             } else if (
@@ -336,20 +327,15 @@ export default function ExpenseForm({
             } else if (s.shares_owed !== null && s.shares_owed !== undefined) {
               return { ...baseSplit, shares_owed: s.shares_owed };
             }
-
-            // For EQUAL split, just return user_id
             return baseSplit;
           });
-
-          console.log("Setting splits:", mappedSplits);
           setValue("splits", mappedSplits, {
             shouldValidate: true,
             shouldDirty: true,
           });
         }
-
         addToast("Expense details populated successfully!", "success");
-      }, 100); // Increased to 100ms for stability
+      }, 100);
     },
     [setValue, addToast, currentUser]
   );
@@ -435,7 +421,13 @@ export default function ExpenseForm({
         <div className="animate-in fade-in">
           {activeTab === "group" ? (
             <Select
-              onValueChange={(val) => setValue("group_id", val)}
+              onValueChange={(val) => {
+                if (val === "CREATE_NEW_GROUP") {
+                  router.push("/dashboard/groups/new");
+                } else {
+                  setValue("group_id", val);
+                }
+              }}
               value={selectedGroupId || ""}
               disabled={mode === "edit"}
             >
@@ -450,11 +442,29 @@ export default function ExpenseForm({
                     {g.name}
                   </SelectItem>
                 ))}
+                {/* --- ADD NEW GROUP ACTION --- */}
+                <div className="border-t border-border mt-1 pt-1">
+                  <SelectItem
+                    value="CREATE_NEW_GROUP"
+                    className="text-primary font-semibold focus:bg-primary/10 focus:text-primary cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <PlusCircle className="h-4 w-4" />
+                      Create new group
+                    </div>
+                  </SelectItem>
+                </div>
               </SelectContent>
             </Select>
           ) : (
             <Select
-              onValueChange={(val) => setValue("friend_id", val)}
+              onValueChange={(val) => {
+                if (val === "ADD_NEW_FRIEND") {
+                  router.push("/dashboard/friends?action=add"); // Assuming your friends page handles this
+                } else {
+                  setValue("friend_id", val);
+                }
+              }}
               value={selectedFriendId || ""}
               disabled={mode === "edit"}
             >
@@ -469,6 +479,18 @@ export default function ExpenseForm({
                     {f.name}
                   </SelectItem>
                 ))}
+                {/* --- ADD NEW FRIEND ACTION --- */}
+                <div className="border-t border-border mt-1 pt-1">
+                  <SelectItem
+                    value="ADD_NEW_FRIEND"
+                    className="text-primary font-semibold focus:bg-primary/10 focus:text-primary cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      Add new friend
+                    </div>
+                  </SelectItem>
+                </div>
               </SelectContent>
             </Select>
           )}
