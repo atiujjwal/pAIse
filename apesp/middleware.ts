@@ -18,26 +18,19 @@ export async function middleware(req: NextRequest) {
     let limit = null;
 
     if (pathname.startsWith("/api/ai")) {
-      let userId: any = "";
-      message = "Ai Chat Limit reached for today";
+      message = "AI Chat Limit reached for today. Try again tomorrow.";
       const token = await getTokenFromRequest(req);
-      if (token) {
-        const payload = await verifyToken(token, "accessToken");
-        userId = payload.userId;
-      }
-
-      const limitKey = userId || ip;
-      const limitType = userId ? "PRIVATE" : "PUBLIC";
+      const limitType = token ? "PRIVATE" : "PUBLIC";
       if (pathname.includes("chat")) {
-        if (limitType == "PUBLIC") {
-          limit = await publicAiChatLimiter.limit(limitKey);
-        } else if (limitType == "PRIVATE")
-          limit = await privateAiChatLimiter.limit(ip);
+        limit =
+          limitType == "PUBLIC"
+            ? await publicAiChatLimiter.limit(`${ip}-${limitType}`)
+            : await privateAiChatLimiter.limit(`${ip}-${limitType}`);
       } else if (pathname.includes("/voice-expense")) {
-        message = "Ai Voice Expense Limit reached for today";
+        message = "AI Voice Expense Limit reached for today. Try again tomorrow.";
         limit = await aiVoiceLimiter.limit(ip);
       } else if (pathname.includes("/scan-receipt")) {
-        message = "Ai Scan Receipt Limit reached for today";
+        message = "AI Scan Receipt Limit reached for today. Try again tomorrow.";
         limit = await aiScanLimiter.limit(ip);
       } else {
         limit = await publicAiChatLimiter.limit(ip);
