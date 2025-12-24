@@ -2,6 +2,7 @@ import { Decimal } from "decimal.js";
 import { z } from "zod";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
+import { AiSecurityService } from "./aiSecurityService";
 
 Decimal.set({ precision: 12 });
 
@@ -146,14 +147,10 @@ export class VoiceAiService {
     });
 
     try {
-      // Upload
       const uploadResult = await fileManager.uploadFile(filePath, {
         mimeType,
         displayName: "Voice Expense Audio",
       });
-
-      // Wait for processing (usually instant for small audio, but good practice)
-      // For flash models, we can proceed directly often, but check state if needed in prod.
 
       // Build Prompt
       const participantMap = new Map<string, string>(); // Name -> ID
@@ -165,15 +162,19 @@ export class VoiceAiService {
         .join("\n");
 
       const today = new Date().toISOString();
+      const safeUserName = AiSecurityService.sanitizeInput(context.current_user.name);
+      const contextData = `
+        - Current User: "${safeUserName}" (ID: "${context.current_user.id}")
+        - Participants Available:
+        ${participantsList}
+        - Today's Date: ${today}
+      `;
 
       const prompt = `
         You are a smart expense assistant. Listen to the audio and extract expense details.
 
-        **CONTEXT**:
-        - Current User: "${context.current_user.name}" (ID: "${context.current_user.id}")
-        - Participants Available:
-        ${participantsList}
-        - Today's Date: ${today}
+        **CONTEXT_DATA (Trusted Source)**:
+          ${contextData}
 
         **RULES**:
         1. **Who Paid**: If I say "I paid", assign payer user_id = "${context.current_user.id}".
@@ -195,13 +196,11 @@ export class VoiceAiService {
         { text: prompt },
       ]);
 
-      // Cleanup
       await fileManager.deleteFile(uploadResult.file.name);
 
       const rawData = JSON.parse(result.response.text());
 
-      // Hydrate Response (Attach full User objects)
-      // This ensures the frontend gets avatar/name for display immediately
+      // Hydrate Response
       const hydrationMap = new Map(context.participants.map((p) => [p.id, p]));
 
       const hydratedPayers = rawData.payers.map((p: any) => ({

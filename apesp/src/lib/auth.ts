@@ -72,7 +72,8 @@ export const verifyToken = async (
       if (!user) return null;
     }
     return decoded;
-  } catch {
+  } catch (error) {
+    console.log("Error in verifyToken: ", error);
     return null;
   }
 };

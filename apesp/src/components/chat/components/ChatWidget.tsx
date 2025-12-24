@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Send, Loader2, Sparkles, MessageCircle, Bot } from "lucide-react";
-import { Button } from "@/src/components/ui/Button";
-import { Input } from "@/src/components/ui/Input";
+import Link from "next/link";
+import axios from "axios";
+import { api } from "@/src/lib/api";
 import { cn } from "@/src/lib/utils";
 import { useAuthStore } from "@/src/features/auth/store";
-import { api } from "@/src/lib/api";
-import Link from "next/link";
+import { Button } from "@/src/components/ui/Button";
+import { Input } from "@/src/components/ui/Input";
 
 const WIDGET_WIDTH = 380;
 const WIDGET_HEIGHT = 550;
@@ -116,7 +117,16 @@ export function ChatWidget() {
         api
           .get("/ai/chat/history")
           .then(({ data }) => {
-            if (data.success) setMessages(data.data.messages || []);
+            if (data.success) {
+              if (data.data?.messages.length === 0) {
+                setMessages([
+                  {
+                    role: "ASSISTANT",
+                    content: "Hi, I hope you are doing good. How can I help you?",
+                  },
+                ]);
+              } else setMessages(data.data.messages);
+            }
           })
           .catch(() =>
             setMessages([
@@ -226,9 +236,17 @@ export function ChatWidget() {
         ]);
       }
     } catch (error) {
+      let errorMessage = "AI chat is temporarily unavailable. Please try again later.";
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        if (status === 429) {
+          errorMessage =
+            "You've reached the AI usage limit for today. Please try again tomorrow or refer to the FAQs.";
+        }
+      }
       setMessages((prev) => [
         ...prev,
-        { role: "ASSISTANT", content: "Connection failed. Please try again." },
+        { role: "ASSISTANT", content: errorMessage },
       ]);
     } finally {
       setIsLoading(false);
