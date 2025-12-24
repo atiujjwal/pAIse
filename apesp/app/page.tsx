@@ -114,7 +114,7 @@ const faqs = [
   },
   {
     q: "What types of expenses can I create?",
-    a: "You can create two types of expenses: Friend-based expenses (shared directly with a specific friend) and Group-based expenses (shared among members of a group you create).",
+    a: "You can create two types of expenses: Friend-based expenses (shared directly with a specific friend) and Group-based expenses (shared among members of a group you create or is part of).",
   },
   {
     q: "What is the difference between a friend expense and a group expense?",
@@ -142,7 +142,7 @@ const faqs = [
   },
   {
     q: "Are there any limits on using AI features?",
-    a: "Yes. During the current development phase: Non-logged-in users can make up to 5 AI interactions, and logged-in users can make up to 15 AI interactions. These limits apply to the AI chatbot, voice-based expense entry, and receipt scanning features.",
+    a: "Yes. During the current development phase: Non-logged-in users can make up to 5 AI interactions, and logged-in users can make up to 10 AI interactions in a day. For voice-based expense entry, and receipt scanning features users can make up to 5 AI interactions in a day.",
   },
 ];
 
