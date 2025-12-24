@@ -16,7 +16,7 @@ const trendsQuerySchema = z.object({
 });
 
 /**
- * GET /analytics/trends
+ * GET /dashboard/trends
  * Returns time-series spending data + aggregated analysis for the selected period.
  * Features:
  * - Dynamic granularity (Daily, Weekly, Monthly, Yearly)
