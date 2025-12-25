@@ -61,20 +61,19 @@ export function Sidebar() {
     <>
       <aside className="relative flex h-full flex-col bg-background/95 backdrop-blur-sm transition-colors">
         {/* --- Modern Vertical Separator (Corrected Fade) --- */}
-        {/* Changed 'h-full top-0' to 'top-10 bottom-10' to force a visible fade at corners */}
         <div className="absolute right-0 top-10 bottom-10 w-[1px] bg-gradient-to-b from-transparent via-border/40 to-transparent" />
 
         {/* --- Brand Header --- */}
         <div className="relative flex h-20 items-center px-6">
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 p-1">
               <img
                 src={pAIse_LOGO}
                 alt="pAIse"
-                className="h-6 w-auto object-contain"
+                className="h-full w-full object-contain rounded-full"
               />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
+            <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
               pAIse
             </span>
           </Link>

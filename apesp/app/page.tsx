@@ -3,12 +3,8 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CheckCircle2,
-  Zap,
   Mic,
   Calculator,
-  ShieldCheck,
-  Users,
   Smartphone,
   HelpCircle,
   Mail,
@@ -24,6 +20,7 @@ import {
   ChevronDown,
   Sparkles,
   ExternalLink,
+  ShieldCheck, // Added ShieldCheck icon for the new footer link
 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { pAIse_LOGO } from "@/src/lib/mediaUrls";
@@ -31,11 +28,14 @@ import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 import { FeedbackForm } from "@/src/components/forms/FeedbackForm";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { PrivacyPolicyModal } from "@/src/components/legal/PrivacyPolicyModal";
+// --- IMPORT THE NEW MODAL ---
+import { SecurityFeaturesModal } from "@/src/components/legal/SecurityFeaturesModal";
 import { useState } from "react";
 import { cn } from "@/src/lib/utils";
 
 // --- FEATURES DATA ---
 const features = [
+  // ... (Features data remains the same)
   {
     title: "Voice-Powered Entry",
     desc: "Just say 'I paid 500 for lunch with Bob where I paid 150 and Bob paid 350' and our AI processes the audio instantly.",
@@ -164,6 +164,7 @@ export default function LandingPage() {
   };
 
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showSecurity, setShowSecurity] = useState(false);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
@@ -181,14 +182,14 @@ export default function LandingPage() {
             className="flex items-center gap-3 group"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 p-1">
               <img
                 src={pAIse_LOGO}
                 alt="pAIse"
-                className="h-6 w-auto object-contain"
+                className="h-full w-full object-contain rounded-full"
               />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
+            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
               pAIse
             </span>
           </Link>
@@ -526,14 +527,14 @@ export default function LandingPage() {
       <footer className="border-t border-border bg-card py-12 px-6">
         <div className="max-w-6xl mx-auto mb-12 flex flex-col items-center text-center">
           <Link href="/" className="flex items-center gap-3 group mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 p-1">
               <img
                 src={pAIse_LOGO}
                 alt="pAIse"
-                className="h-7 w-auto object-contain"
+                className="h-full w-full object-contain rounded-full"
               />
             </div>
-            <span className="text-3xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
+            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
               pAIse
             </span>
           </Link>
@@ -552,10 +553,20 @@ export default function LandingPage() {
             >
               Privacy Policy
             </button>
+            <button
+              onClick={() => setShowSecurity(true)}
+              className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <ShieldCheck className="h-4 w-4" /> Security Features
+            </button>
           </div>
         </div>
       </footer>
       <PrivacyPolicyModal open={showPrivacy} onOpenChange={setShowPrivacy} />
+      <SecurityFeaturesModal
+        open={showSecurity}
+        onOpenChange={setShowSecurity}
+      />
     </div>
   );
 }

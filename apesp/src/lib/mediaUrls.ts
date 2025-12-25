@@ -1,5 +1,5 @@
 export const pAIse_LOGO =
-  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766405993/pAIse_logo_n7jtzp.png";
+  "https://res.cloudinary.com/do1f9qqik/image/upload/v1766671265/new_paise_logo_04_y8ifrh.png";
 
 export const GROUP_AVATARS = [
   "https://res.cloudinary.com/do1f9qqik/image/upload/v1766404633/1_sr7yhj.avif",
