@@ -17,6 +17,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "pAIse - AI Expense Manager",
   description: "Smart splitting for smart groups.",
+  icons: {
+    icon: "https://res.cloudinary.com/do1f9qqik/image/upload/v1766679121/favicon_e894ro.ico",
+    apple: "https://res.cloudinary.com/do1f9qqik/image/upload/v1766679115/paise-favicon-apple_w9qljs.png", // Optional: for iPhone home screen
+  },
 };
 
 export default function RootLayout({
