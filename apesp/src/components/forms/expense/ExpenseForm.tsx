@@ -106,8 +106,8 @@ export default function ExpenseForm({
         category: wizardStore.category || "General",
         payers: wizardStore.payers || [],
         splits: wizardStore.splits || [],
-        group_id: wizardStore.group_id || preSelectedGroupId || null,
-        friend_id: wizardStore.friend_id || preSelectedFriendId || null,
+        group_id: wizardStore.group_id || preSelectedGroupId || undefined,
+        friend_id: wizardStore.friend_id || preSelectedFriendId || undefined,
       };
     }, [
       mode,
@@ -381,6 +381,19 @@ export default function ExpenseForm({
       ),
   });
 
+  const onFormError = (errors: any) => {
+    console.log("❌ FULL FORM ERRORS:", errors);
+    const firstErrorKey = Object.keys(errors)[0];
+    const errorMessage = errors[firstErrorKey]?.message;
+    if (errorMessage === "Required") {
+      addToast(`Missing field: ${firstErrorKey}`, "error");
+    } else if (errorMessage) {
+      addToast(`Error in ${firstErrorKey}: ${errorMessage}`, "error");
+    } else {
+      addToast("Validation failed. Please check the form.", "error");
+    }
+  };
+
   return (
     <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-10 space-y-6">
@@ -499,7 +512,7 @@ export default function ExpenseForm({
 
       {isContextSelected && (
         <form
-          onSubmit={handleSubmit((data) => mutation.mutate(data))}
+          onSubmit={handleSubmit((data) => mutation.mutate(data), onFormError)}
           className="space-y-10"
         >
           {mode === "create" && (

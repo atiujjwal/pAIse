@@ -43,36 +43,45 @@ export default function EditExpensePage() {
 
   // Format Data for the Form
   const initialData = {
-    amount: expense.amount.toString(),
-    description: expense.description,
-    category: expense.category,
-    date: new Date(expense.date).toISOString().slice(0, 10),
-    currency: expense.currency,
-    group_id: expense.group_id ?? null,
-    friend_id: expense?.friend_id || expense.friend?.id || null,
-    split_type: expense.split_type as SplitType,
-    payers: expense.payers.map((p) => ({
-      user_id: p.user.id,
-      amount: p.amount.toString(),
-      avatar: p.user.avatar,
-      name: p.user.name,
-    })),
-    splits: expense.splits.map((s) => ({
-      user_id: s.user.id,
-      avatar: s.user.avatar,
-      name: s.user.name,
-      amount_owed: s.amount_owed ?? undefined,
-      percent_owed:
-        s.percent_owed !== undefined ? Number(s.percent_owed) : undefined,
-      shares_owed:
-        s.shares_owed !== undefined ? Number(s.shares_owed) : undefined,
-    })),
+    amount: expense.amount?.toString() || "",
+    description: expense.description || "",
+    category: expense.category || "General",
+    date: expense.date
+      ? new Date(expense.date).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
+    currency: expense.currency || "INR",
+    group_id: expense.group_id || undefined,
+    friend_id: expense.friend_id || expense.friend?.id || undefined,
+    split_type: (expense.split_type as SplitType) || "EQUAL",
+    payers:
+      expense.payers?.map((p) => ({
+        user_id: p.user.id,
+        amount: p.amount?.toString() || "0",
+        avatar: p.user.avatar,
+        name: p.user.name,
+      })) || [],
+    splits:
+      expense.splits?.map((s) => ({
+        user_id: s.user.id,
+        avatar: s.user.avatar,
+        name: s.user.name,
+        amount_owed: s.amount_owed ? s.amount_owed.toString() : undefined,
+        percent_owed:
+          s.percent_owed !== null ? Number(s.percent_owed) : undefined,
+        shares_owed: s.shares_owed !== null ? Number(s.shares_owed) : undefined,
+      })) || [],
   };
 
+  // Preload members
+  const preloadedMembers = [
+    ...(expense.payers?.map((p) => p.user) || []),
+    ...(expense.splits?.map((s) => s.user) || []),
+  ].filter(
+    (user, index, self) => index === self.findIndex((u) => u.id === user.id)
+  );
 
   return (
     <div className="max-w-2xl mx-auto pb-20 pt-6">
-      {/* Navigation */}
       <div className="mb-4">
         <Button
           variant="ghost"
@@ -100,6 +109,7 @@ export default function EditExpensePage() {
         mode="edit"
         expenseId={id as string}
         initialData={initialData}
+        preloadedMembers={preloadedMembers}
       />
     </div>
   );
