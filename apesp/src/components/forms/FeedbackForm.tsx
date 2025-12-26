@@ -23,9 +23,9 @@ import { useState } from "react";
 import { Textarea } from "../ui/textarea";
 
 export function FeedbackForm() {
-  const FORMSPREE_ID = process.env.FORMSPREE_ID!;
+  const formspreeId = process.env.NEXT_PUBLIC_FORMSPREE_ID!;
 
-  const [state, handleSubmit] = useForm(`${FORMSPREE_ID}`);
+  const [state, handleSubmit] = useForm(`${formspreeId}`);
   const [category, setCategory] = useState("feedback");
 
   if (state.succeeded) {
