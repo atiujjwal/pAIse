@@ -3,7 +3,6 @@ import { prisma } from "@/src/lib/db";
 import { generateToken, parseDevice } from "@/src/lib/auth";
 import { getGoogleUser } from "@/src/lib/google";
 import { generateInviteCode } from "@/src/lib/nanoid";
-import { sendEmail } from "@/src/services/messageServices";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -16,14 +15,13 @@ export async function GET(req: NextRequest) {
   try {
     const googleUser = await getGoogleUser(code);
     const { email, name, picture } = googleUser;
-    
+
     let user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
       const inviteCode = generateInviteCode();
-
       user = await prisma.user.create({
         data: {
           email,
@@ -35,12 +33,6 @@ export async function GET(req: NextRequest) {
           timezone: "Asia/Kolkata",
         },
       });
-
-      // sendEmail({
-      //   to: user.email,
-      //   templateId: 2,
-      //   data: { name: user.name },
-      // }).catch(console.error);
     }
 
     const userAgent = req.headers.get("user-agent");
@@ -74,14 +66,15 @@ export async function GET(req: NextRequest) {
         user_id: user.id,
         session_id: session.id,
         token: refreshToken,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
 
-    // Create the Redirect Response
-    const response = NextResponse.redirect(new URL("/dashboard", req.url));
+    // --- Redirect to Client Handler instead of Dashboard ---
+    const response = NextResponse.redirect(
+      new URL(`/auth/callback?token=${accessToken}`, req.url)
+    );
 
-    // Set Cookies securely on the response
     const cookieOptions = {
       httpOnly: false,
       path: "/",

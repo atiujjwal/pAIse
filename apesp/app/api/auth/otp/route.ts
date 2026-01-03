@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
       otp = generateOtp();
       expiresAt = new Date(now.getTime() + 90 * 1000); // 90 secs validity
 
-      prisma.userOtp.create({
+      await prisma.userOtp.create({
         data: {
           email,
           phone,

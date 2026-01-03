@@ -59,33 +59,36 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="relative flex h-full flex-col bg-background/95 backdrop-blur-sm transition-colors">
-        {/* --- Modern Vertical Separator (Corrected Fade) --- */}
-        <div className="absolute right-0 top-10 bottom-10 w-[1px] bg-gradient-to-b from-transparent via-border/40 to-transparent" />
+      <aside className="relative flex h-full flex-col bg-background/80 backdrop-blur-xl transition-colors">
+        {/* --- Gradient Vertical Separator --- */}
+        <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-border/60 to-transparent" />
 
         {/* --- Brand Header --- */}
-        <div className="relative flex h-20 items-center px-6">
+        <div className="relative flex h-24 items-center px-6">
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 p-1">
-              <img
-                src={pAIse_LOGO}
-                alt="pAIse"
-                className="h-full w-full object-contain rounded-full"
-              />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform duration-300 shadow-lg shadow-primary/20">
+              <div className="h-full w-full rounded-[10px] bg-background flex items-center justify-center overflow-hidden">
+                <img
+                  src={pAIse_LOGO}
+                  alt="pAIse"
+                  className="h-full w-full object-contain"
+                />
+              </div>
             </div>
-            <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-              pAIse
-            </span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+                pAIse
+              </span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-1">
+              </span>
+            </div>
           </Link>
-
-          {/* Header Separator */}
-          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/40 to-transparent" />
         </div>
 
         {/* --- Navigation --- */}
-        <nav className="flex-1 space-y-1.5 px-4 py-6 overflow-y-auto custom-scrollbar">
-          <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Menu
+        <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto custom-scrollbar">
+          <p className="px-4 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-3">
+            Main Menu
           </p>
           {NAV_ITEMS.map((item) => {
             const isActive =
@@ -98,25 +101,27 @@ export function Sidebar() {
                 key={item.href}
                 onClick={() => handleNavigation(item.href)}
                 className={cn(
-                  "relative w-full group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+                  "relative w-full group flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/25"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 )}
               >
                 <item.icon
                   className={cn(
-                    "h-5 w-5 transition-colors duration-200",
+                    "h-5 w-5 transition-transform duration-300",
                     isActive
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground group-hover:text-primary"
+                      ? "text-white"
+                      : "text-muted-foreground group-hover:text-primary group-hover:scale-110"
                   )}
                 />
-                <span className="flex-1 text-left">{item.label}</span>
+                <span className="flex-1 text-left tracking-tight">
+                  {item.label}
+                </span>
 
-                {/* Active Indicator Dot */}
+                {/* Active Indicator Glow */}
                 {isActive && (
-                  <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary-foreground/30 animate-pulse" />
+                  <div className="absolute inset-0 rounded-xl ring-1 ring-white/20" />
                 )}
               </button>
             );
@@ -124,22 +129,26 @@ export function Sidebar() {
         </nav>
 
         {/* --- Footer / Logout --- */}
-        <div className="relative p-4 space-y-2">
-          {/* Footer Separator */}
-          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/40 to-transparent" />
+        <div className="p-4 mt-auto">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent mb-4" />
 
           <Button
             variant="ghost"
             disabled={isPending}
-            className="w-full !justify-start gap-3 rounded-xl px-2 py-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all group"
+            className="w-full justify-start gap-3 rounded-xl px-3 py-6 h-auto text-muted-foreground hover:bg-destructive/5 hover:text-destructive transition-all group border border-transparent hover:border-destructive/10"
             onClick={() => logoutUser()}
           >
-            <div className="p-1.5 rounded-lg bg-muted group-hover:bg-destructive/20 transition-colors">
+            <div className="p-2 rounded-lg bg-muted group-hover:bg-destructive/10 transition-colors">
               <LogOut className="h-4 w-4 text-muted-foreground group-hover:text-destructive" />
             </div>
-            <span className="font-medium">
-              {isPending ? "Logging out..." : "Log Out"}
-            </span>
+            <div className="flex flex-col items-start">
+              <span className="font-semibold text-sm">
+                {isPending ? "Logging out..." : "Log Out"}
+              </span>
+              <span className="text-[10px] text-muted-foreground/60 group-hover:text-destructive/60">
+                End your session
+              </span>
+            </div>
           </Button>
         </div>
       </aside>

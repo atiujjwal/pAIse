@@ -76,7 +76,7 @@ export function DashboardCharts({
               Spending Trends
             </h3>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider bg-muted/50 px-2.5 py-1 rounded-lg text-muted-foreground">
+          <span className="text-[10px] font-bold uppercase tracking-wider bg-muted/50 px-2.5 py-1 rounded-lg text-muted-foreground border border-border">
             {data?.granularity === "day" ? "Daily" : "Monthly"} View
           </span>
         </div>
@@ -116,7 +116,7 @@ export function DashboardCharts({
                 />
                 <Bar
                   dataKey="amount"
-                  fill="#7C5CFF"
+                  fill="hsl(var(--primary))"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={50}
                   animationDuration={1000}

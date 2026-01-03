@@ -20,7 +20,8 @@ import {
   ChevronDown,
   Sparkles,
   ExternalLink,
-  ShieldCheck, // Added ShieldCheck icon for the new footer link
+  ShieldCheck,
+  Check,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { pAIse_LOGO } from "@/src/lib/mediaUrls";
@@ -28,77 +29,75 @@ import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 import { FeedbackForm } from "@/src/components/forms/FeedbackForm";
 import { useToastStore } from "@/src/hooks/use-toast";
 import { PrivacyPolicyModal } from "@/src/components/legal/PrivacyPolicyModal";
-// --- IMPORT THE NEW MODAL ---
 import { SecurityFeaturesModal } from "@/src/components/legal/SecurityFeaturesModal";
 import { useState } from "react";
 import { cn } from "@/src/lib/utils";
 
 // --- FEATURES DATA ---
 const features = [
-  // ... (Features data remains the same)
   {
     title: "Voice-Powered Entry",
-    desc: "Just say 'I paid 500 for lunch with Bob where I paid 150 and Bob paid 350' and our AI processes the audio instantly.",
+    desc: "Just say 'I paid 500 for lunch with Bob' and our AI processes the audio instantly.",
     icon: Mic,
-    color: "text-primary",
-    bg: "bg-primary/10",
-    border: "group-hover:border-primary/50",
+    color: "text-violet-600 dark:text-violet-400",
+    bg: "bg-violet-500/10",
+    gradient: "from-violet-500/20 to-purple-500/20",
   },
   {
     title: "Smart Receipt Scanning",
-    desc: "Snap a photo of any bill. We extract amounts, items, and taxes automatically, saving you from manual data entry.",
+    desc: "Snap a photo of any bill. We extract amounts, items, and taxes automatically.",
     icon: Receipt,
-    color: "text-blue-600",
+    color: "text-blue-600 dark:text-blue-400",
     bg: "bg-blue-500/10",
-    border: "group-hover:border-blue-500/50",
+    gradient: "from-blue-500/20 to-cyan-500/20",
   },
   {
     title: "Flexible Splits",
-    desc: "Create expenses directly with friends or within groups. We handle the complex math for who owes whom.",
+    desc: "Handle complex math: Equal, Exact, Percentage, or Shares based splitting.",
     icon: Calculator,
-    color: "text-violet-600",
-    bg: "bg-violet-500/10",
-    border: "group-hover:border-violet-500/50",
+    color: "text-pink-600 dark:text-pink-400",
+    bg: "bg-pink-500/10",
+    gradient: "from-pink-500/20 to-rose-500/20",
   },
   {
     title: "AI Financial Assistant",
-    desc: "Chat with your data. Ask 'How much do I owe Rahul?' or 'What did I spend on food this month?' for instant answers.",
+    desc: "Chat with your data. Ask 'How much do I owe Rahul?' for instant answers.",
     icon: Bot,
-    color: "text-emerald-600",
+    color: "text-emerald-600 dark:text-emerald-400",
     bg: "bg-emerald-500/10",
-    border: "group-hover:border-emerald-500/50",
+    gradient: "from-emerald-500/20 to-teal-500/20",
   },
   {
     title: "Dynamic Insights",
-    desc: "Track net balances, spending trends, and category breakdowns across weekly, monthly, or yearly views.",
+    desc: "Track net balances and spending trends across weekly, monthly, or yearly views.",
     icon: LayoutDashboard,
-    color: "text-orange-600",
+    color: "text-orange-600 dark:text-orange-400",
     bg: "bg-orange-500/10",
-    border: "group-hover:border-orange-500/50",
+    gradient: "from-orange-500/20 to-amber-500/20",
   },
   {
     title: "Easy Connections",
-    desc: "Add friends via email, invite links, or pAIse QR tags. Manage your network easily to start sharing expenses.",
+    desc: "Add friends via email, invite links, or unique pAIse QR tags.",
     icon: UserPlus,
-    color: "text-pink-600",
-    bg: "bg-pink-500/10",
-    border: "group-hover:border-pink-500/50",
+    color: "text-indigo-600 dark:text-indigo-400",
+    bg: "bg-indigo-500/10",
+    gradient: "from-indigo-500/20 to-blue-500/20",
   },
   {
     title: "Privacy First",
-    desc: "Full control over who interacts with you. Accept/reject requests and block users if needed. Your data is yours.",
+    desc: "Full control over your data. Block users, manage requests, and stay secure.",
     icon: Lock,
-    color: "text-rose-600",
+    color: "text-rose-600 dark:text-rose-400",
     bg: "bg-rose-500/10",
-    border: "group-hover:border-rose-500/50",
+    gradient: "from-rose-500/20 to-red-500/20",
   },
   {
     title: "Manual Entry",
-    desc: "Prefer the classic way? Quickly enter description, amount, date, and split details manually whenever you need.",
+    desc: "Prefer the classic way? Quickly enter description, amount, and dates manually.",
     icon: Smartphone,
-    color: "text-indigo-600",
-    bg: "bg-indigo-500/10",
-    border: "group-hover:border-indigo-500/50",
+    color: "text-cyan-600 dark:text-cyan-400",
+    bg: "bg-cyan-500/10",
+    gradient: "from-cyan-500/20 to-sky-500/20",
   },
 ];
 
@@ -129,16 +128,8 @@ const faqs = [
     a: "Yes. You can scan a bill, and AI will attempt to extract relevant details such as the amount and description to create a draft expense for your review.",
   },
   {
-    q: "Is it possible to create an expense manually without using AI?",
-    a: "Yes. You can manually enter expense details such as description, amount, date, payers, and split information without using AI-assisted features.",
-  },
-  {
     q: "What can the AI chatbot help me with?",
     a: "The AI chatbot can assist with app features, expense-related information, and balance details with your friends and groups. Access to personal data is available only when you are logged in.",
-  },
-  {
-    q: "What information is shown on the dashboard?",
-    a: "The dashboard shows your net balance, expenses created by you, spending trends, category-wise spending charts, recent expense activity, and information about who owes you and whom you owe.",
   },
   {
     q: "Are there any limits on using AI features?",
@@ -148,110 +139,101 @@ const faqs = [
 
 export default function LandingPage() {
   const { addToast } = useToastStore();
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showSecurity, setShowSecurity] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
       window.history.pushState(null, "", `#${id}`);
     }
   };
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText("paiseapesp@gmail.com");
+    setCopiedEmail(true);
     addToast("Email copied to clipboard", "success");
+    setTimeout(() => setCopiedEmail(false), 2000);
   };
 
-  const [showPrivacy, setShowPrivacy] = useState(false);
-  const [showSecurity, setShowSecurity] = useState(false);
-
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
-      {/* --- Ambient Background --- */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20%] -left-[10%] h-[800px] w-[800px] rounded-full bg-primary/10 blur-[120px] opacity-60 dark:opacity-20 mix-blend-multiply dark:mix-blend-screen" />
-        <div className="absolute top-[20%] -right-[10%] h-[600px] w-[600px] rounded-full bg-secondary/10 blur-[100px] opacity-60 dark:opacity-20 mix-blend-multiply dark:mix-blend-screen" />
+    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary font-sans transition-colors duration-300">
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px] animate-pulse mix-blend-multiply dark:mix-blend-screen" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[128px] animate-pulse delay-700 mix-blend-multiply dark:mix-blend-screen" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[160px] opacity-50" />
       </div>
 
       {/* --- Header --- */}
-      <header className="sticky top-0 z-50 flex h-20 items-center justify-between px-6 md:px-12 border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all">
-        <div className="flex h-20 items-center px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-3 group"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 p-1">
-              <img
-                src={pAIse_LOGO}
-                alt="pAIse"
-                className="h-full w-full object-contain rounded-full"
-              />
-            </div>
-            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-              pAIse
-            </span>
-          </Link>
-        </div>
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl transition-all">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center">
+            <Link
+              href="/"
+              className="flex items-center gap-3 group"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+                <div className="w-full h-full rounded-[10px] bg-background flex items-center justify-center overflow-hidden">
+                  <img
+                    src={pAIse_LOGO}
+                    alt="pAIse"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              </div>
+              <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+                pAIse
+              </span>
+            </Link>
+          </div>
 
-        {/* --- Navigation Menu (Desktop) --- */}
-        <nav className="hidden md:flex items-center gap-8">
-          <Link
-            href="#"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="#features"
-            onClick={(e) => handleScroll(e, "features")}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Features
-          </Link>
-          <Link
-            href="#faq"
-            onClick={(e) => handleScroll(e, "faq")}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            FAQs
-          </Link>
-          <Link
-            href="#contact"
-            onClick={(e) => handleScroll(e, "contact")}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Contact
-          </Link>
-        </nav>
+          {/* --- Navigation Menu --- */}
+          <nav className="hidden md:flex items-center gap-8">
+            {["Home", "Features", "FAQ", "Contact"].map((item) => (
+              <Link
+                key={item}
+                href={item === "Home" ? "#" : `#${item.toLowerCase()}`}
+                onClick={(e) =>
+                  item === "Home"
+                    ? window.scrollTo({ top: 0, behavior: "smooth" })
+                    : handleScroll(e, item.toLowerCase())
+                }
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item}
+              </Link>
+            ))}
+          </nav>
 
-        <div className="flex gap-3">
-          {/* Theme Switcher */}
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            className="rounded-xl text-muted-foreground hover:text-foreground hidden sm:flex"
-            asChild
-          >
-            <Link href="/auth/login">Log in</Link>
-          </Button>
-          <Button
-            className="rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all"
-            asChild
-          >
-            <Link href="/auth/register">Start for Free</Link>
-          </Button>
+          <div className="flex gap-3 items-center">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted hidden sm:flex rounded-xl"
+              asChild
+            >
+              <Link href="/auth/login">Log in</Link>
+            </Button>
+            <Button
+              className="px-5 py-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all border-none"
+              asChild
+            >
+              <Link href="/auth/register">Start for Free</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="flex-1">
         {/* --- Hero Section --- */}
         <section className="relative px-6 pt-20 pb-24 md:pt-32 md:pb-32 text-center max-w-5xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Sparkles className="h-3.5 w-3.5 fill-primary" />
-            <span className="tracking-wide">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-sm font-medium text-primary tracking-wide">
               AI-Powered Expense Tracking V1.0
             </span>
           </div>
@@ -268,22 +250,10 @@ export default function LandingPage() {
             our AI handle the complex splitting logic instantly.
           </p>
 
-          {/* --- New Call to Action Text --- */}
-          <div className="mx-auto mb-8 max-w-lg text-center animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300">
-            <p className="text-lg font-semibold text-foreground">
-              Ready to settle up?
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Join thousands of users who trust pAIse to manage their shared
-              expenses effortlessly.
-            </p>
-          </div>
-
-          {/* --- Action Buttons --- */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-400">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-400">
             <Button
               size="lg"
-              className="h-14 w-full sm:w-auto rounded-2xl px-8 text-lg shadow-xl shadow-primary/20 transition-transform hover:-translate-y-1"
+              className="h-14 w-full sm:w-auto px-8 text-lg font-semibold bg-gradient-to-r from-primary to-secondary text-white rounded-2xl shadow-xl hover:shadow-primary/20 transition-transform hover:-translate-y-1 border-none"
               asChild
             >
               <Link href="/auth/register">
@@ -294,7 +264,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="outline"
-              className="h-14 w-full sm:w-auto rounded-2xl px-8 text-lg border-border bg-card/50 hover:bg-card hover:text-foreground backdrop-blur-sm"
+              className="h-14 w-full sm:w-auto px-8 text-lg font-semibold bg-card/50 border-border text-foreground hover:bg-muted hover:text-foreground rounded-2xl backdrop-blur-sm"
               asChild
             >
               <Link
@@ -307,7 +277,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="ghost"
-              className="h-14 w-full sm:w-auto rounded-2xl px-6 text-lg text-muted-foreground hover:text-primary hover:bg-primary/5 hover:border-primary/20 transition-all"
+              className="h-14 w-full sm:w-auto px-6 text-lg text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-2xl"
               onClick={(e) => handleScroll(e as any, "feedback")}
             >
               <MessageSquare className="mr-2 h-5 w-5" /> Suggestion / Bug
@@ -318,11 +288,11 @@ export default function LandingPage() {
         {/* --- Features Grid --- */}
         <section
           id="features"
-          className="py-24 px-6 bg-muted/30 border-y border-border"
+          className="py-24 px-6 border-t border-border bg-muted/20"
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 text-foreground">
                 Everything you need to settle up
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -337,30 +307,32 @@ export default function LandingPage() {
                 return (
                   <div
                     key={i}
-                    className={cn(
-                      "group relative flex flex-col items-start p-8 rounded-[2rem] bg-card border border-border shadow-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 overflow-hidden",
-                      feature.border
-                    )}
+                    className="group relative flex flex-col items-start p-8 rounded-[2rem] bg-card border border-border shadow-sm transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
                     <div
                       className={cn(
-                        "mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner",
-                        feature.bg,
-                        feature.color
+                        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 rounded-[2rem] transition-all duration-500 pointer-events-none",
+                        feature.gradient
                       )}
-                    >
-                      <Icon className="h-7 w-7" />
+                    />
+                    <div className="relative z-10">
+                      <div
+                        className={cn(
+                          "mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner",
+                          feature.bg
+                        )}
+                      >
+                        <Icon className={cn("h-7 w-7", feature.color)} />
+                      </div>
+
+                      <h3 className="mb-3 text-xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                        {feature.title}
+                      </h3>
+
+                      <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+                        {feature.desc}
+                      </p>
                     </div>
-
-                    <h3 className="mb-3 text-xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
-                      {feature.title}
-                    </h3>
-
-                    <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                      {feature.desc}
-                    </p>
                   </div>
                 );
               })}
@@ -369,9 +341,12 @@ export default function LandingPage() {
         </section>
 
         {/* --- Help & Support (FAQ) --- */}
-        <section id="faq" className="py-24 px-6 max-w-4xl mx-auto">
+        <section
+          id="faq"
+          className="py-24 px-6 max-w-4xl mx-auto border-t border-border"
+        >
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">
+            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground">
               Frequently Asked Questions
             </h2>
             <p className="text-muted-foreground">
@@ -383,10 +358,10 @@ export default function LandingPage() {
             {faqs.map((faq, i) => (
               <details
                 key={i}
-                className="group rounded-2xl border border-border bg-card p-1 shadow-sm transition-all open:shadow-md open:border-primary/20 hover:border-primary/20"
+                className="group rounded-2xl border border-border bg-card p-1 shadow-sm transition-all open:ring-1 open:ring-primary/20 hover:border-primary/30"
               >
-                <summary className="flex cursor-pointer items-center justify-between gap-4 rounded-xl p-5 font-bold text-lg marker:content-none hover:bg-muted/50 transition-colors">
-                  <span className="flex items-center gap-3 text-left">
+                <summary className="flex cursor-pointer items-center justify-between gap-4 rounded-xl p-5 font-bold text-lg marker:content-none transition-colors hover:bg-muted/50">
+                  <span className="flex items-center gap-3 text-left text-foreground">
                     <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     {faq.q}
                   </span>
@@ -402,10 +377,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* --- Feedback Section (Separated) --- */}
+        {/* --- Feedback Section --- */}
         <section
           id="feedback"
-          className="py-24 px-6 bg-muted/30 border-y border-border"
+          className="py-24 px-6 border-t border-border bg-muted/20"
         >
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             {/* Left: Text */}
@@ -413,7 +388,7 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
                 Beta Feedback
               </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
                 Help us shape the future of pAIse.
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -424,43 +399,49 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Form Component */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-purple-500/20 blur-3xl -z-10 rounded-full opacity-60 transform scale-90" />
-              <FeedbackForm />
+            <div className="relative p-1 rounded-[2.5rem] bg-gradient-to-tr from-primary/20 to-secondary/20 shadow-2xl">
+              <div className="p-6 rounded-[2.3rem] bg-card border border-border/50 backdrop-blur-xl">
+                <FeedbackForm />
+              </div>
             </div>
           </div>
         </section>
 
         {/* --- CTA Section --- */}
         <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-gradient-to-br from-primary to-violet-700 px-6 py-16 md:px-12 text-center text-white shadow-2xl relative overflow-hidden">
-            {/* Abstract Shapes */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/30 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+          <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-1 shadow-2xl shadow-primary/20">
+            <div className="relative rounded-[22px] bg-background/95 px-6 py-16 md:px-12 text-center text-foreground overflow-hidden dark:bg-slate-950">
+              {/* Abstract Shapes */}
+              <div className="absolute top-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
-                Ready to settle up?
-              </h2>
-              <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-                Join thousands of users who trust pAIse to manage their shared
-                expenses effortlessly.
-              </p>
-              <Button
-                size="lg"
-                className="h-14 px-8 rounded-full bg-white text-violet-600 hover:bg-slate-50 font-bold text-lg shadow-xl hover:scale-105 transition-all"
-                asChild
-              >
-                <Link href="/auth/register">Create Free Account</Link>
-              </Button>
+              <div className="relative z-10">
+                <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
+                  Ready to settle up?
+                </h2>
+                <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+                  Join thousands of users who trust pAIse to manage their shared
+                  expenses effortlessly.
+                </p>
+                <Button
+                  size="lg"
+                  className="h-14 px-8 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-lg shadow-xl hover:scale-105 transition-all border-none"
+                  asChild
+                >
+                  <Link href="/auth/register">Create Free Account</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* --- Contact Section (Separated & Last) --- */}
-        <section id="contact" className="py-24 px-6 max-w-5xl mx-auto">
+        {/* --- Contact Section --- */}
+        <section
+          id="contact"
+          className="py-24 px-6 max-w-5xl mx-auto border-t border-border"
+        >
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">
+            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground">
               Get in Touch
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
@@ -471,12 +452,14 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Email Card */}
-            <div className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/30 transition-all group">
+            <div className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group">
               <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Mail className="h-6 w-6" />
               </div>
-              <h3 className="font-bold text-lg mb-2">Email Us</h3>
-              <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full">
+              <h3 className="font-bold text-lg mb-2 text-foreground">
+                Email Us
+              </h3>
+              <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full border border-border">
                 <span className="text-sm text-muted-foreground font-medium">
                   paiseapesp@gmail.com
                 </span>
@@ -485,7 +468,11 @@ export default function LandingPage() {
                   className="text-primary hover:scale-110 transition-transform"
                   title="Copy"
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  {copiedEmail ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -494,12 +481,12 @@ export default function LandingPage() {
             <Link
               href="https://github.com/atiujjwal/pAIse"
               target="_blank"
-              className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/30 transition-all group hover:-translate-y-1"
+              className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
             >
-              <div className="h-12 w-12 rounded-2xl bg-gray-500/10 text-foreground flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="h-12 w-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Github className="h-6 w-6" />
               </div>
-              <h3 className="font-bold text-lg mb-2">GitHub</h3>
+              <h3 className="font-bold text-lg mb-2 text-foreground">GitHub</h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
                 Contribute <ExternalLink className="h-3 w-3" />
               </div>
@@ -509,12 +496,14 @@ export default function LandingPage() {
             <Link
               href="https://www.linkedin.com/in/atiujjwal/"
               target="_blank"
-              className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/30 transition-all group hover:-translate-y-1"
+              className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
             >
-              <div className="h-12 w-12 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Linkedin className="h-6 w-6" />
               </div>
-              <h3 className="font-bold text-lg mb-2">LinkedIn</h3>
+              <h3 className="font-bold text-lg mb-2 text-foreground">
+                LinkedIn
+              </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
                 Connect <ExternalLink className="h-3 w-3" />
               </div>
@@ -527,12 +516,14 @@ export default function LandingPage() {
       <footer className="border-t border-border bg-card py-12 px-6">
         <div className="max-w-6xl mx-auto mb-12 flex flex-col items-center text-center">
           <Link href="/" className="flex items-center gap-3 group mb-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 p-1">
-              <img
-                src={pAIse_LOGO}
-                alt="pAIse"
-                className="h-full w-full object-contain rounded-full"
-              />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full rounded-[10px] bg-background flex items-center justify-center overflow-hidden">
+                <img
+                  src={pAIse_LOGO}
+                  alt="pAIse"
+                  className="h-full w-full object-contain"
+                />
+              </div>
             </div>
             <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
               pAIse

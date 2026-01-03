@@ -37,14 +37,14 @@ export function StatsCards({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* --- CARD : BALANCE OVERVIEW (Static) --- */}
+      {/* --- CARD : BALANCE OVERVIEW --- */}
       {isLoadingSnapshot ? (
         <Skeleton className="h-[280px] rounded-[2.5rem]" />
       ) : (
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-violet-600 to-indigo-700 p-8 text-white shadow-xl flex flex-col justify-between min-h-[280px]">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[280px]">
           {/* Decorative Background */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
 
           {/* Top Section: Total Net */}
           <div className="relative z-10">
@@ -52,7 +52,7 @@ export function StatsCards({
               <div className="p-2.5 bg-white/20 backdrop-blur-md rounded-2xl shadow-sm border border-white/10">
                 <Wallet className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xs font-bold uppercase tracking-widest opacity-80">
+              <span className="text-xs font-bold uppercase tracking-widest opacity-90">
                 Total Net Balance
               </span>
             </div>
@@ -62,15 +62,15 @@ export function StatsCards({
                 {formatCurrency(String(netBalance), "INR")}
               </h3>
             </div>
-            <p className="text-sm text-white/70 mt-1 font-medium flex items-center gap-1.5">
+            <p className="text-sm text-white/80 mt-2 font-medium flex items-center gap-1.5">
               {netBalance >= 0 ? (
                 <>
-                  <ArrowUpRight className="h-4 w-4 text-emerald-300" /> You are
+                  <ArrowUpRight className="h-4 w-4 text-emerald-200" /> You are
                   owed overall
                 </>
               ) : (
                 <>
-                  <ArrowDownLeft className="h-4 w-4 text-rose-300" /> You owe
+                  <ArrowDownLeft className="h-4 w-4 text-rose-200" /> You owe
                   overall
                 </>
               )}
@@ -80,17 +80,17 @@ export function StatsCards({
           {/* Bottom Section: Breakdown Grid */}
           <div className="relative z-10 mt-8 grid grid-cols-2 gap-4">
             {/* Groups Block */}
-            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col gap-1 transition-colors hover:bg-black/30">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex flex-col gap-1 transition-colors hover:bg-white/20">
               <div className="flex items-center gap-2 mb-1">
-                <Users className="h-3.5 w-3.5 opacity-70" />
-                <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">
+                <Users className="h-3.5 w-3.5 opacity-80" />
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
                   Groups
                 </span>
               </div>
               <span
                 className={cn(
                   "text-xl font-mono font-bold",
-                  groupNet >= 0 ? "text-emerald-300" : "text-rose-300"
+                  groupNet >= 0 ? "text-emerald-100" : "text-rose-100"
                 )}
               >
                 {groupNet > 0 ? "+" : ""}
@@ -99,17 +99,17 @@ export function StatsCards({
             </div>
 
             {/* Friends Block */}
-            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/5 flex flex-col gap-1 transition-colors hover:bg-black/30">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex flex-col gap-1 transition-colors hover:bg-white/20">
               <div className="flex items-center gap-2 mb-1">
-                <User className="h-3.5 w-3.5 opacity-70" />
-                <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">
+                <User className="h-3.5 w-3.5 opacity-80" />
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
                   Friends
                 </span>
               </div>
               <span
                 className={cn(
                   "text-xl font-mono font-bold",
-                  friendNet >= 0 ? "text-emerald-300" : "text-rose-300"
+                  friendNet >= 0 ? "text-emerald-100" : "text-rose-100"
                 )}
               >
                 {friendNet > 0 ? "+" : ""}
@@ -120,7 +120,7 @@ export function StatsCards({
         </div>
       )}
 
-      {/* --- CARD: SPENDING ANALYSIS (Filtered) --- */}
+      {/* --- CARD: SPENDING ANALYSIS  --- */}
       <div className="rounded-[2.5rem] border border-border bg-card p-8 shadow-sm flex flex-col justify-between min-h-[280px]">
         <div className="flex items-start justify-between mb-6">
           <div className="space-y-1">
@@ -142,7 +142,7 @@ export function StatsCards({
           </div>
 
           {/* Period Badge */}
-          <span className="px-3 py-1.5 bg-muted rounded-xl text-[10px] font-bold text-muted-foreground uppercase tracking-wide border border-border">
+          <span className="px-3 py-1.5 bg-muted/50 rounded-xl text-[10px] font-bold text-muted-foreground uppercase tracking-wide border border-border">
             {trends?.spending_analysis?.period?.replace("_", " ") ||
               "This Month"}
           </span>
