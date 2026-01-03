@@ -66,8 +66,8 @@ export function Sidebar() {
         {/* --- Brand Header --- */}
         <div className="relative flex h-24 items-center px-6">
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform duration-300 shadow-lg shadow-primary/20">
-              <div className="h-full w-full rounded-[10px] bg-background flex items-center justify-center overflow-hidden">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                 <img
                   src={pAIse_LOGO}
                   alt="pAIse"
@@ -79,8 +79,7 @@ export function Sidebar() {
               <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
                 pAIse
               </span>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-1">
-              </span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-1"></span>
             </div>
           </Link>
         </div>

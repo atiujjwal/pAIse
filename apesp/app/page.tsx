@@ -176,8 +176,8 @@ export default function LandingPage() {
               className="flex items-center gap-3 group"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
-                <div className="w-full h-full rounded-[10px] bg-background flex items-center justify-center overflow-hidden">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+                <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                   <img
                     src={pAIse_LOGO}
                     alt="pAIse"
@@ -516,8 +516,8 @@ export default function LandingPage() {
       <footer className="border-t border-border bg-card py-12 px-6">
         <div className="max-w-6xl mx-auto mb-12 flex flex-col items-center text-center">
           <Link href="/" className="flex items-center gap-3 group mb-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full rounded-[10px] bg-background flex items-center justify-center overflow-hidden">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                 <img
                   src={pAIse_LOGO}
                   alt="pAIse"
