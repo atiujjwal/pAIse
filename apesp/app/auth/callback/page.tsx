@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/src/features/auth/store";
 import { Loader2 } from "lucide-react";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((state: any) => state.setAuth || state.login);
@@ -27,7 +27,6 @@ export default function AuthCallbackPage() {
 
     const processLogin = async () => {
       try {
-        // Decode token
         const base64Url = token.split(".")[1];
         const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
         const jsonPayload = decodeURIComponent(
@@ -48,14 +47,12 @@ export default function AuthCallbackPage() {
           invite_code: payload.inviteCode,
         };
 
-        // Hydrate Store
         setAuth({
           user,
           accessToken: token,
           isAuthenticated: true,
         });
 
-        // Force Hard Redirect to Dashboard
         window.location.href = "/dashboard";
       } catch (error) {
         console.error("Failed to process Google Login:", error);
@@ -75,5 +72,19 @@ export default function AuthCallbackPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

@@ -18,7 +18,7 @@ export default function AddFriendPage() {
   const code = searchParams.get("code");
   const { addToast } = useToastStore();
 
-  // 1. Lookup the User based on code
+  // Lookup the User based on code
   const {
     data: userProfile,
     isLoading,
@@ -33,7 +33,7 @@ export default function AddFriendPage() {
     retry: false,
   });
 
-  // 2. Mutation to Send Request
+  // Mutation to Send Request
   const {
     mutate: sendRequest,
     isPending: isSending,
