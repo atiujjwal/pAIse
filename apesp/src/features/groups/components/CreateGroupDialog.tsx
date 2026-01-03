@@ -1,21 +1,18 @@
 "use client";
 
-import { z } from "zod";
-import { Loader2, Image as ImageIcon, Check } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateGroup } from "../api/group-details-query";
+import { z } from "zod";
+import { ArrowLeft, Loader2, Image as ImageIcon, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/Dialog";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Label } from "@/src/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/Dialog";
 import { cn } from "@/src/lib/utils";
 import { GROUP_AVATARS } from "@/src/lib/mediaUrls";
+import { useCreateGroup } from "@/src/features/groups/api/group-details-query";
 
 const createGroupSchema = z.object({
   name: z.string().min(1, "Group name is required"),
@@ -25,129 +22,189 @@ const createGroupSchema = z.object({
 
 type CreateGroupFormValues = z.infer<typeof createGroupSchema>;
 
-export function CreateGroupDialog({
-  isOpen,
-  onClose,
-}: {
+interface CreateGroupDialogProps {
   isOpen: boolean;
   onClose: () => void;
-}) {
+}
+
+export function CreateGroupDialog({ isOpen, onClose }: CreateGroupDialogProps) {
+  const router = useRouter();
   const { mutate: createGroup, isPending } = useCreateGroup();
+
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    reset,
     formState: { errors },
+    reset,
   } = useForm<CreateGroupFormValues>({
     resolver: zodResolver(createGroupSchema),
-    defaultValues: { name: "", description: "", avatar: "" },
+    defaultValues: {
+      name: "",
+      description: "",
+      avatar: "",
+    },
   });
 
   const selectedAvatar = watch("avatar");
+
   const onSubmit = (data: CreateGroupFormValues) => {
     createGroup(data, {
       onSuccess: () => {
         reset();
         onClose();
+        router.refresh();
       },
     });
   };
 
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg rounded-3xl p-8 bg-card border-border">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Create Group</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 mt-2">
-          <div className="space-y-4">
-            <Label>Choose Avatar</Label>
-            <div className="grid grid-cols-4 gap-3">
-              <button
-                type="button"
-                onClick={() => setValue("avatar", "")}
-                className={cn(
-                  "aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all",
-                  !selectedAvatar
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <ImageIcon className="h-6 w-6 mb-1" />
-                <span className="text-[10px] font-bold uppercase">None</span>
-              </button>
-              {GROUP_AVATARS.map((url, index) => (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      {/* FIX APPLIED: Added [&>button]:hidden
+        This targets the direct child button (the default X close icon from shadcn) 
+        and hides it, so it doesn't float outside our custom card.
+      */}
+      <DialogContent className="max-w-lg w-full p-0 bg-transparent border-none shadow-none outline-none overflow-hidden [&>button]:hidden">
+        <DialogTitle className="hidden">Create New Group</DialogTitle>
+
+        <div className="w-full bg-card rounded-[2rem] border border-border shadow-2xl p-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          {/* Navigation (Back / Close) */}
+          <div className="mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="text-muted-foreground hover:text-foreground -ml-2 h-8 px-2 rounded-lg"
+            >
+              <ArrowLeft className="mr-1 h-3 w-3" /> Back
+            </Button>
+          </div>
+
+          {/* Header */}
+          <div className="mb-4 border-b border-border pb-3">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Create New Group
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Start a new collection for a trip, home, or event.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Avatar Selection */}
+            <div className="space-y-2.5">
+              <Label className="text-sm font-semibold text-foreground">
+                Group Avatar
+              </Label>
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                {/* No Avatar Option */}
                 <button
-                  key={index}
                   type="button"
-                  onClick={() => setValue("avatar", url)}
+                  onClick={() => setValue("avatar", "")}
                   className={cn(
-                    "relative aspect-square rounded-2xl overflow-hidden border-2 transition-all",
-                    selectedAvatar === url
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-transparent hover:opacity-80"
+                    "aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-200",
+                    !selectedAvatar
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  <img
-                    src={url}
-                    alt="Avatar"
-                    className="h-full w-full object-cover"
-                  />
-                  {selectedAvatar === url && (
-                    <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
-                      <Check className="h-5 w-5 text-white drop-shadow-md" />
-                    </div>
-                  )}
+                  <ImageIcon className="h-5 w-5 mb-0.5" />
+                  <span className="text-[9px] font-bold uppercase tracking-wide">
+                    None
+                  </span>
                 </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <Label>Group Name</Label>
-              <Input
-                {...register("name")}
-                placeholder="e.g. Summer Trip"
-                className="h-12 rounded-xl bg-muted/30"
-              />
-              {errors.name && (
-                <p className="text-destructive text-xs ml-1">
-                  {errors.name.message}
-                </p>
-              )}
+                {/* Image Options */}
+                {GROUP_AVATARS.map((url, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setValue("avatar", url)}
+                    className={cn(
+                      "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200",
+                      selectedAvatar === url
+                        ? "border-primary ring-2 ring-primary/10 scale-105 shadow-md"
+                        : "border-transparent opacity-80 hover:opacity-100 hover:scale-105"
+                    )}
+                  >
+                    <img
+                      src={url}
+                      alt={`Avatar ${index}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {selectedAvatar === url && (
+                      <div className="absolute inset-0 bg-primary/40 flex items-center justify-center backdrop-blur-[1px]">
+                        <div className="bg-white rounded-full p-0.5 shadow-sm">
+                          <Check className="h-2.5 w-2.5 text-primary" />
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Input
-                {...register("description")}
-                placeholder="Optional description"
-                className="h-12 rounded-xl bg-muted/30"
-              />
-            </div>
-          </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClose}
-              className="h-12 px-6 rounded-xl"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20"
-            >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{" "}
-              Create
-            </Button>
-          </div>
-        </form>
+            {/* Text Inputs */}
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm text-foreground">Group Name</Label>
+                <Input
+                  {...register("name")}
+                  placeholder="e.g. Summer Trip 2025"
+                  className="h-10 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 text-sm"
+                />
+                {errors.name && (
+                  <p className="text-destructive text-[10px] font-medium ml-1">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm text-foreground">
+                  Description{" "}
+                  <span className="text-muted-foreground font-normal text-xs">
+                    (Optional)
+                  </span>
+                </Label>
+                <Input
+                  {...register("description")}
+                  placeholder="What is this group for?"
+                  className="h-10 rounded-xl bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2 border-t border-border">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClose}
+                className="flex-1 h-10 rounded-xl text-muted-foreground hover:bg-muted text-sm"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="flex-[2] h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:scale-[1.01] transition-all text-sm"
+              >
+                {isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "Create Group"
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

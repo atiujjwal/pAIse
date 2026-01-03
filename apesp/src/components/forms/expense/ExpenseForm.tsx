@@ -34,7 +34,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectSeparator,
 } from "@/src/components/ui/Select";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { CreateExpenseInput, createExpenseSchema } from "@/src/lib/schemas";
@@ -44,6 +43,7 @@ import { SplitDistribution } from "./SplitDistribution";
 import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 import { useExpenseWizardStore } from "@/src/features/expenses/store/wizard-store";
 import { User as ApiUser } from "@/src/types/api";
+import { CreateGroupDialog } from "@/src/features/groups/components/CreateGroupDialog";
 
 interface ExpenseFormProps {
   mode?: "create" | "edit";
@@ -75,6 +75,8 @@ export default function ExpenseForm({
   const preSelectedGroupId = searchParams.get("groupId");
   const preSelectedFriendId = searchParams.get("friendId");
   const contextParam = searchParams.get("context");
+
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   const [draftMembers, setDraftMembers] = useState<ExpenseMember[]>([]);
 
@@ -161,10 +163,7 @@ export default function ExpenseForm({
   const { data: groupMembers } = useGroupMembers(selectedGroupId || null);
 
   const activeMembers = useMemo<ExpenseMember[]>(() => {
-    // Draft Members 
     if (draftMembers.length > 0) return draftMembers;
-
-    // Preloaded
     if (preloadedMembers.length > 0) {
       return preloadedMembers.map((u) => ({
         id: u.id,
@@ -172,8 +171,6 @@ export default function ExpenseForm({
         avatar: u.avatar,
       }));
     }
-
-    // Group
     if (selectedGroupId && groupMembers) {
       return groupMembers.map((m) => ({
         id: m.id,
@@ -181,8 +178,6 @@ export default function ExpenseForm({
         avatar: m.avatar,
       }));
     }
-
-    // Friend
     if (selectedFriendId && friends && currentUser) {
       const friend = friends.find((f) => f.id === selectedFriendId);
       return friend
@@ -200,7 +195,6 @@ export default function ExpenseForm({
           ]
         : [];
     }
-
     return [];
   }, [
     draftMembers,
@@ -229,9 +223,8 @@ export default function ExpenseForm({
 
   const handleDraftReceived = useCallback(
     (draft: any) => {
-      // console.log("AI Draft Processing:", draft);
+      // (Draft logic remains same...)
       if (!draft) return;
-
       const tempMap = new Map();
       const extractUser = (u: any) => {
         if (u && u.id) {
@@ -299,10 +292,7 @@ export default function ExpenseForm({
           shouldDirty: true,
         });
 
-      // SET PAYERS & SPLITS
-      // Allow a render cycle for members to be available
       setTimeout(() => {
-        // PAYERS: Map correctly to { user_id, amount }
         if (draft.payers && Array.isArray(draft.payers)) {
           const mappedPayers = draft.payers.map((p: any) => ({
             user_id: p.user_id,
@@ -436,7 +426,7 @@ export default function ExpenseForm({
             <Select
               onValueChange={(val) => {
                 if (val === "CREATE_NEW_GROUP") {
-                  router.push("/dashboard/groups/new");
+                  setShowCreateGroup(true);
                 } else {
                   setValue("group_id", val);
                 }
@@ -455,7 +445,6 @@ export default function ExpenseForm({
                     {g.name}
                   </SelectItem>
                 ))}
-                {/* --- ADD NEW GROUP ACTION --- */}
                 <div className="border-t border-border mt-1 pt-1">
                   <SelectItem
                     value="CREATE_NEW_GROUP"
@@ -473,7 +462,7 @@ export default function ExpenseForm({
             <Select
               onValueChange={(val) => {
                 if (val === "ADD_NEW_FRIEND") {
-                  router.push("/dashboard/friends?action=add"); // Assuming your friends page handles this
+                  router.push("/dashboard/friends?action=add");
                 } else {
                   setValue("friend_id", val);
                 }
@@ -492,7 +481,6 @@ export default function ExpenseForm({
                     {f.name}
                   </SelectItem>
                 ))}
-                {/* --- ADD NEW FRIEND ACTION --- */}
                 <div className="border-t border-border mt-1 pt-1">
                   <SelectItem
                     value="ADD_NEW_FRIEND"
@@ -689,6 +677,11 @@ export default function ExpenseForm({
           </div>
         </form>
       )}
+
+      <CreateGroupDialog
+        isOpen={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+      />
     </div>
   );
 }

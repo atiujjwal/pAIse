@@ -7,18 +7,15 @@ import {
   Settings,
   Users,
   ArrowRightLeft,
-  Wallet,
   UserPlus,
   MoreVertical,
   Shield,
   UserMinus,
   ArrowLeft,
   Receipt,
-  Loader2,
   Calendar,
   Layers,
   User,
-  PieChart,
   Plus,
 } from "lucide-react";
 
@@ -33,12 +30,12 @@ import {
   OptimizedPayment,
 } from "@/src/features/groups/api/group-details-query";
 import { useSettlements } from "@/src/features/settlements/api/settlement-queries";
-import { useRemindFriend } from "@/src/features/friends/api/friend-queries";
 
 import { SimplifyDebtDialog } from "@/src/features/groups/components/SimplifyDebtDialog";
 import { AddMemberDialog } from "@/src/features/groups/components/AddMemberDialog";
 import { EditGroupDialog } from "@/src/features/groups/components/EditGroupDialog";
 import { SettlementModal } from "@/src/features/settlements/components/SettlementModal";
+import { BalancesList } from "@/src/features/groups/components/BalancesList";
 
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import { Button } from "@/src/components/ui/Button";
@@ -69,7 +66,6 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
   const avatarUrl = expense.created_by.avatar;
   const displayName = expense.created_by.name;
 
-  // 1. Calculate User Specific Financials
   const userPayment = expense.payers.find((p: any) => p.user.id === user?.id);
   const userSplit = expense.splits.find((s: any) => s.user.id === user?.id);
 
@@ -81,7 +77,6 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
       href={`/dashboard/expenses/${expense.id}`}
       className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 hover:shadow-md transition-all group"
     >
-      {/* Dynamic Avatar Section */}
       <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
         <AvatarImage src={avatarUrl || undefined} className="object-cover" />
         <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
@@ -89,7 +84,6 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
         </AvatarFallback>
       </Avatar>
 
-      {/* Main Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
@@ -119,14 +113,11 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
         </div>
       </div>
 
-      {/* Amount & User Context Section */}
       <div className="text-right pl-2 flex flex-col items-end">
-        {/* Total Expense Amount */}
         <span className="block font-bold text-foreground font-mono text-base">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
 
-        {/* User Specific Details - Exact same logic as global list */}
         <div className="flex flex-col items-end gap-0.5 mt-1">
           {paidAmount > 0 && (
             <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
@@ -141,7 +132,6 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
             </span>
           )}
 
-          {/* Fallback if user is neither payer nor splitter (rare watcher case) */}
           {paidAmount === 0 && shareAmount === 0 && (
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-muted/50 px-2 py-0.5 rounded-md">
               {expense.split_type}
@@ -158,13 +148,11 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
 export default function GroupDetailsPage() {
   const params = useParams();
   const groupId = params?.id as string;
-  const { user, accessToken } = useAuthStore((state) => state);
+  const { user } = useAuthStore((state) => state);
   const router = useRouter();
 
-  // --- QUERIES ---
   const { data: group, isLoading: loadingGroup } = useGroupDetails(groupId);
-  const { data: balances, isLoading: loadingBalances } =
-    useGroupBalances(groupId);
+  const { data: balances } = useGroupBalances(groupId);
   const { data: expensesResponse, isLoading: loadingExpenses } =
     useGroupExpenses(groupId);
   const { data: settlements, isLoading: loadingSettlements } = useSettlements({
@@ -173,13 +161,11 @@ export default function GroupDetailsPage() {
 
   const expensesList = Array.isArray(expensesResponse) ? expensesResponse : [];
 
-  // --- MUTATIONS ---
   const { mutate: removeMember } = useRemoveMember(groupId);
   const { mutate: updateRole } = useUpdateMemberRole(groupId);
   const { mutate: simplify, isPending: isSimplifying } =
     useSimplifyDebts(groupId);
 
-  // --- STATE ---
   const [showSimplifyModal, setShowSimplifyModal] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
@@ -196,7 +182,6 @@ export default function GroupDetailsPage() {
     return null;
   }, [user]);
 
-  // --- HANDLERS ---
   const handleSimplify = () => {
     setShowSimplifyModal(true);
     simplify(undefined, { onSuccess: (data) => setOptimizedData(data) });
@@ -213,11 +198,9 @@ export default function GroupDetailsPage() {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* HEADER SECTION */}
       <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 relative overflow-hidden">
-        {/* Decorative Background */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 z-0 pointer-events-none" />
 
         <div className="relative z-10">
-          {/* Back Button */}
           <div className="mb-6">
             <Button
               variant="ghost"
@@ -258,7 +241,6 @@ export default function GroupDetailsPage() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex flex-wrap gap-3 w-full md:w-auto">
               <Button
                 variant="outline"
@@ -588,154 +570,6 @@ export default function GroupDetailsPage() {
           context={{ type: "group", groupId: group.id, groupName: group.name }}
         />
       )}
-    </div>
-  );
-}
-
-// --- BALANCES LIST (Refactored) ---
-function BalancesList({
-  balances,
-  onSettleClick,
-  groupName,
-}: {
-  balances: any;
-  onSettleClick: (t: any) => void;
-  groupName: string;
-}) {
-  if (!balances) return null;
-  const router = useRouter();
-  const { mutate: remindFriend, isPending: isReminding } = useRemindFriend();
-  const [remindedSet, setRemindedSet] = useState<Set<string>>(new Set());
-
-  const handleRemind = (userId: string, amount: string) => {
-    if (remindedSet.has(userId)) return;
-    const formattedAmount = formatCurrency(amount, balances.currency);
-
-    remindFriend(
-      {
-        friendId: userId,
-        amount: formattedAmount,
-        message: `Reminder: You owe ${formattedAmount} in group "${groupName}".`,
-      },
-      { onSuccess: () => setRemindedSet((prev) => new Set(prev).add(userId)) }
-    );
-  };
-
-  return (
-    <div className="grid gap-6 md:grid-cols-2">
-      {/* YOU OWE */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-destructive uppercase tracking-wider flex items-center gap-2 px-2">
-          <div className="w-2 h-2 rounded-full bg-destructive"></div> You Owe
-        </h3>
-        {balances.you_owe.length === 0 ? (
-          <div className="p-8 rounded-[2rem] border border-dashed border-border bg-card text-center">
-            <p className="text-muted-foreground text-sm font-medium">
-              You don't owe anyone.
-            </p>
-          </div>
-        ) : (
-          balances.you_owe.map((item: any) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between p-4 rounded-2xl border border-destructive/20 bg-destructive/5 shadow-sm hover:shadow-md transition-all group"
-            >
-              <div
-                className="flex items-center gap-3 cursor-pointer flex-1"
-                onClick={() => router.push(`/dashboard/friends/${item.id}`)}
-              >
-                <Avatar className="h-10 w-10 border border-background shadow-sm">
-                  <AvatarImage src={item.avatar} />
-                  <AvatarFallback className="bg-destructive/10 text-destructive font-bold">
-                    {item.name[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1">
-                    {item.name}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="font-bold text-destructive font-mono text-lg">
-                  {formatCurrency(item.amount, balances.currency)}
-                </span>
-                <Button
-                  size="sm"
-                  className="h-8 text-xs bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg shadow-sm"
-                  onClick={() =>
-                    onSettleClick({
-                      id: item.id,
-                      name: item.name,
-                      amount: item.amount,
-                      avatar: item.avatar,
-                    })
-                  }
-                >
-                  <Wallet className="h-3 w-3 mr-1" /> Settle
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* OWED TO YOU */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2 px-2">
-          <div className="w-2 h-2 rounded-full bg-secondary"></div> Owed to You
-        </h3>
-        {balances.you_are_owed.length === 0 ? (
-          <div className="p-8 rounded-[2rem] border border-dashed border-border bg-card text-center">
-            <p className="text-muted-foreground text-sm font-medium">
-              No one owes you.
-            </p>
-          </div>
-        ) : (
-          balances.you_are_owed.map((item: any) => {
-            const isReminded = remindedSet.has(item.id);
-            return (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 rounded-2xl border border-secondary/20 bg-secondary/5 shadow-sm hover:shadow-md transition-all group"
-              >
-                <div
-                  className="flex items-center gap-3 cursor-pointer flex-1"
-                  onClick={() => router.push(`/dashboard/friends/${item.id}`)}
-                >
-                  <Avatar className="h-10 w-10 border border-background shadow-sm">
-                    <AvatarImage src={item.avatar} />
-                    <AvatarFallback className="bg-secondary/10 text-secondary font-bold">
-                      {item.name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {item.name}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className="font-bold text-secondary font-mono text-lg">
-                    {formatCurrency(item.amount, balances.currency)}
-                  </span>
-                  <Button
-                    size="sm"
-                    disabled={isReminding || isReminded}
-                    className={cn(
-                      "h-8 text-xs rounded-lg shadow-sm transition-all",
-                      isReminded
-                        ? "bg-muted text-muted-foreground hover:bg-muted cursor-default"
-                        : "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                    )}
-                    onClick={() => handleRemind(item.id, item.amount)}
-                  >
-                    {isReminded ? "Reminded" : "Remind"}
-                  </Button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
     </div>
   );
 }
