@@ -68,7 +68,7 @@ function AuthCallbackContent() {
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-muted-foreground font-medium animate-pulse">
-          Finalizing secure login...
+          Authenticating...
         </p>
       </div>
     </div>
