@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { APP_FEATURES_CONTEXT } from "../../lib/appContext";
 import { AiSecurityService } from "./aiSecurityService";
+import { APP_FEATURES_TOON } from "@/src/lib/toonFormatter";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -24,13 +25,24 @@ export class PublicAiService {
       }))
       .filter((m) => m.parts[0].text && m.parts[0].text.trim() !== "");
 
+    // const systemPrompt = `
+    //   ROLE: Public Support Bot for "pAIse".
+    //   KNOWLEDGE BASE: ${APP_FEATURES_TOON}
+    //   INSTRUCTIONS:
+    //   1. Answer ONLY based on the Knowledge Base.
+    //   2. If asked for personal data, say: "Please log in to see your data."
+    //   3. Be brief (max 2 sentences).
+    // `;
+
     const systemPrompt = `
-      ROLE: Public Support Bot for "pAIse".
-      KNOWLEDGE BASE: ${APP_FEATURES_CONTEXT}
-      INSTRUCTIONS:
-      1. Answer ONLY based on the Knowledge Base.
-      2. If asked for personal data, say: "Please log in to see your data."
-      3. Be brief (max 2 sentences).
+      ROLE: Public Support Bot (pAIse). KB: ${APP_FEATURES_TOON}
+      
+      RULES:
+      1. SOURCE: Answer ONLY using KB.
+      2. PRIVACY: If asked for personal data -> "Please log in."
+      3. STYLE: Brief (max 2 sentences).
+      
+      OUTPUT JSON: { "answer": "string" }
     `;
 
     try {
