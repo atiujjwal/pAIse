@@ -36,6 +36,12 @@ loadEnvFile(path.join(projectDir, '.env'));
 loadEnvFile(path.join(projectDir, '.env.local'));
 console.log('✅ Environment variables loaded.');
 
+// Ensure DIRECT_URL is defined (defaults to DATABASE_URL) to satisfy Prisma validation during migration/build
+if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
+  process.env.DIRECT_URL = process.env.DATABASE_URL;
+  console.log('ℹ️  DIRECT_URL was not set. Defaulted DIRECT_URL to DATABASE_URL.');
+}
+
 const DATABASE_URL = process.env.DATABASE_URL;
 
 function obfuscateUrl(urlStr) {
@@ -113,6 +119,75 @@ async function waitForDatabase(host, port, maxRetries = 15, delayMs = 2000) {
   return false;
 }
 
+// Ensure the database exists before running migrations
+async function ensureDatabaseExists(prismaCliPath) {
+  if (!DATABASE_URL) return;
+
+  const isPostgres = DATABASE_URL.startsWith('postgresql://') || DATABASE_URL.startsWith('postgres://');
+  const isMysql = DATABASE_URL.startsWith('mysql://');
+
+  if (!isPostgres && !isMysql) {
+    console.log('ℹ️ Non-Postgres/MySQL connection string. Skipping database auto-creation check.');
+    return;
+  }
+
+  try {
+    const url = new URL(DATABASE_URL);
+    const dbName = url.pathname.substring(1);
+    if (!dbName) {
+      console.log('ℹ️ No database name found in connection string. Skipping database auto-creation check.');
+      return;
+    }
+
+    console.log(`🔍 Checking if database "${dbName}" exists...`);
+
+    // Import PrismaClient dynamically (assumed to be generated already)
+    const { PrismaClient } = require('@prisma/client');
+
+    // Create a connection URL pointing to the default database (postgres/mysql) to perform the check/creation
+    const defaultUrl = new URL(DATABASE_URL);
+    defaultUrl.pathname = isPostgres ? '/postgres' : '/mysql';
+    const defaultDbUrl = defaultUrl.toString();
+
+    const tempClient = new PrismaClient({
+      datasources: {
+        db: {
+          url: defaultDbUrl,
+        },
+      },
+    });
+
+    try {
+      if (isPostgres) {
+        // Query pg_database to check if the target database exists
+        const result = await tempClient.$queryRawUnsafe(
+          `SELECT 1 FROM pg_database WHERE datname = $1`,
+          dbName
+        );
+
+        if (result.length === 0) {
+          console.log(`➕ Database "${dbName}" does not exist. Attempting to create...`);
+          // Escape database name by doubling double-quotes
+          const escapedDbName = dbName.replace(/"/g, '""');
+          await tempClient.$executeRawUnsafe(`CREATE DATABASE "${escapedDbName}"`);
+          console.log(`✅ Database "${dbName}" created successfully!`);
+        } else {
+          console.log(`✅ Database "${dbName}" already exists.`);
+        }
+      } else if (isMysql) {
+        // MySQL supports IF NOT EXISTS natively
+        const escapedDbName = dbName.replace(/`/g, '``');
+        await tempClient.$executeRawUnsafe(`CREATE DATABASE IF NOT EXISTS \`${escapedDbName}\``);
+        console.log(`✅ Database "${dbName}" ensured (created if not exists).`);
+      }
+    } finally {
+      await tempClient.$disconnect();
+    }
+  } catch (err) {
+    console.warn(`⚠️ Warning: Could not check or create database. It may already exist or user lacks permission:`, err.message);
+  }
+}
+
 async function run() {
   let host = null;
   let port = null;
@@ -157,7 +232,14 @@ async function run() {
       process.exit(1);
     }
 
-    // 1. Run Migrations (or db push depending on settings)
+    // 1. Generate Prisma Client first to ensure it's generated and up to date before we load it
+    console.log('📦 Generating Prisma Client...');
+    execSync(`node "${prismaCliPath}" generate`, { cwd: projectDir, stdio: 'inherit' });
+
+    // 2. Ensure the database itself exists
+    await ensureDatabaseExists(prismaCliPath);
+
+    // 3. Run Migrations (or db push depending on settings)
     if (process.env.DB_PUSH === 'true') {
       console.log('🚀 Applying schema changes via prisma db push...');
       execSync(`node "${prismaCliPath}" db push --accept-data-loss`, { cwd: projectDir, stdio: 'inherit' });
@@ -165,10 +247,6 @@ async function run() {
       console.log('🚀 Running database migrations via prisma migrate deploy...');
       execSync(`node "${prismaCliPath}" migrate deploy`, { cwd: projectDir, stdio: 'inherit' });
     }
-
-    // 2. Generate Prisma Client to ensure it is fully sync'd
-    console.log('📦 Generating Prisma Client...');
-    execSync(`node "${prismaCliPath}" generate`, { cwd: projectDir, stdio: 'inherit' });
 
     console.log('🎉 Database setup completed successfully!');
   } catch (err) {
@@ -182,3 +260,4 @@ async function run() {
 }
 
 run();
+
