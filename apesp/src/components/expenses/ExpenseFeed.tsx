@@ -157,7 +157,7 @@ export function ExpenseFeed({ expenses, isLoading, isError }: ExpenseFeedProps) 
 
   const itemVariants = {
     hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100, damping: 15 } },
     exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
   };
 
