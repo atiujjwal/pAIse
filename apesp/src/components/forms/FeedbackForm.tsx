@@ -55,29 +55,29 @@ export function FeedbackForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Name</Label>
             <Input
               id="name"
               type="text"
               name="name"
               placeholder="Your name"
-              className="bg-background"
+              className="bg-muted/30 focus:bg-background border border-border/50 focus:border-primary/50 h-12 text-sm transition-all"
               required
             />
             <ValidationError prefix="Name" field="name" errors={state.errors} />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Email</Label>
             <Input
               id="email"
               type="email"
               name="email"
               placeholder="you@example.com"
-              className="bg-background"
+              className="bg-muted/30 focus:bg-background border border-border/50 focus:border-primary/50 h-12 text-sm transition-all"
               required
             />
             <ValidationError
@@ -88,14 +88,14 @@ export function FeedbackForm() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="category">Feedback Type</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="category" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Feedback Type</Label>
           <Select
             name="category"
             defaultValue="feedback"
             onValueChange={setCategory}
           >
-            <SelectTrigger className="bg-background">
+            <SelectTrigger className="bg-muted/30 focus:bg-background border border-border/50 focus:border-primary/50 h-12 text-sm transition-all">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -119,8 +119,8 @@ export function FeedbackForm() {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="message">Message</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="message" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Message</Label>
           <Textarea
             id="message"
             name="message"
@@ -129,7 +129,7 @@ export function FeedbackForm() {
                 ? "Describe what happened, steps to reproduce, and what you expected..."
                 : "Tell us what's on your mind..."
             }
-            className="min-h-[120px] bg-background resize-none"
+            className="min-h-[120px] bg-muted/30 focus:bg-background border border-border/50 focus:border-primary/50 text-sm transition-all resize-none"
             required
           />
           <ValidationError
@@ -142,7 +142,7 @@ export function FeedbackForm() {
         <Button
           type="submit"
           disabled={state.submitting}
-          className="w-full h-12 text-lg rounded-xl shadow-lg shadow-primary/20"
+          className="w-full h-12 md:h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-secondary text-white hover:opacity-95 transition-all shadow-lg shadow-primary/20 border-none"
         >
           {state.submitting ? (
             <>

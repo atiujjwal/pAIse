@@ -165,22 +165,22 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary font-sans transition-colors duration-300">
+      {/* Background Decor */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px] animate-pulse mix-blend-multiply dark:mix-blend-screen" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[128px] animate-pulse delay-700 mix-blend-multiply dark:mix-blend-screen" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[160px] opacity-50" />
       </div>
 
-      {/* --- Header --- */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl transition-all">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center">
             <Link
               href="/"
-              className="flex items-center gap-3 group"
+              className="flex items-center gap-2 md:gap-3 group"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             >
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
                 <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                   <img
                     src={pAIse_LOGO}
@@ -189,13 +189,13 @@ export default function LandingPage() {
                   />
                 </div>
               </div>
-              <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+              <span className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
                 pAIse
               </span>
             </Link>
           </div>
 
-          {/* --- Navigation Menu --- */}
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             {["Home", "Features", "FAQ", "Contact"].map((item) => (
               <Link
@@ -213,7 +213,7 @@ export default function LandingPage() {
             ))}
           </nav>
 
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-2 md:gap-3 items-center">
             <ThemeToggle />
             <Button
               variant="ghost"
@@ -229,12 +229,11 @@ export default function LandingPage() {
               <Link href="/auth/register">Start for Free</Link>
             </Button>
 
-            {/* Hamburger Trigger for Mobile Menu */}
+            {/* Hamburger Trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center justify-center p-2 rounded-xl border border-border/50 bg-card/30 hover:bg-card text-muted-foreground hover:text-foreground transition-all h-11 w-11 touch-manipulation"
+              className="md:hidden flex items-center justify-center p-2 rounded-xl border border-border/50 bg-card/30 hover:bg-card text-muted-foreground hover:text-foreground transition-all h-10 w-10 touch-manipulation"
               aria-label="Toggle menu"
-              style={{ minWidth: "44px", minHeight: "44px" }}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -249,7 +248,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-x-0 top-20 z-40 md:hidden bg-background/95 backdrop-blur-xl border-b border-border shadow-2xl p-6 flex flex-col gap-6"
+              className="absolute inset-x-0 top-16 md:top-20 z-40 md:hidden bg-background/95 backdrop-blur-xl border-b border-border shadow-2xl p-6 flex flex-col gap-6"
             >
               <nav className="flex flex-col gap-4">
                 {["Home", "Features", "FAQ", "Contact"].map((item) => (
@@ -294,30 +293,30 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* --- Hero Section --- */}
-        <section className="relative px-6 pt-20 pb-24 md:pt-32 md:pb-32 text-center max-w-5xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <section className="relative px-4 sm:px-6 pt-16 pb-12 md:pt-32 md:pb-24 text-center max-w-5xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-6 md:mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium text-primary tracking-wide">
-              AI-Powered Expense Tracking V1.0
+            <span className="text-[11px] sm:text-xs md:text-sm font-medium text-primary tracking-wide">
+              AI-Powered Expense Tracking V2.0
             </span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 text-balance">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight mb-6 md:mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 text-balance">
             Split bills, <br className="hidden md:block" />
             <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
               not friendships.
             </span>
           </h1>
 
-          <p className="mx-auto mb-10 max-w-2xl text-xl text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200">
+          <p className="mx-auto mb-8 md:mb-10 max-w-2xl text-lg md:text-xl text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 text-balance px-2">
             Stop arguing over math. Scan receipts, use voice commands, and let
             our AI handle the complex splitting logic instantly.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-400">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-400">
             <Button
               size="lg"
-              className="h-14 w-full sm:w-auto px-8 text-lg font-semibold bg-gradient-to-r from-primary to-secondary text-white rounded-2xl shadow-xl hover:shadow-primary/20 transition-transform hover:-translate-y-1 border-none"
+              className="h-14 w-full sm:w-auto px-8 text-base md:text-lg font-semibold bg-gradient-to-r from-primary to-secondary text-white rounded-2xl shadow-xl hover:shadow-primary/20 transition-transform hover:-translate-y-1 border-none touch-manipulation"
               asChild
             >
               <Link href="/auth/register">
@@ -328,7 +327,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="outline"
-              className="h-14 w-full sm:w-auto px-8 text-lg font-semibold bg-card/50 border-border text-foreground hover:bg-muted hover:text-foreground rounded-2xl backdrop-blur-sm"
+              className="h-14 w-full sm:w-auto px-8 text-base md:text-lg font-semibold bg-card/50 border-border text-foreground hover:bg-muted hover:text-foreground rounded-2xl backdrop-blur-sm touch-manipulation"
               asChild
             >
               <Link
@@ -341,7 +340,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="ghost"
-              className="h-14 w-full sm:w-auto px-6 text-lg text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-2xl"
+              className="h-14 w-full sm:w-auto px-6 text-base md:text-lg text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-2xl touch-manipulation"
               onClick={(e) => handleScroll(e as any, "feedback")}
             >
               <MessageSquare className="mr-2 h-5 w-5" /> Suggestion / Bug
@@ -352,48 +351,49 @@ export default function LandingPage() {
         {/* --- Features Grid --- */}
         <section
           id="features"
-          className="py-24 px-6 border-t border-border bg-muted/20"
+          className="py-12 md:py-24 px-4 sm:px-6 border-t border-border bg-muted/20"
         >
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 text-foreground text-balance">
+            <div className="text-center mb-8 md:mb-16">
+              <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-3 text-foreground text-balance">
                 Everything you need to settle up
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-balance px-2">
                 Built for friends, groups, and roommates. pAIse handles the
                 chaos of shared finances so you don't have to.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Explicitly 2 columns on mobile */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
               {features.map((feature, i) => {
                 const Icon = feature.icon;
                 return (
                   <div
                     key={i}
-                    className="group relative flex flex-col items-start p-8 rounded-[2rem] bg-card border border-border shadow-sm transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 overflow-hidden"
+                    className="group relative flex flex-col items-start p-4 md:p-6 rounded-2xl md:rounded-[2rem] bg-card border border-border/50 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 overflow-hidden"
                   >
                     <div
                       className={cn(
-                        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 rounded-[2rem] transition-all duration-500 pointer-events-none",
+                        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 rounded-2xl md:rounded-[2rem] transition-all duration-500 pointer-events-none",
                         feature.gradient
                       )}
                     />
-                    <div className="relative z-10">
+                    <div className="relative z-10 w-full">
                       <div
                         className={cn(
-                          "mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner",
+                          "mb-3 md:mb-5 inline-flex h-10 w-10 md:h-14 md:w-14 items-center justify-center rounded-xl md:rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner",
                           feature.bg
                         )}
                       >
-                        <Icon className={cn("h-7 w-7", feature.color)} />
+                        <Icon className={cn("h-5 w-5 md:h-7 md:w-7", feature.color)} />
                       </div>
 
-                      <h3 className="mb-3 text-xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                      <h3 className="mb-1 md:mb-2 text-sm md:text-base font-bold leading-tight text-foreground group-hover:text-primary transition-colors">
                         {feature.title}
                       </h3>
 
-                      <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+                      <p className="text-muted-foreground leading-snug text-[11px] md:text-sm line-clamp-3">
                         {feature.desc}
                       </p>
                     </div>
@@ -404,35 +404,34 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* --- Help & Support (FAQ) --- */}
+        {/* --- FAQ Section --- */}
         <section
           id="faq"
-          className="py-24 px-6 max-w-4xl mx-auto border-t border-border"
+          className="py-12 md:py-24 px-4 sm:px-6 max-w-4xl mx-auto border-t border-border"
         >
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground text-balance">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 text-foreground text-balance">
               Frequently Asked Questions
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm md:text-base">
               Got questions? We've got answers.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="divide-y divide-border/50 border-t border-b border-border/50">
             {faqs.map((faq, i) => (
               <details
                 key={i}
-                className="group rounded-2xl border border-border bg-card p-1 shadow-sm transition-all open:ring-1 open:ring-primary/20 hover:border-primary/30"
+                className="group py-1 transition-all"
               >
-                <summary className="flex cursor-pointer items-center justify-between gap-4 rounded-xl p-5 font-bold text-lg marker:content-none transition-colors hover:bg-muted/50">
-                  <span className="flex items-center gap-3 text-left text-foreground">
-                    <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <summary className="flex cursor-pointer items-center justify-between gap-3 py-4 px-2 font-semibold text-sm md:text-base marker:content-none transition-colors hover:bg-muted/30 touch-manipulation min-h-[44px]">
+                  <span className="text-left text-foreground leading-snug">
                     {faq.q}
                   </span>
-                  <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-open:rotate-180 shrink-0" />
+                  <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/85 transition-transform duration-200 group-open:rotate-180 shrink-0 ml-2" />
                 </summary>
-                <div className="px-6 pb-6 pt-2 text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="ml-8 border-l-2 border-border pl-4 text-sm md:text-base">
+                <div className="px-2 pb-4 pt-1 text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="text-[13px] md:text-sm text-muted-foreground/90 pl-0">
                     {faq.a}
                   </div>
                 </div>
@@ -444,18 +443,18 @@ export default function LandingPage() {
         {/* --- Feedback Section --- */}
         <section
           id="feedback"
-          className="py-24 px-6 border-t border-border bg-muted/20"
+          className="py-12 md:py-24 px-4 sm:px-6 border-t border-border bg-muted/20"
         >
-          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Left: Text */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
+            <div className="space-y-5 md:space-y-6 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider mx-auto md:mx-0">
                 Beta Feedback
               </div>
               <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground text-balance">
                 Help us shape the future of pAIse.
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed text-balance">
                 We are constantly improving. Whether you've spotted a glitch or
                 have a brilliant idea for a new feature, we want to hear from
                 you directly. Use the form to send us your thoughts immediately.
@@ -463,8 +462,8 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Form Component */}
-            <div className="relative p-1 rounded-[2.5rem] bg-gradient-to-tr from-primary/20 to-secondary/20 shadow-2xl">
-              <div className="p-6 rounded-[2.3rem] bg-card border border-border/50 backdrop-blur-xl">
+            <div className="relative md:p-1 md:rounded-[2.5rem] md:bg-gradient-to-tr md:from-primary/20 md:to-secondary/20 md:shadow-2xl w-full max-w-md md:max-w-full mx-auto">
+              <div className="p-0 md:p-6 md:rounded-[2.3rem] md:bg-card md:border md:border-border/50 md:backdrop-blur-xl">
                 <FeedbackForm />
               </div>
             </div>
@@ -472,24 +471,24 @@ export default function LandingPage() {
         </section>
 
         {/* --- CTA Section --- */}
-        <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-1 shadow-2xl shadow-primary/20">
-            <div className="relative rounded-[22px] bg-background/95 px-6 py-16 md:px-12 text-center text-foreground overflow-hidden dark:bg-slate-950">
+        <section className="py-12 md:py-20 px-2 sm:px-6">
+          <div className="max-w-5xl mx-auto rounded-2xl md:rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-[1px] md:p-1 shadow-xl md:shadow-2xl shadow-primary/20">
+            <div className="relative rounded-2xl md:rounded-[22px] bg-background/95 px-5 py-10 md:px-12 md:py-16 text-center text-foreground overflow-hidden dark:bg-slate-950">
               {/* Abstract Shapes */}
-              <div className="absolute top-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+              <div className="absolute top-0 left-0 w-48 md:w-64 h-48 md:h-64 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute bottom-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-secondary/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
               <div className="relative z-10">
-                <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight text-balance">
+                <h2 className="text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-balance">
                   Ready to settle up?
                 </h2>
-                <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+                <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto text-balance">
                   Join thousands of users who trust pAIse to manage their shared
                   expenses effortlessly.
                 </p>
                 <Button
                   size="lg"
-                  className="h-14 px-8 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-lg shadow-xl hover:scale-105 transition-all border-none"
+                  className="h-14 w-full sm:w-auto px-8 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-lg shadow-xl hover:scale-105 transition-all border-none touch-manipulation"
                   asChild
                 >
                   <Link href="/auth/register">Create Free Account</Link>
@@ -502,42 +501,45 @@ export default function LandingPage() {
         {/* --- Contact Section --- */}
         <section
           id="contact"
-          className="py-24 px-6 max-w-5xl mx-auto border-t border-border"
+          className="py-12 md:py-24 px-4 sm:px-6 max-w-5xl mx-auto border-t border-border"
         >
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground text-balance">
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-3xl font-bold tracking-tight mb-3 md:mb-4 text-foreground text-balance">
               Get in Touch
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">
+            <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto text-balance">
               Want to contribute, collaborate, or just say hi? Here is how you
               can reach us.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-3 md:grid md:grid-cols-3 md:gap-6">
             {/* Email Card */}
-            <div className="flex flex-col items-center p-6 sm:p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group">
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Mail className="h-6 w-6" />
+            <div className="flex flex-row items-center gap-4 p-4 md:flex-col md:items-center md:text-center bg-card border border-border rounded-2xl md:rounded-3xl shadow-sm hover:border-primary/50 transition-all group w-full">
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                <Mail className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <h3 className="font-bold text-lg mb-2 text-foreground">
-                Email Us
-              </h3>
-              <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full border border-border max-w-full overflow-hidden">
-                <span className="text-sm text-muted-foreground font-medium truncate">
-                  paiseapesp@gmail.com
-                </span>
-                <button
-                  onClick={handleCopyEmail}
-                  className="text-primary hover:scale-110 transition-transform shrink-0"
-                  title="Copy"
-                >
-                  {copiedEmail ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
+              <div className="flex flex-col items-start md:items-center text-left md:text-center min-w-0 flex-1 w-full gap-1">
+                <h3 className="font-bold text-sm md:text-lg text-foreground">
+                  Email Us
+                </h3>
+                <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full border border-border max-w-full w-full justify-center overflow-hidden">
+                  <span className="text-xs md:text-sm text-muted-foreground font-medium truncate">
+                    paiseapesp@gmail.com
+                  </span>
+                  <button
+                    onClick={handleCopyEmail}
+                    className="text-primary hover:scale-110 transition-transform shrink-0 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2"
+                    title="Copy"
+                    aria-label="Copy email address"
+                  >
+                    {copiedEmail ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -545,14 +547,16 @@ export default function LandingPage() {
             <Link
               href="https://github.com/atiujjwal/pAIse"
               target="_blank"
-              className="flex flex-col items-center p-6 sm:p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
+              className="flex flex-row items-center gap-4 p-4 md:flex-col md:items-center md:text-center bg-card border border-border rounded-2xl md:rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1 touch-manipulation w-full"
             >
-              <div className="h-12 w-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Github className="h-6 w-6" />
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-muted text-muted-foreground flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                <Github className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <h3 className="font-bold text-lg mb-2 text-foreground">GitHub</h3>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                Contribute <ExternalLink className="h-3 w-3" />
+              <div className="flex flex-col items-start md:items-center text-left md:text-center flex-1 w-full gap-1">
+                <h3 className="font-bold text-sm md:text-lg text-foreground">GitHub</h3>
+                <div className="flex items-center justify-start md:justify-center gap-1 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors w-full min-h-[32px]">
+                  Contribute <ExternalLink className="h-3 w-3" />
+                </div>
               </div>
             </Link>
 
@@ -560,27 +564,28 @@ export default function LandingPage() {
             <Link
               href="https://www.linkedin.com/in/atiujjwal/"
               target="_blank"
-              className="flex flex-col items-center p-6 sm:p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
+              className="flex flex-row items-center gap-4 p-4 md:flex-col md:items-center md:text-center bg-card border border-border rounded-2xl md:rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1 touch-manipulation w-full"
             >
-              <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Linkedin className="h-6 w-6" />
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                <Linkedin className="h-5 w-5 md:h-6 md:w-6" />
               </div>
-              <h3 className="font-bold text-lg mb-2 text-foreground">
-                LinkedIn
-              </h3>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                Connect <ExternalLink className="h-3 w-3" />
+              <div className="flex flex-col items-start md:items-center text-left md:text-center flex-1 w-full gap-1">
+                <h3 className="font-bold text-sm md:text-lg text-foreground">
+                  LinkedIn
+                </h3>
+                <div className="flex items-center justify-start md:justify-center gap-1 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors w-full min-h-[32px]">
+                  Connect <ExternalLink className="h-3 w-3" />
+                </div>
               </div>
             </Link>
           </div>
         </section>
       </main>
 
-      {/* --- Footer --- */}
-      <footer className="border-t border-border bg-card py-12 px-6">
-        <div className="max-w-6xl mx-auto mb-12 flex flex-col items-center text-center">
-          <Link href="/" className="flex items-center gap-3 group mb-4">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
+      <footer className="border-t border-border bg-card py-10 md:py-12 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto mb-10 flex flex-col items-center text-center">
+          <Link href="/" className="flex items-center gap-2 md:gap-3 group mb-4 touch-manipulation">
+            <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
               <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                 <img
                   src={pAIse_LOGO}
@@ -589,28 +594,28 @@ export default function LandingPage() {
                 />
               </div>
             </div>
-            <span className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+            <span className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
               pAIse
             </span>
           </Link>
-          <p className="text-muted-foreground max-w-md leading-relaxed text-lg">
+          <p className="text-muted-foreground max-w-md leading-relaxed text-base md:text-lg text-balance px-2">
             The smartest way to split bills and track shared expenses with
             friends, roommates, and family.
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>© 2025 pAIse. All rights reserved.</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+        <div className="max-w-6xl mx-auto pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-muted-foreground">
+          <p className="order-2 md:order-1">© 2025 pAIse. All rights reserved.</p>
+          <div className="order-1 md:order-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <button
               onClick={() => setShowPrivacy(true)}
-              className="hover:text-primary transition-colors cursor-pointer"
+              className="hover:text-primary transition-colors cursor-pointer touch-manipulation py-2 px-1"
             >
               Privacy Policy
             </button>
             <button
               onClick={() => setShowSecurity(true)}
-              className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
+              className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5 touch-manipulation py-2 px-1"
             >
               <ShieldCheck className="h-4 w-4" /> Security Features
             </button>
