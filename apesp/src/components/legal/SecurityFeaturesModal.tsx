@@ -57,7 +57,7 @@ export function SecurityFeaturesModal({
         {/* --- INNER WRAPPER for scroll handling --- */}
         <div className="flex flex-col h-[85vh] w-full">
           {/* --- Header (Fixed) --- */}
-          <DialogHeader className="px-8 pt-8 pb-4 border-b border-border/50 bg-muted/20 shrink-0 text-left">
+          <DialogHeader className="px-5 sm:px-8 pt-6 sm:pt-8 pb-4 border-b border-border/50 bg-muted/20 shrink-0 text-left">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
                 <ShieldCheck className="h-6 w-6" />
@@ -87,7 +87,7 @@ export function SecurityFeaturesModal({
 
           {/* --- Scrollable Body --- */}
           <div className="flex-1 overflow-y-auto font-sans">
-            <div className="px-8 py-6 space-y-6 text-sm leading-relaxed text-muted-foreground">
+            <div className="px-5 sm:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6 text-sm leading-relaxed text-muted-foreground">
               {/* 1. Executive Summary */}
               <div>
                 <SectionHeader icon={FileBadge} title="1. Executive Summary" />
@@ -390,7 +390,7 @@ export function SecurityFeaturesModal({
           </div>
 
           {/* --- Footer (Fixed) --- */}
-          <div className="p-6 border-t border-border bg-background shrink-0">
+          <div className="p-5 sm:p-6 border-t border-border bg-background shrink-0">
             <Button
               className="w-full h-12 rounded-xl text-base font-medium shadow-lg shadow-primary/10"
               onClick={() => onOpenChange(false)}

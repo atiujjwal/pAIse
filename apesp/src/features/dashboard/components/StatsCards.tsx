@@ -41,7 +41,7 @@ export function StatsCards({
       {isLoadingSnapshot ? (
         <Skeleton className="h-[280px] rounded-[2.5rem]" />
       ) : (
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[280px]">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-5 sm:p-8 text-white shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[280px]">
           {/* Decorative Background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
@@ -58,7 +58,7 @@ export function StatsCards({
             </div>
 
             <div className="flex items-baseline gap-2">
-              <h3 className="text-5xl font-mono font-bold tracking-tighter drop-shadow-sm">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-mono font-bold tracking-tighter drop-shadow-sm truncate">
                 {formatCurrency(String(netBalance), "INR")}
               </h3>
             </div>
@@ -78,9 +78,9 @@ export function StatsCards({
           </div>
 
           {/* Bottom Section: Breakdown Grid */}
-          <div className="relative z-10 mt-8 grid grid-cols-2 gap-4">
+          <div className="relative z-10 mt-8 grid grid-cols-2 gap-3 sm:gap-4">
             {/* Groups Block */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex flex-col gap-1 transition-colors hover:bg-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 flex flex-col gap-1 transition-colors hover:bg-white/20 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Users className="h-3.5 w-3.5 opacity-80" />
                 <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
@@ -89,7 +89,7 @@ export function StatsCards({
               </div>
               <span
                 className={cn(
-                  "text-xl font-mono font-bold",
+                  "text-base sm:text-lg md:text-xl font-mono font-bold truncate",
                   groupNet >= 0 ? "text-emerald-100" : "text-rose-100"
                 )}
               >
@@ -99,7 +99,7 @@ export function StatsCards({
             </div>
 
             {/* Friends Block */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex flex-col gap-1 transition-colors hover:bg-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 flex flex-col gap-1 transition-colors hover:bg-white/20 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <User className="h-3.5 w-3.5 opacity-80" />
                 <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
@@ -108,7 +108,7 @@ export function StatsCards({
               </div>
               <span
                 className={cn(
-                  "text-xl font-mono font-bold",
+                  "text-base sm:text-lg md:text-xl font-mono font-bold truncate",
                   friendNet >= 0 ? "text-emerald-100" : "text-rose-100"
                 )}
               >
@@ -121,7 +121,7 @@ export function StatsCards({
       )}
 
       {/* --- CARD: SPENDING ANALYSIS  --- */}
-      <div className="rounded-[2.5rem] border border-border bg-card p-8 shadow-sm flex flex-col justify-between min-h-[280px]">
+      <div className="rounded-[2.5rem] border border-border bg-card p-5 sm:p-8 shadow-sm flex flex-col justify-between min-h-[280px]">
         <div className="flex items-start justify-between mb-6">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ export function StatsCards({
             {isLoadingTrends ? (
               <Skeleton className="h-10 w-48 mt-3 rounded-lg" />
             ) : (
-              <h3 className="text-4xl font-bold text-foreground mt-3 font-mono tracking-tight animate-in fade-in">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mt-3 font-mono tracking-tight animate-in fade-in truncate">
                 {formatCurrency(String(totalSpent), "INR")}
               </h3>
             )}
@@ -185,13 +185,13 @@ export function StatsCards({
             </div>
 
             {/* Legend Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <span className="w-2 h-2 rounded-full bg-primary" />
                   Group Expenses
                 </div>
-                <span className="text-lg font-bold text-foreground pl-4">
+                <span className="text-base sm:text-lg font-bold text-foreground pl-2 sm:pl-4 truncate">
                   {formatCurrency(String(groupSpent), "INR")}
                 </span>
               </div>
@@ -200,7 +200,7 @@ export function StatsCards({
                   <span className="w-2 h-2 rounded-full bg-secondary" />
                   Direct Expenses
                 </div>
-                <span className="text-lg font-bold text-foreground pl-4">
+                <span className="text-base sm:text-lg font-bold text-foreground pl-2 sm:pl-4 truncate">
                   {formatCurrency(String(friendSpent), "INR")}
                 </span>
               </div>

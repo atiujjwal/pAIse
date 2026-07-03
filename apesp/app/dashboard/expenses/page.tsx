@@ -17,143 +17,9 @@ import {
 import { Button } from "@/src/components/ui/Button";
 import { FilterBar } from "@/src/components/expenses/FilterBar";
 import { useExpenses } from "@/src/features/expenses/api/expense-queries";
-import { Skeleton } from "@/src/components/ui/Skeleton";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/Avatar";
+import { ExpenseFeed } from "@/src/components/expenses/ExpenseFeed";
 import { formatCurrency, cn } from "@/src/lib/utils";
 import { useAuthStore } from "@/src/features/auth/store";
-
-// --- Local Component: Expense Card ---
-const ExpenseCard = ({ expense }: { expense: any }) => {
-  const { user } = useAuthStore();
-  const isGroupExpense = !!expense.group;
-
-  // User Specific Financials
-  const userPayment = expense.payers.find((p: any) => p.user.id === user?.id);
-  const userSplit = expense.splits.find((s: any) => s.user.id === user?.id);
-
-  const paidAmount = userPayment ? parseFloat(userPayment.amount) : 0;
-  const shareAmount = userSplit ? parseFloat(userSplit.amount_owed) : 0;
-
-  // Determine Display Avatar & Name
-  let avatarUrl: string | null | undefined = null;
-  let displayName: string = "";
-  let FallbackIcon = User;
-
-  if (isGroupExpense) {
-    avatarUrl = expense.group.avatar;
-    displayName = expense.group.name;
-    FallbackIcon = Layers;
-  } else {
-    // For friend expenses, show the *other* person if possible
-    const otherPerson = expense.splits.find(
-      (split: any) => split.user.id !== user?.id
-    )?.user;
-
-    if (otherPerson) {
-      avatarUrl = otherPerson.avatar;
-      displayName = otherPerson.name;
-    } else {
-      avatarUrl = expense.created_by.avatar;
-      displayName = expense.created_by.name;
-    }
-    FallbackIcon = User;
-  }
-
-  return (
-    <div className="group flex items-center justify-between p-5 hover:bg-muted/40 transition-all duration-200">
-      <div className="flex items-center gap-5 overflow-hidden">
-        {/* Dynamic Avatar Section */}
-        <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
-          <AvatarImage src={avatarUrl || undefined} className="object-cover" />
-          <AvatarFallback
-            className={cn(
-              "text-xs font-bold",
-              isGroupExpense
-                ? "bg-primary/10 text-primary"
-                : "bg-secondary/10 text-secondary"
-            )}
-          >
-            {displayName?.[0]?.toUpperCase() || (
-              <FallbackIcon className="h-5 w-5" />
-            )}
-          </AvatarFallback>
-        </Avatar>
-
-        {/* Main Content */}
-        <div className="flex flex-col min-w-0 gap-1">
-          <div className="flex items-center gap-2">
-            <h4 className="font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">
-              {expense.description}
-            </h4>
-            <span
-              className={cn(
-                "hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border",
-                isGroupExpense
-                  ? "bg-primary/5 text-primary border-primary/10"
-                  : "bg-secondary/5 text-secondary border-secondary/10"
-              )}
-            >
-              {isGroupExpense ? "Group" : "Friend"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>
-                {new Date(expense.date).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-            </div>
-            <span className="text-border">•</span>
-            <span className="capitalize font-medium">{expense.category}</span>
-            <span className="text-border">•</span>
-            <span className="truncate max-w-[100px]">
-              {isGroupExpense ? expense.group.name : displayName}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Amount & User Context Section */}
-      <div className="text-right pl-2 flex flex-col items-end">
-        {/* Total Expense Amount */}
-        <span className="block font-mono font-bold text-foreground text-lg group-hover:scale-105 transition-transform origin-right">
-          {formatCurrency(expense.amount, expense.currency)}
-        </span>
-
-        {/* User Specific Details - The Key Change */}
-        <div className="flex flex-col items-end gap-0.5 mt-1">
-          {paidAmount > 0 && (
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-              You paid {formatCurrency(String(paidAmount), expense.currency)}
-            </span>
-          )}
-
-          {shareAmount > 0 && (
-            <span className="text-[10px] font-medium text-muted-foreground">
-              Your share:{" "}
-              {formatCurrency(String(shareAmount), expense.currency)}
-            </span>
-          )}
-
-          {/* Fallback if user is neither payer nor splitter (rare watcher case) */}
-          {paidAmount === 0 && shareAmount === 0 && (
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              {expense.split_type}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // --- Main Page Component ---
 
@@ -280,75 +146,12 @@ export default function ExpensesPage() {
       </div>
 
       {/* --- CONTENT LIST --- */}
-      <div className="rounded-[2rem] border border-border bg-card shadow-sm overflow-hidden min-h-[400px]">
-        {isLoading ? (
-          <div className="p-6 space-y-6">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-3 w-1/4" />
-                </div>
-                <Skeleton className="h-8 w-24 rounded-lg" />
-              </div>
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="p-4 bg-destructive/10 rounded-full mb-4">
-              <Receipt className="h-8 w-8 text-destructive" />
-            </div>
-            <h3 className="text-foreground font-bold text-lg mb-1">
-              Unable to load expenses
-            </h3>
-            <p className="text-muted-foreground text-sm mb-6">
-              Something went wrong while fetching data.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              className="rounded-xl"
-            >
-              Retry
-            </Button>
-          </div>
-        ) : expenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-            <div className="h-24 w-24 bg-muted/30 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner border border-border transform -rotate-3">
-              <Receipt className="h-12 w-12 text-muted-foreground/50" />
-            </div>
-            <h3 className="text-2xl font-bold text-foreground">
-              No expenses found
-            </h3>
-            <p className="text-muted-foreground max-w-sm mt-2 mb-8 leading-relaxed">
-              We couldn't find any expenses matching your filters. Try adjusting
-              them or create a new one.
-            </p>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                handleTypeChange("all");
-                router.push("/dashboard/expenses");
-              }}
-              className="rounded-xl"
-            >
-              Clear All Filters
-            </Button>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {expenses.map((expense: any) => (
-              <Link
-                key={expense.id}
-                href={`/dashboard/expenses/${expense.id}`}
-                className="block"
-              >
-                <ExpenseCard expense={expense} />
-              </Link>
-            ))}
-          </div>
-        )}
+      <div className="min-h-[400px]">
+        <ExpenseFeed
+          expenses={expenses}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
     </div>
   );

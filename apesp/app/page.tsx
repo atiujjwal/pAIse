@@ -22,6 +22,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Check,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { pAIse_LOGO } from "@/src/lib/mediaUrls";
@@ -32,6 +34,7 @@ import { PrivacyPolicyModal } from "@/src/components/legal/PrivacyPolicyModal";
 import { SecurityFeaturesModal } from "@/src/components/legal/SecurityFeaturesModal";
 import { useState } from "react";
 import { cn } from "@/src/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- FEATURES DATA ---
 const features = [
@@ -142,6 +145,7 @@ export default function LandingPage() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showSecurity, setShowSecurity] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -213,19 +217,79 @@ export default function LandingPage() {
             <ThemeToggle />
             <Button
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted hidden sm:flex rounded-xl"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted hidden md:flex rounded-xl"
               asChild
             >
               <Link href="/auth/login">Log in</Link>
             </Button>
             <Button
-              className="px-5 py-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all border-none"
+              className="px-5 py-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all border-none hidden md:flex"
               asChild
             >
               <Link href="/auth/register">Start for Free</Link>
             </Button>
+
+            {/* Hamburger Trigger for Mobile Menu */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex items-center justify-center p-2 rounded-xl border border-border/50 bg-card/30 hover:bg-card text-muted-foreground hover:text-foreground transition-all h-11 w-11 touch-manipulation"
+              aria-label="Toggle menu"
+              style={{ minWidth: "44px", minHeight: "44px" }}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-x-0 top-20 z-40 md:hidden bg-background/95 backdrop-blur-xl border-b border-border shadow-2xl p-6 flex flex-col gap-6"
+            >
+              <nav className="flex flex-col gap-4">
+                {["Home", "Features", "FAQ", "Contact"].map((item) => (
+                  <Link
+                    key={item}
+                    href={item === "Home" ? "#" : `#${item.toLowerCase()}`}
+                    onClick={(e) => {
+                      setMobileMenuOpen(false);
+                      item === "Home"
+                        ? window.scrollTo({ top: 0, behavior: "smooth" })
+                        : handleScroll(e, item.toLowerCase());
+                    }}
+                    className="text-lg font-semibold text-muted-foreground hover:text-foreground py-2 transition-colors border-b border-border/40 touch-manipulation"
+                    style={{ minHeight: "44px" }}
+                  >
+                    {item}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 rounded-xl text-base font-bold bg-card touch-manipulation"
+                  asChild
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link href="/auth/login">Log in</Link>
+                </Button>
+                <Button
+                  className="w-full h-12 bg-gradient-to-r from-primary to-secondary text-white rounded-xl text-base font-bold border-none touch-manipulation"
+                  asChild
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link href="/auth/register">Start for Free</Link>
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main className="flex-1">
@@ -233,12 +297,12 @@ export default function LandingPage() {
         <section className="relative px-6 pt-20 pb-24 md:pt-32 md:pb-32 text-center max-w-5xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-sm font-medium text-primary tracking-wide">
+            <span className="text-xs sm:text-sm font-medium text-primary tracking-wide">
               AI-Powered Expense Tracking V1.0
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 text-balance">
             Split bills, <br className="hidden md:block" />
             <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
               not friendships.
@@ -292,7 +356,7 @@ export default function LandingPage() {
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 text-foreground">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 text-foreground text-balance">
                 Everything you need to settle up
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -346,7 +410,7 @@ export default function LandingPage() {
           className="py-24 px-6 max-w-4xl mx-auto border-t border-border"
         >
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground">
+            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground text-balance">
               Frequently Asked Questions
             </h2>
             <p className="text-muted-foreground">
@@ -388,7 +452,7 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
                 Beta Feedback
               </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground text-balance">
                 Help us shape the future of pAIse.
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -416,7 +480,7 @@ export default function LandingPage() {
               <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
               <div className="relative z-10">
-                <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
+                <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight text-balance">
                   Ready to settle up?
                 </h2>
                 <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
@@ -441,7 +505,7 @@ export default function LandingPage() {
           className="py-24 px-6 max-w-5xl mx-auto border-t border-border"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground">
+            <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground text-balance">
               Get in Touch
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
@@ -452,20 +516,20 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Email Card */}
-            <div className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group">
+            <div className="flex flex-col items-center p-6 sm:p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group">
               <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Mail className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-foreground">
                 Email Us
               </h3>
-              <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full border border-border">
-                <span className="text-sm text-muted-foreground font-medium">
+              <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full border border-border max-w-full overflow-hidden">
+                <span className="text-sm text-muted-foreground font-medium truncate">
                   paiseapesp@gmail.com
                 </span>
                 <button
                   onClick={handleCopyEmail}
-                  className="text-primary hover:scale-110 transition-transform"
+                  className="text-primary hover:scale-110 transition-transform shrink-0"
                   title="Copy"
                 >
                   {copiedEmail ? (
@@ -481,7 +545,7 @@ export default function LandingPage() {
             <Link
               href="https://github.com/atiujjwal/pAIse"
               target="_blank"
-              className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
+              className="flex flex-col items-center p-6 sm:p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
             >
               <div className="h-12 w-12 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Github className="h-6 w-6" />
@@ -496,7 +560,7 @@ export default function LandingPage() {
             <Link
               href="https://www.linkedin.com/in/atiujjwal/"
               target="_blank"
-              className="flex flex-col items-center p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
+              className="flex flex-col items-center p-6 sm:p-8 bg-card border border-border rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1"
             >
               <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Linkedin className="h-6 w-6" />
@@ -537,7 +601,7 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© 2025 pAIse. All rights reserved.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <button
               onClick={() => setShowPrivacy(true)}
               className="hover:text-primary transition-colors cursor-pointer"

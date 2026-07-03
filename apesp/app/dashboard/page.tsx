@@ -79,11 +79,11 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
   return (
     <Link
       href={`/dashboard/expenses/${expense.id}`}
-      className="group relative flex items-center justify-between p-4 rounded-[1.5rem] border border-border/50 bg-card/50 hover:bg-card hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 backdrop-blur-sm transition-all duration-300"
+      className="group relative flex items-center justify-between p-3 sm:p-4 rounded-[1.5rem] border border-border/50 bg-card/50 hover:bg-card hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 backdrop-blur-sm transition-all duration-300"
     >
-      <div className="flex items-center gap-4 overflow-hidden">
-        <div className="relative">
-          <Avatar className="h-12 w-12 border-2 border-background shadow-sm group-hover:border-primary/20 transition-colors">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0 overflow-hidden flex-1">
+        <div className="relative shrink-0">
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-background shadow-sm group-hover:border-primary/20 transition-colors">
             <AvatarImage
               src={avatarUrl || undefined}
               className="object-cover"
@@ -120,11 +120,11 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
         </div>
 
         <div className="flex flex-col min-w-0">
-          <h4 className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+          <h4 className="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition-colors">
             {expense.description}
           </h4>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground mt-1">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               <span>
@@ -135,7 +135,7 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
               </span>
             </div>
             <span className="text-border/60">•</span>
-            <span className="capitalize px-1.5 py-0.5 rounded-md bg-muted/50 text-[10px] font-medium border border-border/50">
+            <span className="capitalize px-1.5 py-0.5 rounded-md bg-muted/50 text-[9px] sm:text-[10px] font-medium border border-border/50">
               {expense.category}
             </span>
           </div>
@@ -143,22 +143,22 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
       </div>
 
       {/* Amount & User Context Section */}
-      <div className="text-right pl-2 flex flex-col items-end">
+      <div className="text-right pl-2 flex flex-col items-end shrink-0 ml-2">
         {/* Total Amount */}
-        <span className="block font-mono font-bold text-foreground text-base tracking-tight">
+        <span className="block font-mono font-bold text-foreground text-sm sm:text-base tracking-tight">
           {formatCurrency(expense.amount, expense.currency)}
         </span>
 
         {/* User Specific Details */}
         <div className="flex flex-col items-end gap-1 mt-1">
           {paidAmount > 0 && (
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
               You paid {formatCurrency(String(paidAmount), expense.currency)}
             </span>
           )}
 
           {shareAmount > 0 && (
-            <span className="text-[10px] font-medium text-muted-foreground">
+            <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground whitespace-nowrap">
               Your share:{" "}
               {formatCurrency(String(shareAmount), expense.currency)}
             </span>
@@ -166,7 +166,7 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
 
           {/* Fallback if user is neither payer nor splitter */}
           {paidAmount === 0 && shareAmount === 0 && (
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted/50 px-1.5 py-0.5 rounded-md border border-border/50">
+            <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted/50 px-1.5 py-0.5 rounded-md border border-border/50 whitespace-nowrap">
               {expense.split_type}
             </span>
           )}
@@ -179,9 +179,9 @@ const RecentActivityCard = ({ expense }: { expense: any }) => {
 const BalanceRow = ({ user, type }: { user: any; type: "owe" | "owed" }) => (
   <Link
     href={`/dashboard/friends/${user.id}`}
-    className="flex items-center gap-3 p-3 rounded-[1.25rem] border border-border/40 bg-card/30 hover:bg-card hover:border-primary/20 hover:shadow-md transition-all duration-300 group"
+    className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-[1.25rem] border border-border/40 bg-card/30 hover:bg-card hover:border-primary/20 hover:shadow-md transition-all duration-300 group"
   >
-    <Avatar className="h-10 w-10 border border-border/50 group-hover:border-primary/30 transition-all">
+    <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border border-border/50 group-hover:border-primary/30 transition-all shrink-0">
       <AvatarImage src={user.avatar} className="object-cover" />
       <AvatarFallback
         className={cn(
@@ -196,17 +196,17 @@ const BalanceRow = ({ user, type }: { user: any; type: "owe" | "owed" }) => (
     </Avatar>
 
     <div className="flex-1 min-w-0">
-      <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
+      <p className="text-xs sm:text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
         {user.name}
       </p>
-      <p className="text-[11px] font-medium text-muted-foreground">
+      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground">
         {type === "owe" ? "you owe" : "owes you"}
       </p>
     </div>
 
     <div
       className={cn(
-        "text-right font-mono font-bold text-sm px-2.5 py-1 rounded-lg border",
+        "text-right font-mono font-bold text-xs sm:text-sm px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border shrink-0 ml-2",
         type === "owe"
           ? "text-destructive bg-destructive/5 border-destructive/10"
           : "text-secondary bg-secondary/5 border-secondary/10"
@@ -261,22 +261,22 @@ export default function DashboardPage() {
   const youAreOwed = snapshot?.you_are_owed || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 max-w-7xl mx-auto">
       {/* --- HEADER --- */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-              Dashboard{" "}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
+              Home{" "}
               <Sparkles className="h-6 w-6 text-primary animate-pulse" />
             </h1>
-            <p className="text-muted-foreground text-sm font-medium mt-1">
+            <p className="text-muted-foreground text-xs sm:text-sm font-medium mt-1">
               Your financial command center.
             </p>
           </div>
 
           {/* Time Range Filter - Controls 'Trends' Query */}
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-2 pt-1 sm:pt-2">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-card border border-border/50 text-muted-foreground shadow-sm">
               <CalendarRange className="h-5 w-5" />
             </div>
@@ -294,11 +294,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
             asChild
             variant="outline"
-            className="h-11 rounded-xl border-border/50 bg-card/50 hover:bg-card text-muted-foreground hover:text-foreground backdrop-blur-sm transition-all"
+            className="h-11 w-full sm:w-auto justify-center rounded-xl border-border/50 bg-card/50 hover:bg-card text-muted-foreground hover:text-foreground backdrop-blur-sm transition-all"
           >
             <Link href="/dashboard/groups?action=create">
               <Users className="mr-2 h-4 w-4" />
@@ -307,7 +307,7 @@ export default function DashboardPage() {
           </Button>
           <Button
             asChild
-            className="h-11 rounded-xl bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all border-none"
+            className="h-11 w-full sm:w-auto justify-center rounded-xl bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all border-none"
           >
             <Link href="/dashboard/expenses/new">
               <Plus className="mr-2 h-5 w-5" />

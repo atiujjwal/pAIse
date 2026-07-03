@@ -1,51 +1,34 @@
 "use client";
 
-import { useAuthStore } from "@/src/features/auth/store";
-import { Bell } from "lucide-react";
-import { Button } from "@/src/components/ui/Button";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/Avatar";
+import Link from "next/link";
+import NotificationBell from "@/src/components/notifications/NotificationBell";
+import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
+import { pAIse_LOGO } from "@/src/lib/mediaUrls";
 
 export function Header() {
-  const user = useAuthStore((state) => state.user);
-
   return (
-    <header className="relative flex h-16 items-center justify-between bg-background px-6 transition-colors">
+    <header className="relative flex h-16 items-center justify-between bg-background px-4 md:hidden transition-colors z-30">
       {/* --- Modern Gradient Separator --- */}
       <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
-      <div className="flex items-center gap-4">
-        {/* Mobile menu trigger would go here */}
-        <h1 className="text-lg font-bold text-foreground md:hidden">pAIse</h1>
+      {/* Brand logo / title */}
+      <div className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5">
+            <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
+              <img src={pAIse_LOGO} alt="pAIse" className="h-full w-full object-contain" />
+            </div>
+          </div>
+          <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
+            pAIse
+          </span>
+        </Link>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative text-muted-foreground hover:text-foreground"
-        >
-          <Bell className="h-5 w-5" />
-          {/* Notification Dot */}
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
-        </Button>
-
-        <div className="flex items-center gap-3 border-l border-border/40 pl-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-foreground">{user?.name}</p>
-            <p className="text-xs text-muted-foreground">{user?.email}</p>
-          </div>
-
-          <Avatar className="h-9 w-9 border border-border/50">
-            <AvatarImage src={user?.avatar || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary font-bold">
-              {user?.name?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </div>
+      {/* Quick Actions (Theme Switch + Notifications) */}
+      <div className="flex items-center gap-2.5">
+        <ThemeToggle />
+        <NotificationBell />
       </div>
     </header>
   );

@@ -33,7 +33,7 @@ export function PrivacyPolicyModal({
         {/* --- INNER WRAPPER --- */}
 
         <div className="flex flex-col h-[80vh] w-full">
-          <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/50 bg-muted/20 shrink-0">
+          <DialogHeader className="px-5 sm:px-8 pt-6 sm:pt-8 pb-5 sm:pb-6 border-b border-border/50 bg-muted/20 shrink-0">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
                 <Shield className="h-6 w-6" />
@@ -49,7 +49,7 @@ export function PrivacyPolicyModal({
 
           {/* --- Scrollable Body --- */}
           <div className="flex-1 overflow-y-auto">
-            <div className="px-8 py-6 space-y-8 text-sm leading-relaxed text-muted-foreground">
+            <div className="px-5 sm:px-8 py-5 sm:py-6 space-y-6 sm:space-y-8 text-sm leading-relaxed text-muted-foreground">
               {/* Introduction */}
               <p>
                 Your privacy is important to us. This Privacy Policy explains
@@ -84,7 +84,7 @@ export function PrivacyPolicyModal({
                   <div className="space-y-1">
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <Mic className="h-4 w-4 text-primary" /> Voice Input
-                    </h4>
+                      </h4>
                     <p>
                       If you choose to use voice input to create an expense, we
                       temporarily process your voice recording only to extract
@@ -167,7 +167,7 @@ export function PrivacyPolicyModal({
           </div>
 
           {/* --- Footer --- */}
-          <div className="p-6 border-t border-border bg-background shrink-0">
+          <div className="p-5 sm:p-6 border-t border-border bg-background shrink-0">
             <Button
               className="w-full h-12 rounded-xl text-base font-medium"
               onClick={() => onOpenChange(false)}

@@ -37,6 +37,8 @@ import {
 } from "@/src/components/ui/Select";
 import { cn } from "@/src/lib/utils";
 import { PROFILE_AVATARS } from "@/src/lib/mediaUrls";
+import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
+import { useLogout } from "@/src/features/auth/api/auth-queries";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -55,6 +57,8 @@ export default function SettingsPage() {
   const { addToast } = useToastStore();
   const queryClient = useQueryClient();
   const qrRef = useRef<HTMLDivElement>(null);
+
+  const { mutate: logoutUser, isPending: isLoggingOut } = useLogout();
 
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
 
@@ -492,6 +496,31 @@ export default function SettingsPage() {
               </div>
             </div>
           </form>
+
+          {/* Preferences & Actions */}
+          <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 md:p-10 space-y-6">
+            <div>
+              <h3 className="text-xl font-bold text-foreground">App Preferences & Session</h3>
+              <p className="text-muted-foreground text-sm">Customize visual settings and manage your current session.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-t border-border pt-6">
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm text-foreground">Theme Mode</span>
+                  <span className="text-xs text-muted-foreground">Toggle between light and dark visual modes.</span>
+                </div>
+                <ThemeToggle />
+              </div>
+              <Button
+                variant="outline"
+                disabled={isLoggingOut}
+                onClick={() => logoutUser()}
+                className="h-11 px-6 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30 self-start sm:self-auto font-semibold"
+              >
+                {isLoggingOut ? "Logging out..." : "Log Out"}
+              </Button>
+            </div>
+          </div>
 
           {/* DANGER ZONE */}
           {/* <div className="rounded-[2.5rem] border border-destructive/20 bg-destructive/5 p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

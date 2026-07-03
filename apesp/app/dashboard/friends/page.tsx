@@ -37,7 +37,16 @@ import {
   Plus,
   Loader2,
   Unlock,
+  ChevronDown,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/src/components/ui/Dropdown-menu";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import {
   Avatar,
@@ -117,7 +126,7 @@ export default function FriendsPage() {
   };
 
   return (
-    <div className="space-y-8 h-full flex flex-col pb-20 max-w-7xl mx-auto">
+    <div className="space-y-8 flex flex-col max-w-7xl mx-auto">
       {/* --- HEADER --- */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
@@ -146,47 +155,94 @@ export default function FriendsPage() {
 
       {/* --- STICKY FILTER BAR --- */}
       <div className="sticky top-4 z-20">
-        <div className="bg-card/80 backdrop-blur-xl p-2 rounded-2xl border border-border shadow-sm ring-1 ring-border/50 flex flex-col sm:flex-row gap-2 max-w-2xl">
+        <div className="bg-background/80 backdrop-blur-xl p-3 rounded-2xl border border-border shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:border-primary/20 flex flex-col gap-3 max-w-2xl">
           {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
-            <Input
+          <div className="relative w-full group">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+              <Search className="h-4 w-4" />
+            </div>
+            <input
+              type="text"
               placeholder="Search friends..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 h-12 bg-transparent border-transparent focus:bg-background rounded-xl transition-all"
+              className="w-full h-10 pl-10 pr-4 rounded-full border border-border bg-background/50 backdrop-blur-sm text-sm outline-none focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
 
-          {/* Sort Control (Only Balance) */}
-          <div className="flex items-center gap-2 px-2 border-t sm:border-t-0 sm:border-l border-border/50 pt-2 sm:pt-0">
-            {/* Static Label for 'Net Balance' */}
-            <div className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-xl bg-muted/40 border border-border/50 text-xs font-bold uppercase tracking-wide text-muted-foreground cursor-default select-none">
-              <Wallet className="h-3.5 w-3.5" />
-              <span>Net Balance</span>
-            </div>
+          {/* Sort Controls Row */}
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-2 h-10 px-4 rounded-full border text-sm font-semibold transition-all duration-200 outline-none focus:ring-2 focus:ring-primary/20",
+                    "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground hover:bg-muted/30"
+                  )}
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>
+                    Sort by: {sortOrder === "desc" ? "Balance (High to Low)" : "Balance (Low to High)"}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 ml-1 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[220px] p-1 rounded-xl">
+                <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
+                  Sort Order
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem
+                  onClick={() => setSortOrder("desc")}
+                  className={cn(
+                    "rounded-lg focus:bg-muted cursor-pointer py-2",
+                    sortOrder === "desc" && "bg-primary/5 text-primary font-semibold"
+                  )}
+                >
+                  <span className="flex-1">Balance: High to Low</span>
+                  {sortOrder === "desc" && <Check className="h-4 w-4 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortOrder("asc")}
+                  className={cn(
+                    "rounded-lg focus:bg-muted cursor-pointer py-2",
+                    sortOrder === "asc" && "bg-primary/5 text-primary font-semibold"
+                  )}
+                >
+                  <span className="flex-1">Balance: Low to High</span>
+                  {sortOrder === "asc" && <Check className="h-4 w-4 text-primary" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-              }
-              className="h-10 w-10 rounded-xl hover:bg-muted text-muted-foreground"
-              title={sortOrder === "asc" ? "Sort Ascending" : "Sort Descending"}
-            >
-              <ArrowUpDown
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  sortOrder === "desc" && "rotate-180"
-                )}
-              />
-            </Button>
+            {/* Reset Button (only shown when search is active or sort order is modified) */}
+            {(searchTerm || sortOrder !== "desc") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSortOrder("desc");
+                }}
+                className="h-10 px-3 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 whitespace-nowrap transition-all"
+              >
+                <X className="h-3.5 w-3.5 mr-1.5" />
+                Reset
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="my-friends" className="w-full">
             <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14">

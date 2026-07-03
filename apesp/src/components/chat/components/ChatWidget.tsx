@@ -1,29 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Send, Loader2, Sparkles, MessageCircle, Bot } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { motion } from "framer-motion";
 import { api } from "@/src/lib/api";
 import { cn } from "@/src/lib/utils";
 import { useAuthStore } from "@/src/features/auth/store";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 
-const WIDGET_WIDTH = 380;
-const WIDGET_HEIGHT = 550;
-const BUTTON_SIZE = 64;
-const MARGIN = 24;
-const STORAGE_KEY = "chat-widget-pos-v3";
-
 interface Message {
   role: "USER" | "ASSISTANT";
   content: string;
-}
-
-interface Coordinates {
-  x: number;
-  y: number;
 }
 
 export function ChatWidget() {
@@ -36,80 +26,35 @@ export function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
 
-  // Position & Drag State
-  const [position, setPosition] = useState<Coordinates>({
-    x: MARGIN,
-    y: MARGIN,
-  });
-  const [isDragging, setIsDragging] = useState(false);
-  const [hasMoved, setHasMoved] = useState(false);
-  const [isHovered, setIsHovered] = useState(false); // New hover state for tooltip
-
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
-  const dragStartRef = useRef<{
-    x: number;
-    y: number;
-    startPos: Coordinates;
-  } | null>(null);
+  const constraintsRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
 
-  // --- BOUNDARY LOGIC ---
-  const clampPosition = useCallback(
-    (pos: Coordinates, isWidgetOpen: boolean): Coordinates => {
-      if (typeof window === "undefined") return pos;
+  const handleDragStart = () => {
+    isDraggingRef.current = true;
+  };
 
-      const currentWidth = isWidgetOpen ? WIDGET_WIDTH : BUTTON_SIZE;
-      const currentHeight = isWidgetOpen ? WIDGET_HEIGHT : BUTTON_SIZE;
+  const handleDragEnd = () => {
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 100);
+  };
 
-      const maxRight = window.innerWidth - currentWidth - MARGIN;
-      const maxBottom = window.innerHeight - currentHeight - MARGIN;
-
-      return {
-        x: Math.min(Math.max(MARGIN, pos.x), maxRight),
-        y: Math.min(Math.max(MARGIN, pos.y), maxBottom),
-      };
-    },
-    []
-  );
-
-  // --- LIFECYCLE EFFECTS ---
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setPosition(clampPosition(parsed, false));
-      } catch {
-        setPosition({ x: MARGIN, y: MARGIN });
-      }
-    }
-  }, [clampPosition]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
-  }, [position]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setPosition((prev) => clampPosition(prev, isOpen));
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isOpen, clampPosition]);
-
+  // --- Click Outside Handler ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!isOpen) return;
       if (widgetRef.current && widgetRef.current.contains(event.target as Node))
         return;
-      if (isDragging) return;
       setIsOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, isDragging]);
+  }, [isOpen]);
 
+  // --- Fetch Chat History ---
   useEffect(() => {
     if (isOpen && !isHistoryLoaded) {
       if (user) {
@@ -146,77 +91,14 @@ export function ChatWidget() {
     }
   }, [isOpen, user, isHistoryLoaded]);
 
+  // --- Auto Scroll ---
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading, isOpen]);
 
-  // --- DRAG HANDLERS ---
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    if (
-      isOpen &&
-      (e.target as HTMLElement).closest("button, input, a, .no-drag")
-    )
-      return;
-
-    setIsDragging(true);
-    setHasMoved(false);
-
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      startPos: { ...position },
-    };
-    e.preventDefault();
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragStartRef.current) return;
-
-      const deltaX = dragStartRef.current.x - e.clientX;
-      const deltaY = dragStartRef.current.y - e.clientY;
-
-      if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
-        setHasMoved(true);
-      }
-
-      const rawX = dragStartRef.current.startPos.x + deltaX;
-      const rawY = dragStartRef.current.startPos.y + deltaY;
-
-      setPosition(clampPosition({ x: rawX, y: rawY }, isOpen));
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      dragStartRef.current = null;
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging, isOpen, clampPosition]);
-
-  // --- ACTION HANDLERS ---
-  const toggleWidget = () => {
-    if (!hasMoved) {
-      setIsOpen((prev) => {
-        const nextState = !prev;
-        if (nextState) {
-          setPosition((curr) => clampPosition(curr, true));
-        }
-        return nextState;
-      });
-    }
-  };
-
+  // --- Send Handler ---
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg = input.trim();
@@ -254,36 +136,65 @@ export function ChatWidget() {
   };
 
   return (
-    <div
-      ref={widgetRef}
-      className={cn(
-        "fixed z-[100] flex flex-col items-end transition-all duration-75 ease-out",
-        isDragging ? "cursor-grabbing select-none" : ""
-      )}
-      style={{ right: `${position.x}px`, bottom: `${position.y}px` }}
-    >
-      {/* --- OPEN WINDOW --- */}
-      {isOpen && (
+    <div className="fixed inset-0 pointer-events-none z-[100]" ref={constraintsRef}>
+      {/* --- CLOSED TRIGGER BUTTON --- */}
+      {!isOpen ? (
+        <motion.div
+          drag
+          dragConstraints={constraintsRef}
+          dragMomentum={false}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          className="pointer-events-auto absolute right-4 bottom-[200px]"
+          onTap={() => {
+            if (!isDraggingRef.current) {
+              setIsOpen(true);
+            }
+          }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <div className="relative group cursor-grab active:cursor-grabbing">
+            {/* Tooltip Label */}
+            <div className="absolute right-full top-1/2 -translate-y-1/2 mr-4 px-3 py-1.5 rounded-xl bg-foreground text-background text-xs font-bold whitespace-nowrap shadow-xl opacity-0 scale-90 translate-x-2 transition-all duration-300 origin-right group-hover:opacity-100 group-hover:scale-100 group-hover:translate-x-0 pointer-events-none">
+              Ask AI
+              <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-foreground rotate-45" />
+            </div>
+
+            <Button
+              className={cn(
+                "h-12 w-12 rounded-full p-0 flex items-center justify-center",
+                "bg-gradient-to-tr from-violet-600 to-indigo-600 text-white",
+                "ring-[3px] ring-white dark:ring-slate-900",
+                "shadow-[0_10px_40px_-10px_rgba(79,70,229,0.5)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]"
+              )}
+            >
+              <div className="relative flex items-center justify-center">
+                <MessageCircle className="h-5 w-5 stroke-[2.5px]" />
+                <span className="absolute -top-2.5 -right-2.5 flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white dark:border-slate-900 items-center justify-center">
+                    <Sparkles className="h-1.5 w-1.5 text-white" />
+                  </span>
+                </span>
+              </div>
+            </Button>
+          </div>
+        </motion.div>
+      ) : (
+        /* --- OPENED WINDOW --- */
         <div
-          style={{ width: WIDGET_WIDTH, height: WIDGET_HEIGHT }}
-          className="bg-card rounded-[2rem] shadow-2xl border border-border/60 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 origin-bottom-right"
+          ref={widgetRef}
+          className="pointer-events-auto absolute right-4 bottom-20 md:bottom-6 w-[calc(100vw-32px)] sm:w-[380px] h-[500px] sm:h-[550px] bg-card rounded-[2rem] shadow-2xl border border-border/60 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 origin-bottom-right"
         >
           {/* Header */}
-          <div
-            onMouseDown={handleMouseDown}
-            className={cn(
-              "h-16 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between px-5 shadow-md z-10 shrink-0",
-              isDragging ? "cursor-grabbing" : "cursor-grab"
-            )}
-          >
+          <div className="h-16 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between px-5 shadow-md z-10 shrink-0">
             <div className="flex items-center gap-3 pointer-events-none">
               <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md shadow-inner">
                 <Bot className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-sm tracking-wide">
-                  pAIse Assistant
-                </h3>
+                <h3 className="font-bold text-sm tracking-wide">pAIse Assistant</h3>
                 <span className="flex items-center gap-1.5 text-[10px] text-white/80 font-medium">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
@@ -295,7 +206,7 @@ export function ChatWidget() {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="no-drag hover:bg-white/20 p-2 rounded-full transition-colors active:scale-95"
+              className="hover:bg-white/20 p-2 rounded-full transition-colors active:scale-95"
             >
               <X className="h-5 w-5" />
             </button>
@@ -344,9 +255,7 @@ export function ChatWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder={
-                  user ? "Ask about expenses..." : "How can pAIse help?"
-                }
+                placeholder={user ? "Ask about expenses..." : "How can pAIse help?"}
                 className="pr-12 py-6 rounded-full bg-muted/50 border-transparent focus-visible:ring-indigo-500 shadow-inner text-sm transition-all"
               />
               <Button
@@ -364,10 +273,7 @@ export function ChatWidget() {
             </div>
             {!user && (
               <p className="text-[11px] text-center text-muted-foreground mt-3">
-                <Link
-                  href="/auth/register"
-                  className="text-primary font-bold hover:underline"
-                >
+                <Link href="/auth/register" className="text-primary font-bold hover:underline">
                   Sign in
                 </Link>{" "}
                 to sync your data with AI.
@@ -376,65 +282,6 @@ export function ChatWidget() {
           </div>
         </div>
       )}
-
-      {/* --- CLOSED ICON --- */}
-      {!isOpen && (
-        <div
-          className="relative group"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          {/* TOOLTIP LABEL
-             - Positioned to the left of the button
-             - Only visible on hover or optionally always for first few seconds
-          */}
-          <div
-            className={cn(
-              "absolute right-full top-1/2 -translate-y-1/2 mr-4 px-3 py-1.5 rounded-xl bg-foreground text-background text-xs font-bold whitespace-nowrap shadow-xl transition-all duration-300 origin-right",
-              isHovered
-                ? "opacity-100 scale-100 translate-x-0"
-                : "opacity-0 scale-90 translate-x-2 pointer-events-none"
-            )}
-          >
-            Ask AI
-            {/* Tiny triangle pointing right */}
-            <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-foreground rotate-45" />
-          </div>
-
-          <Button
-            onMouseDown={handleMouseDown}
-            onClick={toggleWidget}
-            className={cn(
-              "h-16 w-16 rounded-full",
-              // --- KEY CHANGES FOR VISIBILITY ---
-              // 1. Vibrant Gradient (independent of theme primary color)
-              "bg-gradient-to-tr from-violet-600 to-indigo-600 text-white",
-
-              // 2. Thick White Ring (Separates from white background)
-              "ring-[3px] ring-white dark:ring-slate-900",
-
-              // 3. Colored Shadow (Glow effect for light mode)
-              "shadow-[0_10px_40px_-10px_rgba(79,70,229,0.5)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]",
-
-              "hover:scale-110 active:scale-95 transition-all duration-300 ease-out",
-              isDragging ? "cursor-grabbing scale-105" : "cursor-grab"
-            )}
-          >
-            <div className="relative">
-              <MessageCircle className="h-8 w-8 stroke-[2.5px]" />
-
-              {/* Notification Dot - Strong Contrast */}
-              <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white dark:border-slate-900 items-center justify-center">
-                  <Sparkles className="h-2 w-2 text-white" />
-                </span>
-              </span>
-            </div>
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
-

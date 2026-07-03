@@ -18,7 +18,7 @@ import { pAIse_LOGO } from "@/src/lib/mediaUrls";
 import Link from "next/link";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Home", href: "/dashboard", icon: LayoutDashboard },
   { label: "Expenses", href: "/dashboard/expenses", icon: Receipt },
   { label: "Groups", href: "/dashboard/groups", icon: Users },
   { label: "Friends", href: "/dashboard/friends", icon: Users },

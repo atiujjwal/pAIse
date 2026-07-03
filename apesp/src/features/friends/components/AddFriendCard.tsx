@@ -156,27 +156,34 @@ export function AddFriendCard() {
                   <QrCode className="h-5 w-5" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-sm rounded-3xl">
-                <DialogHeader>
-                  <DialogTitle className="text-center text-xl">
+              <DialogContent className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full max-w-full rounded-t-[2rem] rounded-b-none p-5 pb-6 md:bottom-auto md:top-[50%] md:left-[50%] md:right-auto md:translate-x-[-50%] md:translate-y-[-50%] md:max-w-xs md:rounded-[2rem] md:p-6 z-[100] border-t md:border border-border bg-card shadow-2xl transition-all duration-200">
+                {/* Drag Handle for Mobile */}
+                <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-3 md:hidden" />
+
+                <DialogHeader className="space-y-1 text-center">
+                  <DialogTitle className="text-center text-lg font-extrabold tracking-tight text-foreground">
                     Your pAIse Tag
                   </DialogTitle>
                 </DialogHeader>
-                <div className="flex flex-col items-center justify-center p-6 space-y-6">
+
+                <div className="flex flex-col items-center justify-center space-y-4 pt-2">
+                  {/* Premium QR Container */}
                   <div
                     ref={qrRef}
-                    className="p-4 bg-white border border-border rounded-3xl shadow-sm"
+                    className="p-4 bg-white rounded-2xl shadow-lg shadow-primary/5 border border-primary/10 flex items-center justify-center"
                   >
-                    <QRCode value={inviteLink} size={200} />
+                    <QRCode value={inviteLink} size={150} />
                   </div>
+
+                  {/* Modern Solid Download Button */}
                   <Button
                     onClick={downloadQRCode}
-                    variant="outline"
-                    className="w-full h-12 rounded-xl"
+                    className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-md shadow-primary/20 hover:shadow-lg transition-all hover:scale-[1.02]"
                   >
                     <Download className="h-4 w-4 mr-2" /> Download QR
                   </Button>
-                  <p className="text-xs text-center text-muted-foreground">
+
+                  <p className="text-xs font-medium text-center text-muted-foreground">
                     Friends can scan this to add you instantly.
                   </p>
                 </div>

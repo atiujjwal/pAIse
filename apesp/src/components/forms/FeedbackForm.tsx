@@ -30,12 +30,12 @@ export function FeedbackForm() {
 
   if (state.succeeded) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-card border border-border rounded-3xl shadow-sm animate-in fade-in duration-500">
+      <div className="flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
         <div className="h-16 w-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mb-6">
           <CheckCircle2 className="h-8 w-8" />
         </div>
         <h3 className="text-2xl font-bold mb-2">Thanks for your input!</h3>
-        <p className="text-muted-foreground max-w-md">
+        <p className="text-muted-foreground max-w-md text-sm">
           We appreciate you taking the time to help make pAIse better. We'll
           review your message shortly.
         </p>
@@ -44,13 +44,13 @@ export function FeedbackForm() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-3xl p-8 shadow-sm">
-      <div className="mb-8">
+    <div className="w-full">
+      <div className="mb-6">
         <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
           Have a suggestion?
         </h3>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Found a bug or have a feature idea? Let us know directly.
         </p>
       </div>
