@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   useFriends,
@@ -12,7 +12,6 @@ import {
 } from "@/src/features/friends/api/friend-queries";
 import { AddFriendCard } from "@/src/features/friends/components/AddFriendCard";
 import { Button } from "@/src/components/ui/Button";
-import { Input } from "@/src/components/ui/Input";
 import {
   Tabs,
   TabsContent,
@@ -33,7 +32,6 @@ import {
   Clock,
   Search,
   ArrowUpDown,
-  Wallet,
   Plus,
   Loader2,
   Unlock,
@@ -93,6 +91,21 @@ export default function FriendsPage() {
     null
   );
 
+  // --- MOBILE STICKY BAR STATE ---
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 220) {
+        setShowStickyBar(true);
+      } else {
+        setShowStickyBar(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // --- QUERIES ---
   const { data: friendsData, isLoading: loadingFriends } = useFriends({
     search: debouncedSearch,
@@ -126,9 +139,9 @@ export default function FriendsPage() {
   };
 
   return (
-    <div className="space-y-8 flex flex-col w-full max-w-7xl mx-auto">
+    <div className="space-y-8 w-full max-w-7xl mx-auto overflow-x-hidden">
       {/* --- HEADER --- */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center min-w-0">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             Friends
@@ -139,11 +152,11 @@ export default function FriendsPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             asChild
             size="lg"
-            className="rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-105"
+            className="w-full sm:w-auto rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-105"
           >
             {/* Pass context=friend to pre-select the Friend tab */}
             <Link href="/dashboard/expenses/new?context=friend">
@@ -179,31 +192,31 @@ export default function FriendsPage() {
           </div>
 
           {/* Sort Controls Row */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2 min-w-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    "flex items-center gap-2 h-10 px-4 rounded-full border text-sm font-semibold transition-all duration-200 outline-none focus:ring-2 focus:ring-primary/20",
+                    "flex items-center gap-1.5 sm:gap-2 h-10 px-2.5 sm:px-4 rounded-full border text-sm font-semibold transition-all duration-200 outline-none focus:ring-2 focus:ring-primary/20 shrink-0",
                     "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground hover:bg-muted/30"
                   )}
                 >
                   <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>
+                  <span className="hidden sm:inline">
                     Sort by: {sortOrder === "desc" ? "Balance (High to Low)" : "Balance (Low to High)"}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 ml-1 opacity-50" />
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 ml-0.5 sm:ml-1 opacity-50" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[220px] p-1 rounded-xl">
+              <DropdownMenuContent align="start" className="w-[220px] p-1 rounded-xl border-border">
                 <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
                   Sort Order
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuSeparator className="my-1 border-border" />
                 <DropdownMenuItem
                   onClick={() => setSortOrder("desc")}
                   className={cn(
-                    "rounded-lg focus:bg-muted cursor-pointer py-2",
+                    "rounded-xl focus:bg-muted cursor-pointer py-2",
                     sortOrder === "desc" && "bg-primary/5 text-primary font-semibold"
                   )}
                 >
@@ -213,7 +226,7 @@ export default function FriendsPage() {
                 <DropdownMenuItem
                   onClick={() => setSortOrder("asc")}
                   className={cn(
-                    "rounded-lg focus:bg-muted cursor-pointer py-2",
+                    "rounded-xl focus:bg-muted cursor-pointer py-2",
                     sortOrder === "asc" && "bg-primary/5 text-primary font-semibold"
                   )}
                 >
@@ -223,7 +236,7 @@ export default function FriendsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Reset Button (only shown when search is active or sort order is modified) */}
+            {/* Reset Button */}
             {(searchTerm || sortOrder !== "desc") && (
               <Button
                 variant="ghost"
@@ -232,9 +245,9 @@ export default function FriendsPage() {
                   setSearchTerm("");
                   setSortOrder("desc");
                 }}
-                className="h-10 px-3 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 whitespace-nowrap transition-all"
+                className="h-10 px-2 sm:px-3 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 whitespace-nowrap transition-all"
               >
-                <X className="h-3.5 w-3.5 mr-1.5" />
+                <X className="h-3.5 w-3.5 mr-1" />
                 Reset
               </Button>
             )}
@@ -243,31 +256,32 @@ export default function FriendsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           <Tabs defaultValue="my-friends" className="w-full">
-            <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14">
+            <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14 flex flex-wrap h-auto sm:h-14">
               <TabsTrigger
                 value="my-friends"
-                className="rounded-xl h-full px-6 transition-all text-sm font-bold"
+                className="rounded-xl h-11 sm:h-full px-3 sm:px-6 transition-all text-xs sm:text-sm font-bold flex-1 sm:flex-none"
               >
-                My Friends ({friends?.length || 0})
+                <span className="inline sm:hidden">Friends ({friends?.length || 0})</span>
+                <span className="hidden sm:inline">My Friends ({friends?.length || 0})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="requests"
-                className="rounded-xl h-full px-6 transition-all text-sm font-bold"
+                className="rounded-xl h-11 sm:h-full px-3 sm:px-6 transition-all text-xs sm:text-sm font-bold flex-1 sm:flex-none"
               >
-                Requests
+                <span>Requests</span>
                 {requestType === "incoming" &&
                   requests &&
                   requests.length > 0 && (
-                    <span className="ml-2 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-xs">
+                    <span className="ml-1 sm:ml-2 rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-[10px] sm:text-xs">
                       {requests.length}
                     </span>
                   )}
               </TabsTrigger>
               <TabsTrigger
                 value="blocked"
-                className="rounded-xl h-full px-6 transition-all text-sm font-bold text-muted-foreground data-[state=active]:text-foreground"
+                className="rounded-xl h-11 sm:h-full px-3 sm:px-6 transition-all text-xs sm:text-sm font-bold text-muted-foreground data-[state=active]:text-foreground flex-1 sm:flex-none"
               >
                 Blocked
               </TabsTrigger>
@@ -279,27 +293,27 @@ export default function FriendsPage() {
               className="mt-8 animate-in fade-in slide-in-from-bottom-2"
             >
               {loadingFriends ? (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-40 rounded-[2.5rem]" />
+                    <Skeleton key={i} className="h-40 rounded-2xl" />
                   ))}
                 </div>
               ) : friends.length === 0 ? (
-                <div className="py-20 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-card">
                   <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Users className="h-10 w-10 text-muted-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground">
                     {searchTerm ? "No friends found" : "No friends yet"}
                   </h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto mt-2">
+                  <p className="text-muted-foreground max-w-sm mx-auto mt-2 px-4">
                     {searchTerm
                       ? `We couldn't find anyone matching "${searchTerm}"`
                       : "Add friends using their email or pAIse Tag on the right."}
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-2 md:gap-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
                   {friends.map((friend) => {
                     const isOwe = friend.status === "owe";
                     const isOwed = friend.status === "owed";
@@ -309,24 +323,24 @@ export default function FriendsPage() {
                       <Link
                         key={friend.id}
                         href={`/dashboard/friends/${friend.id}`}
-                        className="group relative flex flex-col justify-between rounded-2xl md:rounded-[2.5rem] border border-border bg-card p-3 md:p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
+                        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
                       >
                         {/* Top: Info */}
-                        <div className="flex items-center gap-2 md:gap-4 min-w-0">
-                          <Avatar className="h-10 w-10 md:h-14 md:w-14 border-2 border-background shadow-md shrink-0">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-background shadow-md shrink-0 rounded-full">
                             <AvatarImage
                               src={friend.avatar || undefined}
-                              className="object-cover"
+                              className="object-cover rounded-full"
                             />
-                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm md:text-lg">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm md:text-lg rounded-full">
                               {friend.name[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-sm md:text-lg text-foreground truncate group-hover:text-primary transition-colors">
+                            <p className="font-bold text-base md:text-lg text-foreground truncate group-hover:text-primary transition-colors">
                               {friend.name}
                             </p>
-                            <p className="text-[10px] md:text-xs text-muted-foreground font-mono truncate">
+                            <p className="text-xs text-muted-foreground font-mono truncate">
                               {friend.email}
                             </p>
                           </div>
@@ -336,9 +350,9 @@ export default function FriendsPage() {
                         </div>
 
                         {/* Bottom: Balance Status */}
-                        <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-border flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                        <div className="mt-5 md:mt-6 pt-4 border-t border-border flex items-center justify-between gap-2">
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">
                               Net Balance
                             </span>
                             <div
@@ -357,7 +371,7 @@ export default function FriendsPage() {
                                 <CheckCircle2 className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
                               )}
 
-                              <span className="font-mono text-sm md:text-lg truncate">
+                              <span className="font-mono text-base md:text-lg truncate">
                                 {isSettled
                                   ? "Settled"
                                   : formatCurrency(
@@ -372,7 +386,7 @@ export default function FriendsPage() {
                           {!isSettled && (
                             <div
                               className={cn(
-                                "px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-wide shadow-sm self-start whitespace-nowrap",
+                                "px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-sm whitespace-nowrap self-center",
                                 isOwe
                                   ? "bg-destructive/10 text-destructive border border-destructive/20"
                                   : "bg-secondary/10 text-secondary border border-secondary/20"
@@ -422,12 +436,12 @@ export default function FriendsPage() {
                     {[1, 2].map((i) => (
                       <Skeleton
                         key={i}
-                        className="h-24 w-full rounded-[2.5rem]"
+                        className="h-24 w-full rounded-2xl"
                       />
                     ))}
                   </div>
                 ) : requests?.length === 0 ? (
-                  <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                  <div className="py-16 text-center border-2 border-dashed border-border rounded-2xl bg-card">
                     <Clock className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
                     <p className="text-muted-foreground font-medium">
                       No {requestType} requests pending.
@@ -446,7 +460,7 @@ export default function FriendsPage() {
                       <div
                         key={req.id}
                         className={cn(
-                          "flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border p-6 shadow-sm transition-all",
+                          "flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border p-4 sm:p-6 shadow-sm transition-all",
                           requestType === "incoming"
                             ? "border-primary/20 bg-primary/5"
                             : "border-border bg-card"
@@ -454,11 +468,12 @@ export default function FriendsPage() {
                       >
                         <div className="flex items-center gap-5">
                           <div className="relative">
-                            <Avatar className="h-14 w-14 border-2 border-background shadow-md">
+                            <Avatar className="h-14 w-14 border-2 border-background shadow-md rounded-full">
                               <AvatarImage
                                 src={displayUser?.avatar || undefined}
+                                className="rounded-full"
                               />
-                              <AvatarFallback className="bg-muted text-muted-foreground font-bold">
+                              <AvatarFallback className="bg-muted text-muted-foreground font-bold rounded-full">
                                 {userName[0]}
                               </AvatarFallback>
                             </Avatar>
@@ -471,7 +486,7 @@ export default function FriendsPage() {
                               )}
                             >
                               {requestType === "incoming" ? (
-                                <ArrowDownLeft className="h-3.5 w-3.5" />
+                                <ArrowDownLeft className="h-3.5 w-3.5 text-white" />
                               ) : (
                                 <ArrowUpRight className="h-3.5 w-3.5" />
                               )}
@@ -510,17 +525,17 @@ export default function FriendsPage() {
                                 variant="outline"
                                 onClick={() => rejectRequest.mutate(req.id)}
                                 disabled={rejectRequest.isPending}
-                                className="flex-1 sm:flex-none border-border text-muted-foreground hover:bg-muted h-10 rounded-xl"
+                                className="flex-1 sm:flex-none border-border text-muted-foreground hover:bg-muted h-10 rounded-xl px-3 text-xs sm:text-sm"
                               >
-                                <X className="h-4 w-4 mr-1" /> Decline
+                                <X className="h-4 w-4 mr-1 shrink-0" /> Decline
                               </Button>
                               <Button
                                 size="sm"
                                 onClick={() => acceptRequest.mutate(req.id)}
                                 disabled={acceptRequest.isPending}
-                                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground h-10 rounded-xl shadow-md"
+                                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground h-10 rounded-xl shadow-md px-3 text-xs sm:text-sm"
                               >
-                                <Check className="h-4 w-4 mr-1" /> Accept
+                                <Check className="h-4 w-4 mr-1 shrink-0" /> Accept
                               </Button>
                               {/* Block Button for Incoming Request */}
                               <Button
@@ -530,7 +545,7 @@ export default function FriendsPage() {
                                   handleBlockRequest(displayUser.id)
                                 }
                                 disabled={isBlocking}
-                                className="h-10 w-10 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                                className="h-10 w-10 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50 shrink-0"
                                 title="Block User"
                               >
                                 <Ban className="h-4 w-4" />
@@ -542,9 +557,9 @@ export default function FriendsPage() {
                               variant="outline"
                               onClick={() => cancelRequest.mutate(req.id)}
                               disabled={cancelRequest.isPending}
-                              className="flex-1 sm:flex-none border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 h-10 rounded-xl"
+                              className="flex-1 sm:flex-none border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 h-10 rounded-xl px-3 text-xs sm:text-sm"
                             >
-                              <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancel
+                              <Ban className="h-3.5 w-3.5 mr-1.5 shrink-0" /> Cancel
                             </Button>
                           )}
                         </div>
@@ -563,11 +578,11 @@ export default function FriendsPage() {
               {loadingBlocked ? (
                 <div className="space-y-4">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-24 w-full rounded-[2rem]" />
+                    <Skeleton key={i} className="h-24 w-full rounded-2xl" />
                   ))}
                 </div>
               ) : !blockedUsers || blockedUsers.length === 0 ? (
-                <div className="py-20 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
+                <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-card">
                   <div className="h-20 w-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Ban className="h-10 w-10 text-muted-foreground" />
                   </div>
@@ -583,12 +598,12 @@ export default function FriendsPage() {
                   {(blockedUsers as unknown as BlockedUser[]).map((user) => (
                     <div
                       key={user.id}
-                      className="flex flex-col sm:flex-row items-center justify-between p-5 rounded-3xl border border-border bg-card shadow-sm gap-4"
+                      className="flex flex-col sm:flex-row items-center justify-between p-5 rounded-xl border border-border bg-card shadow-sm gap-4"
                     >
                       <div className="flex items-center gap-4 w-full">
-                        <Avatar className="h-12 w-12 grayscale opacity-80">
-                          <AvatarImage src={user.avatar || undefined} />
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
+                        <Avatar className="h-12 w-12 grayscale opacity-80 rounded-full">
+                          <AvatarImage src={user.avatar || undefined} className="rounded-full" />
+                          <AvatarFallback className="rounded-full">{user.name[0]}</AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-bold text-foreground text-base strike-through decoration-muted-foreground/50">
@@ -623,10 +638,26 @@ export default function FriendsPage() {
         </div>
 
         {/* Sidebar: Add Friend */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 min-w-0">
           <AddFriendCard />
         </div>
       </div>
+
+      {/* --- MOBILE STICKY ACTION BAR --- */}
+      {showStickyBar && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 backdrop-blur-md border-t border-border shadow-lg animate-in fade-in slide-in-from-bottom duration-200">
+          <div className="max-w-md mx-auto safe-bottom">
+            <Button
+              asChild
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
+            >
+              <Link href="/dashboard/expenses/new?context=friend">
+                <Plus className="mr-2 h-4 w-4" /> Add Expense
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Settle Modal */}
       {showSettlement && selectedFriend && (
