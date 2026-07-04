@@ -261,7 +261,7 @@ export default function DashboardPage() {
   const youAreOwed = snapshot?.you_are_owed || [];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 flex flex-col w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* --- HEADER --- */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">

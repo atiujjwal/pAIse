@@ -62,7 +62,7 @@ export default function GroupsPage() {
   }, [searchParams, router]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
+    <div className="space-y-8 flex flex-col w-full max-w-7xl mx-auto animate-in fade-in duration-500 pb-20">
       {/* --- HEADER --- */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -121,7 +121,7 @@ export default function GroupsPage() {
             ))}
           </div>
         ) : groups && groups.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {groups.map((group) => {
               const isOwe = group.user_status === "owe";
               const isOwed = group.user_status === "owed";
@@ -131,47 +131,47 @@ export default function GroupsPage() {
                 <Link
                   key={group.id}
                   href={`/dashboard/groups/${group.id}`}
-                  className="group relative flex flex-col justify-between rounded-[2.5rem] border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20"
+                  className="group relative flex flex-col justify-between rounded-2xl md:rounded-[2.5rem] border border-border bg-card p-3 md:p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20"
                 >
                   <div>
                     {/* Header: Avatar & Member Count */}
-                    <div className="flex items-start justify-between mb-4">
-                      <Avatar className="h-16 w-16 rounded-2xl border-4 border-background shadow-md">
+                    <div className="flex items-start justify-between mb-2 md:mb-4">
+                      <Avatar className="h-10 w-10 md:h-16 md:w-16 rounded-xl md:rounded-2xl border-2 md:border-4 border-background shadow-md">
                         <AvatarImage
                           src={group.avatar || undefined}
                           className="object-cover"
                         />
-                        <AvatarFallback className="rounded-2xl bg-gradient-to-br from-primary/10 to-indigo-500/10 text-primary font-bold text-xl">
+                        <AvatarFallback className="rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/10 to-indigo-500/10 text-primary font-bold text-sm md:text-xl">
                           {group.name[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1 text-xs font-bold text-muted-foreground border border-border">
-                        <Users className="h-3.5 w-3.5" />
+                      <div className="flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-xs font-bold text-muted-foreground border border-border shrink-0">
+                        <Users className="h-3 w-3 md:h-3.5 md:w-3.5" />
                         {group.member_count}
                       </div>
                     </div>
 
                     {/* Group Info */}
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      <h3 className="text-sm md:text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {group.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 h-10 leading-relaxed">
+                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 h-8 md:h-10 leading-relaxed">
                         {group.description || "No description provided."}
                       </p>
                     </div>
                   </div>
 
                   {/* Footer: Balance Status */}
-                  <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-border flex items-center justify-between">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">
                         Your Balance
                       </span>
                       <div
                         className={cn(
-                          "flex items-center gap-1.5 mt-0.5",
+                          "flex items-center gap-1 mt-0.5 min-w-0",
                           isOwe
                             ? "text-destructive"
                             : isOwed
@@ -179,11 +179,11 @@ export default function GroupsPage() {
                             : "text-muted-foreground"
                         )}
                       >
-                        {isOwe && <TrendingDown className="h-4 w-4" />}
-                        {isOwed && <TrendingUp className="h-4 w-4" />}
-                        {isSettled && <CheckCircle2 className="h-4 w-4" />}
+                        {isOwe && <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />}
+                        {isOwed && <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />}
+                        {isSettled && <CheckCircle2 className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />}
 
-                        <span className="font-mono font-bold text-lg">
+                        <span className="font-mono font-bold text-sm md:text-lg truncate">
                           {isSettled
                             ? "Settled"
                             : formatCurrency(
@@ -194,7 +194,7 @@ export default function GroupsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-muted/50 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-sm">
+                    <div className="hidden md:flex items-center justify-center h-10 w-10 rounded-full bg-muted/50 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-sm shrink-0">
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>

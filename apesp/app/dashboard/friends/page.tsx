@@ -126,7 +126,7 @@ export default function FriendsPage() {
   };
 
   return (
-    <div className="space-y-8 flex flex-col max-w-7xl mx-auto">
+    <div className="space-y-8 flex flex-col w-full max-w-7xl mx-auto">
       {/* --- HEADER --- */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
@@ -299,7 +299,7 @@ export default function FriendsPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-2 md:gap-5">
                   {friends.map((friend) => {
                     const isOwe = friend.status === "owe";
                     const isOwed = friend.status === "owed";
@@ -309,41 +309,41 @@ export default function FriendsPage() {
                       <Link
                         key={friend.id}
                         href={`/dashboard/friends/${friend.id}`}
-                        className="group relative flex flex-col justify-between rounded-[2.5rem] border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
+                        className="group relative flex flex-col justify-between rounded-2xl md:rounded-[2.5rem] border border-border bg-card p-3 md:p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
                       >
                         {/* Top: Info */}
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-14 w-14 border-2 border-background shadow-md">
+                        <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                          <Avatar className="h-10 w-10 md:h-14 md:w-14 border-2 border-background shadow-md shrink-0">
                             <AvatarImage
                               src={friend.avatar || undefined}
                               className="object-cover"
                             />
-                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm md:text-lg">
                               {friend.name[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-lg text-foreground truncate group-hover:text-primary transition-colors">
+                            <p className="font-bold text-sm md:text-lg text-foreground truncate group-hover:text-primary transition-colors">
                               {friend.name}
                             </p>
-                            <p className="text-xs text-muted-foreground font-mono truncate">
+                            <p className="text-[10px] md:text-xs text-muted-foreground font-mono truncate">
                               {friend.email}
                             </p>
                           </div>
-                          <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                          <div className="hidden md:flex h-8 w-8 rounded-full bg-muted/50 items-center justify-center opacity-0 group-hover:opacity-100 transition-all shrink-0">
                             <ChevronRight className="h-4 w-4 text-foreground" />
                           </div>
                         </div>
 
                         {/* Bottom: Balance Status */}
-                        <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                        <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-border flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-wider text-muted-foreground truncate">
                               Net Balance
                             </span>
                             <div
                               className={cn(
-                                "flex items-center gap-1.5 mt-0.5 font-bold",
+                                "flex items-center gap-1 mt-0.5 font-bold min-w-0",
                                 isOwe
                                   ? "text-destructive"
                                   : isOwed
@@ -351,13 +351,13 @@ export default function FriendsPage() {
                                   : "text-muted-foreground"
                               )}
                             >
-                              {isOwe && <TrendingDown className="h-4 w-4" />}
-                              {isOwed && <TrendingUp className="h-4 w-4" />}
+                              {isOwe && <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />}
+                              {isOwed && <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />}
                               {isSettled && (
-                                <CheckCircle2 className="h-4 w-4" />
+                                <CheckCircle2 className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
                               )}
 
-                              <span className="font-mono text-lg">
+                              <span className="font-mono text-sm md:text-lg truncate">
                                 {isSettled
                                   ? "Settled"
                                   : formatCurrency(
@@ -372,7 +372,7 @@ export default function FriendsPage() {
                           {!isSettled && (
                             <div
                               className={cn(
-                                "px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wide shadow-sm",
+                                "px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-bold uppercase tracking-wide shadow-sm self-start whitespace-nowrap",
                                 isOwe
                                   ? "bg-destructive/10 text-destructive border border-destructive/20"
                                   : "bg-secondary/10 text-secondary border border-secondary/20"

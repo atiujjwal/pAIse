@@ -72,7 +72,7 @@ export default function ExpensesPage() {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20 max-w-5xl mx-auto">
+    <div className="space-y-6 flex flex-col w-full max-w-7xl mx-auto animate-in fade-in duration-500 pb-20">
       {/* --- HEADER SECTION --- */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between px-2">
         <div>

@@ -156,10 +156,7 @@ export function AddFriendCard() {
                   <QrCode className="h-5 w-5" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 w-full max-w-full rounded-t-[2rem] rounded-b-none p-5 pb-6 md:bottom-auto md:top-[50%] md:left-[50%] md:right-auto md:translate-x-[-50%] md:translate-y-[-50%] md:max-w-xs md:rounded-[2rem] md:p-6 z-[100] border-t md:border border-border bg-card shadow-2xl transition-all duration-200">
-                {/* Drag Handle for Mobile */}
-                <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-3 md:hidden" />
-
+              <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-xs rounded-3xl p-6 z-[100] border border-border bg-card shadow-2xl transition-all duration-200">
                 <DialogHeader className="space-y-1 text-center">
                   <DialogTitle className="text-center text-lg font-extrabold tracking-tight text-foreground">
                     Your pAIse Tag

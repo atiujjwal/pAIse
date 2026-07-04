@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -17,6 +17,7 @@ import {
   Layers,
   User,
   Plus,
+  LucideIcon,
 } from "lucide-react";
 
 import { useAuthStore } from "@/src/features/auth/store";
@@ -60,6 +61,54 @@ import {
 } from "@/src/components/ui/Dropdown-menu";
 import { formatCurrency, cn } from "@/src/lib/utils";
 
+// --- LOCAL COMPONENTS ---
+
+const EmptyState = ({ icon: Icon, message }: { icon: LucideIcon; message: string }) => (
+  <div className="py-16 text-center border-2 border-dashed border-border rounded-2xl bg-card">
+    <Icon className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+    <p className="text-muted-foreground font-medium">{message}</p>
+  </div>
+);
+
+const ListControls = ({
+  search,
+  setSearch,
+  sort,
+  setSort,
+  placeholder = "Search description..."
+}: {
+  search: string;
+  setSearch: (v: string) => void;
+  sort: "newest" | "oldest" | "amount";
+  setSort: (v: "newest" | "oldest" | "amount") => void;
+  placeholder?: string;
+}) => (
+  <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pb-4">
+    <div className="relative w-full sm:w-72">
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full h-10 px-4 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+      />
+    </div>
+    <div className="flex gap-2 w-full sm:w-auto justify-end">
+      {(["newest", "oldest", "amount"] as const).map((opt) => (
+        <Button
+          key={opt}
+          variant={sort === opt ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSort(opt)}
+          className="capitalize h-9 px-3 rounded-xl text-xs font-semibold"
+        >
+          {opt}
+        </Button>
+      ))}
+    </div>
+  </div>
+);
+
 // --- LOCAL COMPONENT: Consistent Expense Card for Group View ---
 const GroupExpenseCard = ({ expense }: { expense: any }) => {
   const { user } = useAuthStore();
@@ -75,11 +124,11 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
   return (
     <Link
       href={`/dashboard/expenses/${expense.id}`}
-      className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 hover:shadow-md transition-all group"
+      className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card shadow-sm hover:border-primary/20 hover:shadow-md transition-all group"
     >
-      <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
-        <AvatarImage src={avatarUrl || undefined} className="object-cover" />
-        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+      <Avatar className="h-12 w-12 border border-border shadow-sm group-hover:border-primary/30 transition-colors rounded-full">
+        <AvatarImage src={avatarUrl || undefined} className="object-cover rounded-full" />
+        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold rounded-full">
           {displayName?.[0]?.toUpperCase()}
         </AvatarFallback>
       </Avatar>
@@ -120,7 +169,7 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
 
         <div className="flex flex-col items-end gap-0.5 mt-1">
           {paidAmount > 0 && (
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
               You paid {formatCurrency(String(paidAmount), expense.currency)}
             </span>
           )}
@@ -133,7 +182,7 @@ const GroupExpenseCard = ({ expense }: { expense: any }) => {
           )}
 
           {paidAmount === 0 && shareAmount === 0 && (
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-muted/50 px-2 py-0.5 rounded-md">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-muted/50 px-2 py-0.5 rounded-full">
               {expense.split_type}
             </span>
           )}
@@ -177,6 +226,25 @@ export default function GroupDetailsPage() {
   } | null>(null);
   const [optimizedData, setOptimizedData] = useState<OptimizedPayment[]>([]);
 
+  // --- MOBILE STICKY BAR STATE ---
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 220) {
+        setShowStickyBar(true);
+      } else {
+        setShowStickyBar(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // --- EXPENSE LIST STATE ---
+  const [expenseSearch, setExpenseSearch] = useState("");
+  const [expenseSort, setExpenseSort] = useState<"newest" | "oldest" | "amount">("newest");
+
   const userAvatar = useMemo(() => {
     if (user?.avatar) return user.avatar;
     return null;
@@ -186,6 +254,42 @@ export default function GroupDetailsPage() {
     setShowSimplifyModal(true);
     simplify(undefined, { onSuccess: (data) => setOptimizedData(data) });
   };
+
+  // --- GROUP STATS CALCULATION ---
+  const groupCreatedDate = useMemo(() => {
+    if (!group) return "Recently";
+    const runtimeCreatedAt = (group as any).created_at || (group as any).createdAt;
+    if (runtimeCreatedAt) {
+      return new Date(runtimeCreatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+    }
+    if (group.members && group.members.length > 0) {
+      const dates = group.members.map((m: any) => new Date(m.joined_at).getTime()).filter(Boolean);
+      if (dates.length > 0) {
+        return new Date(Math.min(...dates)).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+      }
+    }
+    return "Recently";
+  }, [group]);
+
+  const totalSpend = useMemo(() => {
+    return expensesList.reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0);
+  }, [expensesList]);
+
+  // --- FILTERED & SORTED EXPENSES ---
+  const filteredExpenses = useMemo(() => {
+    let list = [...expensesList];
+    if (expenseSearch.trim()) {
+      const q = expenseSearch.toLowerCase();
+      list = list.filter(e => e.description.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      if (expenseSort === "newest") return new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (expenseSort === "oldest") return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (expenseSort === "amount") return parseFloat(b.amount) - parseFloat(a.amount);
+      return 0;
+    });
+    return list;
+  }, [expensesList, expenseSearch, expenseSort]);
 
   if (loadingGroup) return <LoadingSkeleton />;
   if (!group) return <GroupNotFound />;
@@ -197,9 +301,7 @@ export default function GroupDetailsPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto">
       {/* HEADER SECTION */}
-      <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 z-0 pointer-events-none" />
-
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-8 relative overflow-hidden">
         <div className="relative z-10">
           <div className="mb-6">
             <Button
@@ -214,12 +316,12 @@ export default function GroupDetailsPage() {
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24 rounded-3xl border-4 border-background shadow-xl">
+              <Avatar className="h-24 w-24 rounded-2xl border-4 border-background shadow-xl">
                 <AvatarImage
                   src={group.avatar || undefined}
-                  className="object-cover"
+                  className="object-cover rounded-2xl"
                 />
-                <AvatarFallback className="rounded-3xl text-4xl font-bold bg-primary/10 text-primary">
+                <AvatarFallback className="rounded-2xl text-4xl font-bold bg-primary/10 text-primary">
                   {group.name[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -232,171 +334,203 @@ export default function GroupDetailsPage() {
                   {group.description || "No description"}
                 </p>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/50 border border-border text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                {/* Stat strip (small muted-text chips) */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 border border-border font-bold uppercase tracking-wide">
                     <Users className="h-3.5 w-3.5" />
                     <span>{group.members.length} Members</span>
                   </div>
+                  <span className="px-2.5 py-1 bg-muted/40 rounded-full border border-border/50">
+                    Created {groupCreatedDate}
+                  </span>
+                  <span className="px-2.5 py-1 bg-muted/40 rounded-full border border-border/50">
+                    Total Spend: {formatCurrency(totalSpend, balances?.currency || "INR")}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
               <Button
                 variant="outline"
                 onClick={handleSimplify}
-                className="flex-1 md:flex-none h-12 rounded-xl border-border hover:bg-muted"
+                className="flex-1 md:flex-none h-12 rounded-xl border-border hover:bg-muted font-bold"
               >
                 <ArrowRightLeft className="mr-2 h-4 w-4" /> Simplify
               </Button>
               <Button
                 asChild
-                className="flex-1 md:flex-none h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                className="flex-1 md:flex-none h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 font-bold"
               >
                 <Link href={`/dashboard/expenses/new?groupId=${groupId}`}>
                   <Plus className="mr-2 h-4 w-4" /> Add Expense
                 </Link>
               </Button>
               {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowEditGroup(true)}
-                  className="h-12 w-12 rounded-xl border border-border hover:bg-muted"
-                >
-                  <Settings className="h-5 w-5 text-muted-foreground" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 rounded-xl border border-border text-muted-foreground hover:text-foreground shrink-0"
+                      title="Group Settings"
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 rounded-xl border-border">
+                    <DropdownMenuLabel className="font-semibold text-xs text-muted-foreground px-2 py-1.5">
+                      Group Settings
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-border my-1" />
+                    <DropdownMenuItem
+                      onClick={() => setShowEditGroup(true)}
+                      className="cursor-pointer rounded-xl font-medium"
+                    >
+                      <Settings className="mr-2 h-4 w-4" /> Edit Group Info
+                    </DropdownMenuItem>
+                    {/* Future Admin Actions: Leave/Delete Group would go here */}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* --- LEFT COLUMN: TABS --- */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* NET BALANCE CARD */}
-          <div className="p-8 rounded-[2rem] bg-gradient-to-br from-gray-900 to-slate-800 dark:from-background dark:to-card dark:border dark:border-border text-white shadow-xl flex items-center justify-between relative overflow-hidden">
-            <div className="absolute inset-0 bg-white/5 opacity-50 pattern-grid-lg" />
-            <div className="relative z-10">
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">
-                Your Net Balance
-              </p>
-              <div
-                className={cn(
-                  "text-4xl font-mono font-bold tracking-tighter",
-                  netBalance > 0
-                    ? "text-emerald-400"
-                    : netBalance < 0
-                    ? "text-rose-400"
-                    : "text-white"
-                )}
-              >
-                {netBalance > 0 ? "+" : ""}
-                {formatCurrency(
-                  String(netBalance),
-                  balances?.currency || "INR"
-                )}
-              </div>
-            </div>
-            <div className="text-right text-sm text-gray-400 font-medium relative z-10">
-              {netBalance > 0
-                ? "You get back"
-                : netBalance < 0
-                ? "You owe"
-                : "Settled up"}
-            </div>
-          </div>
-
-          <Tabs defaultValue="balances" className="w-full">
-            <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14 mb-6">
-              <TabsTrigger
-                value="balances"
-                className="rounded-xl h-full px-6 font-bold"
-              >
-                Balances
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="expenses"
-                className="rounded-xl h-full px-6 font-bold"
-              >
-                Expenses
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="history"
-                className="rounded-xl h-full px-6 font-bold"
-              >
-                Activity
-              </TabsTrigger>
-            </TabsList>
-
-            {/* TAB 1: BALANCES */}
-            <TabsContent
-              value="balances"
-              className="space-y-6 animate-in fade-in slide-in-from-bottom-2"
-            >
-              <BalancesList
-                balances={balances}
-                groupName={group.name}
-                onSettleClick={(target) => setSettlementTarget(target)}
-              />
-            </TabsContent>
-
-            {/* TAB 2: EXPENSES LIST */}
-            <TabsContent
-              value="expenses"
-              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
-            >
-              {loadingExpenses ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-                  ))}
-                </div>
-              ) : expensesList.length === 0 ? (
-                <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
-                  <Receipt className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-muted-foreground font-medium">
-                    No expenses added yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {expensesList.map((expense: any) => (
-                    <GroupExpenseCard key={expense.id} expense={expense} />
-                  ))}
-                </div>
+      <div className="w-full space-y-6">
+        {/* NET BALANCE CARD */}
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+              Your Net Balance
+            </p>
+            <div
+              className={cn(
+                "text-4xl font-mono font-bold tracking-tighter",
+                netBalance > 0
+                  ? "text-secondary"
+                  : netBalance < 0
+                  ? "text-destructive"
+                  : "text-muted-foreground"
               )}
-            </TabsContent>
-
-            {/* TAB 3: SETTLEMENT HISTORY */}
-            <TabsContent
-              value="history"
-              className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
             >
-              {loadingSettlements ? (
-                <div className="space-y-3">
-                  {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-                  ))}
-                </div>
-              ) : settlements?.length === 0 ? (
-                <div className="py-16 text-center border-2 border-dashed border-border rounded-[2.5rem] bg-card">
-                  <ArrowRightLeft className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-muted-foreground font-medium">
-                    No settlement history.
-                  </p>
-                </div>
-              ) : (
-                settlements.map((s: any) => {
+              {netBalance > 0 ? "+" : ""}
+              {formatCurrency(
+                String(netBalance),
+                balances?.currency || "INR"
+              )}
+            </div>
+            {balances && (
+              <div className="flex gap-4 mt-2 text-xs font-medium text-muted-foreground">
+                <span>Owed by {balances.you_are_owed?.length || 0} {balances.you_are_owed?.length === 1 ? "person" : "people"}</span>
+                <span className="text-border">•</span>
+                <span>You owe {balances.you_owe?.length || 0} {balances.you_owe?.length === 1 ? "person" : "people"}</span>
+              </div>
+            )}
+          </div>
+          <div className="text-right text-sm font-semibold text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-full border border-border">
+            {netBalance > 0
+              ? "You get back"
+              : netBalance < 0
+              ? "You owe"
+              : "Settled up"}
+          </div>
+        </div>
+
+        <Tabs defaultValue="balances" className="w-full">
+          <TabsList className="bg-muted p-1.5 rounded-2xl w-full sm:w-auto h-14 mb-6 flex flex-wrap h-auto sm:h-14">
+            <TabsTrigger
+              value="balances"
+              className="rounded-xl h-11 sm:h-full px-6 font-bold flex-1 sm:flex-none"
+            >
+              Balances
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="expenses"
+              className="rounded-xl h-11 sm:h-full px-6 font-bold flex-1 sm:flex-none"
+            >
+              Expenses ({expensesList.length})
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="history"
+              className="rounded-xl h-11 sm:h-full px-6 font-bold flex-1 sm:flex-none"
+            >
+              Activity ({settlements?.length || 0})
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="members"
+              className="rounded-xl h-11 sm:h-full px-6 font-bold flex-1 sm:flex-none"
+            >
+              Members ({group.members.length})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB 1: BALANCES */}
+          <TabsContent
+            value="balances"
+            className="space-y-6 animate-in fade-in slide-in-from-bottom-2"
+          >
+            <BalancesList
+              balances={balances}
+              groupName={group.name}
+              onSettleClick={(target) => setSettlementTarget(target)}
+            />
+          </TabsContent>
+
+          {/* TAB 2: EXPENSES LIST */}
+          <TabsContent
+            value="expenses"
+            className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+          >
+            <ListControls
+              search={expenseSearch}
+              setSearch={setExpenseSearch}
+              sort={expenseSort}
+              setSort={setExpenseSort}
+            />
+            {loadingExpenses ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : filteredExpenses.length === 0 ? (
+              <EmptyState icon={Receipt} message="No expenses added yet." />
+            ) : (
+              <div className="space-y-3">
+                {filteredExpenses.map((expense: any) => (
+                  <GroupExpenseCard key={expense.id} expense={expense} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* TAB 3: SETTLEMENT HISTORY */}
+          <TabsContent
+            value="history"
+            className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+          >
+            {loadingSettlements ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : settlements?.length === 0 ? (
+              <EmptyState icon={ArrowRightLeft} message="No settlement history." />
+            ) : (
+              <div className="space-y-3">
+                {settlements.map((s: any) => {
                   const isPayer = s.payer.id === user?.id;
                   const isReceiver = s.receiver.id === user?.id;
                   return (
                     <div
                       key={s.id}
-                      className="flex items-center justify-between p-4 rounded-2xl border border-border bg-card shadow-sm hover:border-primary/20 transition-all"
+                      className="flex items-center justify-between p-4 rounded-xl border border-border bg-card shadow-sm hover:border-primary/20 transition-all"
                     >
                       <div className="flex items-center gap-4">
                         <div
@@ -436,96 +570,116 @@ export default function GroupDetailsPage() {
                       </span>
                     </div>
                   );
-                })
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+                })}
+              </div>
+            )}
+          </TabsContent>
 
-        {/* --- RIGHT COLUMN: MEMBERS SIDEBAR --- */}
-        <div className="lg:col-span-1">
-          <div className="rounded-[2.5rem] border border-border bg-card p-6 shadow-sm sticky top-6">
-            <div className="flex items-center justify-between mb-6 px-2">
-              <h3 className="font-bold text-lg text-foreground">Members</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAddMember(true)}
-                className="text-primary hover:text-primary hover:bg-primary/5 rounded-full px-3"
-              >
-                <UserPlus className="h-4 w-4 mr-1" /> Add
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {group.members.map((member) => (
-                <div
-                  key={member.user.id}
-                  className="flex items-center justify-between p-3 rounded-2xl hover:bg-muted/50 transition-colors group"
+          {/* TAB 4: MEMBERS */}
+          <TabsContent
+            value="members"
+            className="space-y-4 animate-in fade-in slide-in-from-bottom-2"
+          >
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6 px-2">
+                <h3 className="font-bold text-lg text-foreground">Members</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddMember(true)}
+                  className="text-primary hover:text-primary hover:bg-primary/5 rounded-full px-3"
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <Avatar className="h-10 w-10 border border-border">
-                      <AvatarImage src={member.user.avatar} />
-                      <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xs">
-                        {member.user.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                  <UserPlus className="h-4 w-4 mr-1" /> Add
+                </Button>
+              </div>
 
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {member.user.name}
-                        {member.user.id === user?.id && " (You)"}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                        {member.role}
-                      </p>
+              <div className="space-y-2">
+                {group.members.map((member) => (
+                  <div
+                    key={member.user.id}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <Avatar className="h-10 w-10 border border-border rounded-full">
+                        <AvatarImage src={member.user.avatar} className="rounded-full" />
+                        <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xs rounded-full">
+                          {member.user.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {member.user.name}
+                          {member.user.id === user?.id && " (You)"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                          {member.role}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {isAdmin && member.user.id !== user?.id && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 rounded-full"
+                    {isAdmin && member.user.id !== user?.id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 rounded-full"
+                          >
+                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="rounded-xl border-border min-w-[160px]"
                         >
-                          <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="rounded-xl border-border min-w-[160px]"
-                      >
-                        <DropdownMenuLabel>Manage Member</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            updateRole({
-                              userId: member.user.id,
-                              role:
-                                member.role === "ADMIN" ? "MEMBER" : "ADMIN",
-                            })
-                          }
-                        >
-                          <Shield className="mr-2 h-4 w-4" />{" "}
-                          {member.role === "ADMIN" ? "Demote" : "Promote"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => removeMember(member.user.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <UserMinus className="mr-2 h-4 w-4" /> Remove
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              ))}
+                          <DropdownMenuLabel>Manage Member</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() =>
+                              updateRole({
+                                userId: member.user.id,
+                                role:
+                                  member.role === "ADMIN" ? "MEMBER" : "ADMIN",
+                              })
+                            }
+                            className="rounded-xl cursor-pointer"
+                          >
+                            <Shield className="mr-2 h-4 w-4" />{" "}
+                            {member.role === "ADMIN" ? "Demote" : "Promote"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => removeMember(member.user.id)}
+                            className="text-destructive focus:text-destructive rounded-xl cursor-pointer"
+                          >
+                            <UserMinus className="mr-2 h-4 w-4" /> Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* --- MOBILE STICKY ACTION BAR --- */}
+      {showStickyBar && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 backdrop-blur-md border-t border-border shadow-lg animate-in fade-in slide-in-from-bottom duration-200">
+          <div className="max-w-md mx-auto safe-bottom">
+            <Button
+              asChild
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
+            >
+              <Link href={`/dashboard/expenses/new?groupId=${groupId}`}>
+                <Plus className="mr-2 h-4 w-4" /> Add Expense
+              </Link>
+            </Button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* --- MODALS --- */}
       <SimplifyDebtDialog
@@ -577,11 +731,8 @@ export default function GroupDetailsPage() {
 function LoadingSkeleton() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <Skeleton className="h-64 w-full rounded-[2.5rem]" />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Skeleton className="h-96 w-full lg:col-span-2 rounded-[2.5rem]" />
-        <Skeleton className="h-64 w-full rounded-[2.5rem]" />
-      </div>
+      <Skeleton className="h-64 w-full rounded-2xl" />
+      <Skeleton className="h-96 w-full rounded-2xl" />
     </div>
   );
 }
