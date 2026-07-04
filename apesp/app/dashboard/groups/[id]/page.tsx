@@ -344,7 +344,7 @@ export default function GroupDetailsPage() {
                     Created {groupCreatedDate}
                   </span>
                   <span className="px-2.5 py-1 bg-muted/40 rounded-full border border-border/50">
-                    Total Spend: {formatCurrency(totalSpend, balances?.currency || "INR")}
+                    Total Spend: {formatCurrency(String(totalSpend), balances?.currency || "INR")}
                   </span>
                 </div>
               </div>
