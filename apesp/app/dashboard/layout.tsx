@@ -271,7 +271,7 @@ export default function DashboardLayout({
                     setActiveDrawer("voice");
                     setIsFabOpen(false);
                   }}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-primary text-white shadow-lg shadow-primary/20 border border-primary/20 text-sm font-bold h-11 touch-manipulation"
+                  className="flex h-11 items-center gap-3 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-card touch-manipulation"
                   style={{ minWidth: "44px", minHeight: "44px" }}
                 >
                   <span className="tracking-tight">Voice Input</span>
@@ -288,7 +288,7 @@ export default function DashboardLayout({
                     setActiveDrawer("scan");
                     setIsFabOpen(false);
                   }}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-secondary text-white shadow-lg shadow-secondary/20 border border-secondary/20 text-sm font-bold h-11 touch-manipulation"
+                  className="flex h-11 items-center gap-3 rounded-xl border border-brand-lemon-s20/60 bg-secondary px-4 py-2.5 text-sm font-bold text-secondary-foreground shadow-card touch-manipulation"
                   style={{ minWidth: "44px", minHeight: "44px" }}
                 >
                   <span className="tracking-tight">Scan Receipt</span>
@@ -323,7 +323,7 @@ export default function DashboardLayout({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className={cn(
-              "h-14 w-14 rounded-full bg-gradient-to-tr from-primary to-secondary text-white shadow-2xl flex items-center justify-center border-none transition-transform z-50 touch-manipulation",
+              "z-50 flex h-14 w-14 items-center justify-center rounded-xl border border-primary bg-primary text-primary-foreground shadow-glow transition-colors touch-manipulation",
               isFabOpen && "rotate-45"
             )}
             style={{ minWidth: "44px", minHeight: "44px" }}
@@ -413,7 +413,7 @@ export default function DashboardLayout({
                           {recordingState === "idle" && (
                             <button
                               onClick={startRecording}
-                              className="h-20 w-20 rounded-full bg-primary hover:bg-primary/95 text-white flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 transition-all touch-manipulation"
+                              className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-glow transition-colors hover:bg-primary-dark touch-manipulation"
                               style={{ minWidth: "44px", minHeight: "44px" }}
                             >
                               <Mic className="h-8 w-8" />
@@ -431,7 +431,7 @@ export default function DashboardLayout({
                           {recordingState === "review" && (
                             <button
                               onClick={togglePlayback}
-                              className="h-20 w-20 rounded-full bg-secondary hover:bg-secondary/95 text-white flex items-center justify-center shadow-lg shadow-secondary/20 hover:scale-105 transition-all touch-manipulation"
+                              className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-card transition-colors hover:bg-secondary-dark touch-manipulation"
                               style={{ minWidth: "44px", minHeight: "44px" }}
                             >
                               {isPlaying ? (

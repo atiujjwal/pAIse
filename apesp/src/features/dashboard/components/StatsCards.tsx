@@ -39,9 +39,9 @@ export function StatsCards({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* --- CARD : BALANCE OVERVIEW --- */}
       {isLoadingSnapshot ? (
-        <Skeleton className="h-[280px] rounded-[2.5rem]" />
+        <Skeleton className="h-[280px] rounded-2xl" />
       ) : (
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-5 sm:p-8 text-white shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[280px]">
+        <div className="relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-2xl bg-primary p-5 text-primary-foreground shadow-glow sm:p-8">
           {/* Decorative Background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
@@ -121,7 +121,7 @@ export function StatsCards({
       )}
 
       {/* --- CARD: SPENDING ANALYSIS  --- */}
-      <div className="rounded-[2.5rem] border border-border bg-card p-5 sm:p-8 shadow-sm flex flex-col justify-between min-h-[280px]">
+      <div className="flex min-h-[280px] flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-card sm:p-8">
         <div className="flex items-start justify-between mb-6">
           <div className="space-y-1">
             <div className="flex items-center gap-3">

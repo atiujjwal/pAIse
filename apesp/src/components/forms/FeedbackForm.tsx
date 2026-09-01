@@ -34,7 +34,7 @@ export function FeedbackForm() {
         <div className="h-16 w-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mb-6">
           <CheckCircle2 className="h-8 w-8" />
         </div>
-        <h3 className="text-2xl font-bold mb-2">Thanks for your input!</h3>
+        <h3 className="font-display text-2xl font-semibold mb-2">Thanks for your input!</h3>
         <p className="text-muted-foreground max-w-md text-sm">
           We appreciate you taking the time to help make pAIse better. We'll
           review your message shortly.
@@ -46,7 +46,7 @@ export function FeedbackForm() {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+        <h3 className="font-display text-2xl font-semibold mb-2 flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
           Have a suggestion?
         </h3>
@@ -112,7 +112,7 @@ export function FeedbackForm() {
               </SelectItem>
               <SelectItem value="feature">
                 <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-violet-500" /> Feature Request
+                  <Zap className="h-4 w-4 text-primary" /> Feature Request
                 </div>
               </SelectItem>
             </SelectContent>
@@ -142,7 +142,7 @@ export function FeedbackForm() {
         <Button
           type="submit"
           disabled={state.submitting}
-          className="w-full h-12 md:h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-secondary text-white hover:opacity-95 transition-all shadow-lg shadow-primary/20 border-none"
+          className="h-12 w-full text-base md:h-14"
         >
           {state.submitting ? (
             <>

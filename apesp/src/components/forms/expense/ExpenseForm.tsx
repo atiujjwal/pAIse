@@ -385,7 +385,7 @@ export default function ExpenseForm({
   };
 
   return (
-    <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in rounded-2xl border border-border bg-card p-8 shadow-card fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-10 space-y-6">
         <div className="flex items-center justify-between">
           <Label className="text-lg font-bold text-foreground">

@@ -20,6 +20,7 @@ const config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", ...fontFamily.sans],
+        display: ["var(--font-fraunces)", ...fontFamily.serif],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -70,6 +71,30 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          red: {
+            DEFAULT: "#A90E02",
+            10: "#F2DBD9",
+            25: "#E5B7B3",
+            40: "#D48680",
+            60: "#C3564E",
+            80: "#B63228",
+            s20: "#870B02",
+            s40: "#650801",
+            s60: "#440601",
+            s80: "#220300",
+          },
+          lemon: {
+            DEFAULT: "#FFFACD",
+            s20: "#CCC8A4",
+            s40: "#99967B",
+            s60: "#666452",
+          },
+          cream: "#FFFDF8",
+          ink: "#1A0C08",
+          body: "#3A2420",
+          border: "#E8DED2",
+        },
         // Category Colors
         cat: {
           dining: "hsl(var(--cat-dining))",
@@ -84,8 +109,8 @@ const config = {
         },
       },
       boxShadow: {
-        glow: "0 0 20px -5px hsl(var(--primary) / 0.5)",
-        card: "0 2px 10px rgba(0, 0, 0, 0.04)",
+        glow: "0 14px 40px -20px rgba(169, 14, 2, 0.45)",
+        card: "0 14px 35px -24px rgba(34, 3, 0, 0.28)",
       },
     },
   },

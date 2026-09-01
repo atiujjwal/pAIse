@@ -14,7 +14,7 @@ import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/Button";
 import { useNavigationGuard } from "@/src/hooks/use-navigation-guard";
 import { UnsavedChangesDialog } from "@/src/components/common/UnsavedChangesDialog";
-import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+import { BrandLogo } from "@/src/components/common/BrandLogo";
 import Link from "next/link";
 
 const NAV_ITEMS = [
@@ -59,25 +59,20 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="relative flex h-full flex-col bg-background/80 backdrop-blur-xl transition-colors">
-        {/* --- Gradient Vertical Separator --- */}
-        <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-border/60 to-transparent" />
+      <aside className="relative flex h-full flex-col bg-card transition-colors">
+        <div className="absolute bottom-0 right-0 top-0 w-px bg-border" />
 
         {/* --- Brand Header --- */}
         <div className="relative flex h-24 items-center px-6">
           <Link href="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
-                <img
-                  src={pAIse_LOGO}
-                  alt="pAIse"
-                  className="h-full w-full object-contain"
-                />
+            <div className="h-11 w-11 rounded-xl border border-border bg-secondary p-1 shadow-sm dark:bg-brand-red-s80">
+              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg">
+                <BrandLogo />
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                pAIse
+              <span className="font-display text-2xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+                p<span className="text-primary">AI</span>se
               </span>
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-1"></span>
             </div>
@@ -100,18 +95,18 @@ export function Sidebar() {
                 key={item.href}
                 onClick={() => handleNavigation(item.href)}
                 className={cn(
-                  "relative w-full group flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+                  "relative w-full group flex min-h-11 items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   isActive
-                    ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/25"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-card"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
                 <item.icon
                   className={cn(
-                    "h-5 w-5 transition-transform duration-300",
+                    "h-5 w-5 transition-colors duration-200",
                     isActive
-                      ? "text-white"
-                      : "text-muted-foreground group-hover:text-primary group-hover:scale-110"
+                      ? "text-primary-foreground"
+                      : "text-muted-foreground group-hover:text-primary"
                   )}
                 />
                 <span className="flex-1 text-left tracking-tight">

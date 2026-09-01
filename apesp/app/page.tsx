@@ -1,144 +1,213 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
-  Mic,
-  Calculator,
-  Smartphone,
-  HelpCircle,
-  Mail,
-  Github,
-  Linkedin,
-  MessageSquare,
-  Copy,
-  Receipt,
   Bot,
-  LayoutDashboard,
-  UserPlus,
-  Lock,
-  ChevronDown,
-  Sparkles,
-  ExternalLink,
-  ShieldCheck,
+  Calculator,
   Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  Github,
+  LayoutDashboard,
+  Linkedin,
+  Lock,
+  Mail,
   Menu,
+  MessageSquare,
+  Mic,
+  Receipt,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  UserPlus,
   X,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
-import { pAIse_LOGO } from "@/src/lib/mediaUrls";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 import { FeedbackForm } from "@/src/components/forms/FeedbackForm";
-import { useToastStore } from "@/src/hooks/use-toast";
 import { PrivacyPolicyModal } from "@/src/components/legal/PrivacyPolicyModal";
 import { SecurityFeaturesModal } from "@/src/components/legal/SecurityFeaturesModal";
-import { useState } from "react";
-import { cn } from "@/src/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { useToastStore } from "@/src/hooks/use-toast";
+import { BrandLogo } from "@/src/components/common/BrandLogo";
 
-// --- FEATURES DATA ---
+const navItems = ["Features", "FAQ", "Contact"];
+
 const features = [
   {
-    title: "Voice-Powered Entry",
-    desc: "Just say 'I paid 500 for lunch with Bob' and our AI processes the audio instantly.",
+    title: "Say it. We’ll shape it.",
+    desc: "Record a natural sentence and pAIse turns it into an expense draft for you to review.",
     icon: Mic,
-    color: "text-violet-600 dark:text-violet-400",
-    bg: "bg-violet-500/10",
-    gradient: "from-violet-500/20 to-purple-500/20",
+    number: "01",
   },
   {
-    title: "Smart Receipt Scanning",
-    desc: "Snap a photo of any bill. We extract amounts, items, and taxes automatically.",
+    title: "Let the receipt speak.",
+    desc: "Photograph a bill and pull the useful details into a clean, editable expense.",
     icon: Receipt,
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-500/10",
-    gradient: "from-blue-500/20 to-cyan-500/20",
+    number: "02",
   },
   {
-    title: "Flexible Splits",
-    desc: "Handle complex math: Equal, Exact, Percentage, or Shares based splitting.",
+    title: "Split it your way.",
+    desc: "Divide equally, by exact amount, percentage, or shares—without doing the maths twice.",
     icon: Calculator,
-    color: "text-pink-600 dark:text-pink-400",
-    bg: "bg-pink-500/10",
-    gradient: "from-pink-500/20 to-rose-500/20",
+    number: "03",
   },
   {
-    title: "AI Financial Assistant",
-    desc: "Chat with your data. Ask 'How much do I owe Rahul?' for instant answers.",
+    title: "Ask your own numbers.",
+    desc: "Use the AI assistant for quick answers about balances, expenses, and how the app works.",
     icon: Bot,
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-500/10",
-    gradient: "from-emerald-500/20 to-teal-500/20",
+    number: "04",
   },
   {
-    title: "Dynamic Insights",
-    desc: "Track net balances and spending trends across weekly, monthly, or yearly views.",
+    title: "See the whole picture.",
+    desc: "Follow balances and spending trends across the week, month, or year.",
     icon: LayoutDashboard,
-    color: "text-orange-600 dark:text-orange-400",
-    bg: "bg-orange-500/10",
-    gradient: "from-orange-500/20 to-amber-500/20",
+    number: "05",
   },
   {
-    title: "Easy Connections",
-    desc: "Add friends via email, invite links, or unique pAIse QR tags.",
+    title: "Bring your people in.",
+    desc: "Connect by email, invite link, or a personal pAIse QR tag.",
     icon: UserPlus,
-    color: "text-indigo-600 dark:text-indigo-400",
-    bg: "bg-indigo-500/10",
-    gradient: "from-indigo-500/20 to-blue-500/20",
+    number: "06",
   },
   {
-    title: "Privacy First",
-    desc: "Full control over your data. Block users, manage requests, and stay secure.",
+    title: "Private by design.",
+    desc: "Control requests, block unwanted connections, and decide who can share expenses with you.",
     icon: Lock,
-    color: "text-rose-600 dark:text-rose-400",
-    bg: "bg-rose-500/10",
-    gradient: "from-rose-500/20 to-red-500/20",
+    number: "07",
   },
   {
-    title: "Manual Entry",
-    desc: "Prefer the classic way? Quickly enter description, amount, and dates manually.",
+    title: "Classic when you need it.",
+    desc: "Add description, amount, date, and participants manually whenever that is faster.",
     icon: Smartphone,
-    color: "text-cyan-600 dark:text-cyan-400",
-    bg: "bg-cyan-500/10",
-    gradient: "from-cyan-500/20 to-sky-500/20",
+    number: "08",
   },
 ];
 
-// --- FAQ DATA ---
 const faqs = [
   {
     q: "How can I add friends on the app?",
-    a: "You can add friends by sending a friend request using their email, sharing an invite link, or asking them to scan your pAIse tag QR code.",
+    a: "Send a friend request using their email, share an invite link, or let them scan your personal pAIse QR tag.",
   },
   {
     q: "Who can create shared expenses with me?",
-    a: "Only users who are added as your friends can create shared expenses with you on the app.",
+    a: "Only people you have accepted as friends can create shared expenses with you.",
   },
   {
     q: "What types of expenses can I create?",
-    a: "You can create two types of expenses: Friend-based expenses (shared directly with a specific friend) and Group-based expenses (shared among members of a group you create or is part of).",
+    a: "Create a direct expense with one friend or a group expense shared among the members of a group.",
   },
   {
-    q: "What is the difference between a friend expense and a group expense?",
-    a: "A friend expense is created between you and one selected friend. A group expense is created with all members of a selected group.",
+    q: "What is the difference between a friend and group expense?",
+    a: "A friend expense is shared directly with one selected friend. A group expense can include every member of a selected group.",
   },
   {
     q: "How does voice-based expense creation work?",
-    a: "You can record your expense details using voice input. The app uses AI to extract relevant information and creates a draft expense. You can review, edit, submit the expense, or re-record if needed.",
+    a: "Record the expense in your own words. pAIse extracts the details into a draft that you can review, edit, submit, or record again.",
   },
   {
     q: "Can I create an expense by scanning a receipt?",
-    a: "Yes. You can scan a bill, and AI will attempt to extract relevant details such as the amount and description to create a draft expense for your review.",
+    a: "Yes. Upload a bill and pAIse will attempt to extract the amount and description into an editable draft.",
   },
   {
-    q: "What can the AI chatbot help me with?",
-    a: "The AI chatbot can assist with app features, expense-related information, and balance details with your friends and groups. Access to personal data is available only when you are logged in.",
+    q: "What can the AI assistant help me with?",
+    a: "It can explain app features and, when you are signed in, answer questions about your own expenses and balances.",
   },
   {
-    q: "Are there any limits on using AI features?",
-    a: "Yes. During the current development phase: Non-logged-in users can make up to 5 AI interactions, and logged-in users can make up to 10 AI interactions in a day. For voice-based expense entry, and receipt scanning features users can make up to 5 AI interactions in a day.",
+    q: "Are there limits on the AI features?",
+    a: "During development, guests can make up to 5 AI interactions per day and signed-in users up to 10. Voice entry and receipt scanning each allow up to 5 interactions per day.",
   },
 ];
+
+function BrandLockup({ inverse = false }: { inverse?: boolean }) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span
+        className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border p-1 shadow-sm md:h-11 md:w-11 ${
+          inverse
+            ? "border-white/20 bg-brand-red-s80"
+            : "border-brand-lemon-s20/60 bg-brand-cream"
+        }`}
+      >
+        <BrandLogo surface={inverse ? "dark" : "light"} decorative />
+      </span>
+      <span
+        className={`font-display text-2xl font-semibold tracking-[-0.04em] ${
+          inverse ? "text-brand-cream" : "text-brand-ink"
+        }`}
+      >
+        p<span className={inverse ? "text-brand-lemon" : "text-brand-red"}>AI</span>se
+      </span>
+    </span>
+  );
+}
+
+function ProductPreview() {
+  return (
+    <div className="relative mx-auto w-full max-w-[590px]">
+      <div className="absolute -left-4 top-12 hidden -rotate-6 border border-brand-red-s40 bg-brand-cream px-4 py-3 text-brand-ink shadow-card sm:block">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-red">Voice draft</p>
+        <p className="mt-1 font-display text-lg">“Dinner was ₹2,400”</p>
+      </div>
+      <div className="relative rounded-[1.75rem] border border-brand-lemon-s20 bg-brand-lemon p-3 shadow-[0_30px_80px_-40px_rgba(34,3,0,.65)] sm:p-5">
+        <div className="overflow-hidden rounded-[1.25rem] border border-brand-border bg-brand-cream text-brand-ink">
+          <div className="flex items-center justify-between border-b border-brand-border px-4 py-3 sm:px-6">
+            <BrandLockup />
+            <span className="rounded-lg bg-brand-red px-3 py-2 text-xs font-bold text-brand-cream">+ Expense</span>
+          </div>
+          <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
+            <div className="rounded-xl bg-brand-red p-5 text-brand-cream">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-red-25">Your balance</p>
+              <p className="mt-3 font-display text-4xl font-semibold">₹1,260</p>
+              <p className="mt-2 text-xs text-brand-red-10">You are owed across 3 groups</p>
+            </div>
+            <div className="rounded-xl border border-brand-border bg-white p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-body">This month</p>
+                <Sparkles className="h-4 w-4 text-brand-red" />
+              </div>
+              <p className="mt-3 font-display text-3xl font-semibold">₹8,450</p>
+              <div className="mt-4 flex h-9 items-end gap-1.5" aria-hidden="true">
+                {[35, 58, 42, 75, 55, 90, 68].map((height, index) => (
+                  <span
+                    key={index}
+                    className="flex-1 rounded-t-sm bg-brand-red-25 last:bg-brand-red"
+                    style={{ height: `${height}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-brand-border bg-white p-4 sm:col-span-2">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="font-semibold">Recent expenses</p>
+                <p className="text-xs font-semibold text-brand-red">View all</p>
+              </div>
+              {[
+                ["Sunday lunch", "The Weekend Table", "₹2,400"],
+                ["Airport cab", "Goa Trip", "₹860"],
+                ["Groceries", "Flatmates", "₹1,280"],
+              ].map(([title, group, amount], index) => (
+                <div key={title} className="flex items-center gap-3 border-t border-brand-border py-3 first:border-t-0">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${index === 1 ? "bg-brand-red-10" : "bg-brand-lemon"}`}>
+                    {index === 1 ? <Receipt className="h-4 w-4 text-brand-red" /> : <Calculator className="h-4 w-4 text-brand-red" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{title}</span>
+                    <span className="block text-xs text-brand-body">{group}</span>
+                  </span>
+                  <span className="font-mono text-sm font-bold">{amount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const { addToast } = useToastStore();
@@ -147,8 +216,7 @@ export default function LandingPage() {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault();
+  const scrollTo = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -156,134 +224,88 @@ export default function LandingPage() {
     }
   };
 
-  const handleCopyEmail = () => {
-    navigator.clipboard.writeText("paiseapesp@gmail.com");
+  const handleCopyEmail = async () => {
+    await navigator.clipboard.writeText("paiseapesp@gmail.com");
     setCopiedEmail(true);
     addToast("Email copied to clipboard", "success");
-    setTimeout(() => setCopiedEmail(false), 2000);
+    window.setTimeout(() => setCopiedEmail(false), 2000);
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary font-sans transition-colors duration-300">
-      {/* Background Decor */}
-      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px] animate-pulse mix-blend-multiply dark:mix-blend-screen" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[128px] animate-pulse delay-700 mix-blend-multiply dark:mix-blend-screen" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[160px] opacity-50" />
-      </div>
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-brand-lemon selection:text-brand-ink">
+      <header className="sticky top-0 z-50 border-b border-white/15 bg-brand-red text-brand-cream shadow-sm">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 md:h-20">
+          <Link href="/" aria-label="pAIse home" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <BrandLockup inverse />
+          </Link>
 
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl transition-all">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
-          <div className="flex items-center">
-            <Link
-              href="/"
-              className="flex items-center gap-2 md:gap-3 group"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            >
-              <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
-                <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
-                  <img
-                    src={pAIse_LOGO}
-                    alt="pAIse"
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-              </div>
-              <span className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                pAIse
-              </span>
-            </Link>
-          </div>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {["Home", "Features", "FAQ", "Contact"].map((item) => (
-              <Link
+          <nav className="hidden items-center gap-8 md:flex" aria-label="Main navigation">
+            {navItems.map((item) => (
+              <a
                 key={item}
-                href={item === "Home" ? "#" : `#${item.toLowerCase()}`}
-                onClick={(e) =>
-                  item === "Home"
-                    ? window.scrollTo({ top: 0, behavior: "smooth" })
-                    : handleScroll(e, item.toLowerCase())
-                }
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                href={`#${item.toLowerCase()}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollTo(item.toLowerCase());
+                }}
+                className="text-sm font-semibold text-brand-red-10 transition-colors hover:text-brand-lemon"
               >
                 {item}
-              </Link>
+              </a>
             ))}
           </nav>
 
-          <div className="flex gap-2 md:gap-3 items-center">
+          <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted hidden md:flex rounded-xl"
-              asChild
-            >
+            <Button asChild variant="ghost" className="hidden border-transparent text-brand-cream hover:bg-white/10 hover:text-brand-lemon md:inline-flex">
               <Link href="/auth/login">Log in</Link>
             </Button>
-            <Button
-              className="px-5 py-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all border-none hidden md:flex"
-              asChild
-            >
-              <Link href="/auth/register">Start for Free</Link>
+            <Button asChild className="hidden border-brand-lemon bg-brand-lemon text-brand-ink hover:bg-brand-cream md:inline-flex">
+              <Link href="/auth/register">Start free</Link>
             </Button>
-
-            {/* Hamburger Trigger */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center justify-center p-2 rounded-xl border border-border/50 bg-card/30 hover:bg-card text-muted-foreground hover:text-foreground transition-all h-10 w-10 touch-manipulation"
-              aria-label="Toggle menu"
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-brand-cream transition-colors hover:bg-white/10 md:hidden"
+              aria-label="Toggle navigation"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-x-0 top-16 md:top-20 z-40 md:hidden bg-background/95 backdrop-blur-xl border-b border-border shadow-2xl p-6 flex flex-col gap-6"
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="absolute inset-x-0 top-16 border-b border-brand-red-s40 bg-brand-red-s20 p-5 shadow-xl md:hidden"
             >
-              <nav className="flex flex-col gap-4">
-                {["Home", "Features", "FAQ", "Contact"].map((item) => (
-                  <Link
+              <nav className="flex flex-col" aria-label="Mobile navigation">
+                {navItems.map((item) => (
+                  <a
                     key={item}
-                    href={item === "Home" ? "#" : `#${item.toLowerCase()}`}
-                    onClick={(e) => {
+                    href={`#${item.toLowerCase()}`}
+                    onClick={(event) => {
+                      event.preventDefault();
                       setMobileMenuOpen(false);
-                      item === "Home"
-                        ? window.scrollTo({ top: 0, behavior: "smooth" })
-                        : handleScroll(e, item.toLowerCase());
+                      scrollTo(item.toLowerCase());
                     }}
-                    className="text-lg font-semibold text-muted-foreground hover:text-foreground py-2 transition-colors border-b border-border/40 touch-manipulation"
-                    style={{ minHeight: "44px" }}
+                    className="flex min-h-11 items-center border-b border-white/10 font-semibold text-brand-cream last:border-0"
                   >
                     {item}
-                  </Link>
+                  </a>
                 ))}
               </nav>
-
-              <div className="flex flex-col gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="w-full h-12 rounded-xl text-base font-bold bg-card touch-manipulation"
-                  asChild
-                  onClick={() => setMobileMenuOpen(false)}
-                >
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <Button asChild variant="outline" className="border-white/30 bg-transparent text-brand-cream hover:bg-white/10 hover:text-brand-cream">
                   <Link href="/auth/login">Log in</Link>
                 </Button>
-                <Button
-                  className="w-full h-12 bg-gradient-to-r from-primary to-secondary text-white rounded-xl text-base font-bold border-none touch-manipulation"
-                  asChild
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Link href="/auth/register">Start for Free</Link>
+                <Button asChild className="border-brand-lemon bg-brand-lemon text-brand-ink hover:bg-brand-cream">
+                  <Link href="/auth/register">Start free</Link>
                 </Button>
               </div>
             </motion.div>
@@ -291,342 +313,220 @@ export default function LandingPage() {
         </AnimatePresence>
       </header>
 
-      <main className="flex-1">
-        {/* --- Hero Section --- */}
-        <section className="relative px-4 sm:px-6 pt-16 pb-12 md:pt-32 md:pb-24 text-center max-w-5xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-6 md:mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] sm:text-xs md:text-sm font-medium text-primary tracking-wide">
-              AI-Powered Expense Tracking V2.0
-            </span>
+      <main>
+        <section className="relative overflow-hidden bg-brand-red text-brand-cream">
+          <div className="absolute inset-0 opacity-25" aria-hidden="true">
+            <div className="absolute -right-28 -top-36 h-96 w-96 rounded-full border border-brand-red-25" />
+            <div className="absolute -right-14 -top-20 h-64 w-64 rounded-full border border-brand-red-25" />
+            <div className="absolute bottom-12 left-[46%] h-px w-36 rotate-[-16deg] bg-brand-lemon" />
           </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight mb-6 md:mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 text-balance">
-            Split bills, <br className="hidden md:block" />
-            <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
-              not friendships.
-            </span>
-          </h1>
-
-          <p className="mx-auto mb-8 md:mb-10 max-w-2xl text-lg md:text-xl text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 text-balance px-2">
-            Stop arguing over math. Scan receipts, use voice commands, and let
-            our AI handle the complex splitting logic instantly.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-400">
-            <Button
-              size="lg"
-              className="h-14 w-full sm:w-auto px-8 text-base md:text-lg font-semibold bg-gradient-to-r from-primary to-secondary text-white rounded-2xl shadow-xl hover:shadow-primary/20 transition-transform hover:-translate-y-1 border-none touch-manipulation"
-              asChild
-            >
-              <Link href="/auth/register">
-                Create Free Account <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-14 w-full sm:w-auto px-8 text-base md:text-lg font-semibold bg-card/50 border-border text-foreground hover:bg-muted hover:text-foreground rounded-2xl backdrop-blur-sm touch-manipulation"
-              asChild
-            >
-              <Link
-                href="#features"
-                onClick={(e) => handleScroll(e, "features")}
+          <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-12 lg:gap-8 lg:py-24">
+            <div className="lg:col-span-6 lg:pr-8">
+              <div className="mb-6 inline-flex items-center gap-2 border-b border-brand-lemon/70 pb-2 text-xs font-bold uppercase tracking-[0.2em] text-brand-lemon">
+                <Sparkles className="h-4 w-4" /> Shared money, made human
+              </div>
+              <h1 className="font-display text-5xl font-semibold leading-[0.96] tracking-[-0.045em] sm:text-6xl md:text-7xl lg:text-[5.4rem]">
+                Split bills.
+                <span className="block italic text-brand-lemon">Keep the good part.</span>
+              </h1>
+              <p className="mt-7 max-w-xl text-lg leading-8 text-brand-red-10 md:text-xl">
+                Say the expense, scan the receipt, or add it by hand. pAIse keeps the maths tidy so shared moments stay easy.
+              </p>
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Button asChild size="lg" className="h-14 border-brand-lemon bg-brand-lemon px-7 text-brand-ink hover:bg-brand-cream">
+                  <Link href="/auth/register">Create free account <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-14 border-white/35 bg-transparent px-7 text-brand-cream hover:bg-white/10 hover:text-brand-cream">
+                  <a href="#features" onClick={(event) => { event.preventDefault(); scrollTo("features"); }}>Explore pAIse</a>
+                </Button>
+              </div>
+              <button
+                type="button"
+                onClick={() => scrollTo("feedback")}
+                className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-red-10 transition-colors hover:text-brand-lemon"
               >
-                Learn More
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="ghost"
-              className="h-14 w-full sm:w-auto px-6 text-base md:text-lg text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-2xl touch-manipulation"
-              onClick={(e) => handleScroll(e as any, "feedback")}
-            >
-              <MessageSquare className="mr-2 h-5 w-5" /> Suggestion / Bug
-            </Button>
+                <MessageSquare className="h-4 w-4" /> Share a suggestion or bug
+              </button>
+            </div>
+            <div className="lg:col-span-6">
+              <ProductPreview />
+            </div>
           </div>
         </section>
 
-        {/* --- Features Grid --- */}
-        <section
-          id="features"
-          className="py-12 md:py-24 px-4 sm:px-6 border-t border-border bg-muted/20"
-        >
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-8 md:mb-16">
-              <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-3 text-foreground text-balance">
-                Everything you need to settle up
-              </h2>
-              <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-balance px-2">
-                Built for friends, groups, and roommates. pAIse handles the
-                chaos of shared finances so you don't have to.
+        <section className="border-b border-brand-border bg-brand-lemon text-brand-ink">
+          <div className="mx-auto grid max-w-7xl divide-y divide-brand-lemon-s20/70 px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6">
+            {[
+              ["Voice", "Speak naturally"],
+              ["Receipt", "Review before saving"],
+              ["Flexible", "Equal, exact, percent, or shares"],
+            ].map(([label, detail]) => (
+              <div key={label} className="flex items-baseline gap-3 py-5 sm:px-6 first:pl-0">
+                <span className="font-display text-2xl font-semibold text-brand-red">{label}</span>
+                <span className="text-sm text-brand-body">{detail}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="features" className="scroll-mt-20 bg-background px-4 py-16 sm:px-6 md:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
+              <div className="lg:col-span-7">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">The everyday toolkit</p>
+                <h2 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-[-0.035em] text-foreground sm:text-5xl md:text-6xl">
+                  Less admin between you and a settled bill.
+                </h2>
+              </div>
+              <p className="max-w-xl text-base leading-7 text-muted-foreground lg:col-span-5 lg:justify-self-end">
+                From the first receipt to the final balance, each step is designed to be quick, reviewable, and clear to everyone involved.
               </p>
             </div>
 
-            {/* Explicitly 2 columns on mobile */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
-              {features.map((feature, i) => {
+            <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+              {features.map((feature) => {
                 const Icon = feature.icon;
                 return (
-                  <div
-                    key={i}
-                    className="group relative flex flex-col items-start p-4 md:p-6 rounded-2xl md:rounded-[2rem] bg-card border border-border/50 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 overflow-hidden"
-                  >
-                    <div
-                      className={cn(
-                        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 rounded-2xl md:rounded-[2rem] transition-all duration-500 pointer-events-none",
-                        feature.gradient
-                      )}
-                    />
-                    <div className="relative z-10 w-full">
-                      <div
-                        className={cn(
-                          "mb-3 md:mb-5 inline-flex h-10 w-10 md:h-14 md:w-14 items-center justify-center rounded-xl md:rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner",
-                          feature.bg
-                        )}
-                      >
-                        <Icon className={cn("h-5 w-5 md:h-7 md:w-7", feature.color)} />
-                      </div>
-
-                      <h3 className="mb-1 md:mb-2 text-sm md:text-base font-bold leading-tight text-foreground group-hover:text-primary transition-colors">
-                        {feature.title}
-                      </h3>
-
-                      <p className="text-muted-foreground leading-snug text-[11px] md:text-sm line-clamp-3">
-                        {feature.desc}
-                      </p>
+                  <article key={feature.number} className="group min-h-64 bg-card p-6 transition-colors duration-200 hover:bg-secondary dark:hover:bg-accent">
+                    <div className="flex items-start justify-between">
+                      <span className="font-mono text-xs font-bold tracking-[0.18em] text-muted-foreground">{feature.number}</span>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                        <Icon className="h-5 w-5" />
+                      </span>
                     </div>
-                  </div>
+                    <h3 className="mt-10 font-display text-2xl font-semibold leading-tight text-foreground">{feature.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{feature.desc}</p>
+                  </article>
                 );
               })}
             </div>
           </div>
         </section>
 
-        {/* --- FAQ Section --- */}
-        <section
-          id="faq"
-          className="py-12 md:py-24 px-4 sm:px-6 max-w-4xl mx-auto border-t border-border"
-        >
-          <div className="text-center mb-8 md:mb-16">
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 text-foreground text-balance">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-muted-foreground text-sm md:text-base">
-              Got questions? We've got answers.
-            </p>
-          </div>
-
-          <div className="divide-y divide-border/50 border-t border-b border-border/50">
-            {faqs.map((faq, i) => (
-              <details
-                key={i}
-                className="group py-1 transition-all"
-              >
-                <summary className="flex cursor-pointer items-center justify-between gap-3 py-4 px-2 font-semibold text-sm md:text-base marker:content-none transition-colors hover:bg-muted/30 touch-manipulation min-h-[44px]">
-                  <span className="text-left text-foreground leading-snug">
-                    {faq.q}
-                  </span>
-                  <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/85 transition-transform duration-200 group-open:rotate-180 shrink-0 ml-2" />
-                </summary>
-                <div className="px-2 pb-4 pt-1 text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="text-[13px] md:text-sm text-muted-foreground/90 pl-0">
-                    {faq.a}
-                  </div>
-                </div>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        {/* --- Feedback Section --- */}
-        <section
-          id="feedback"
-          className="py-12 md:py-24 px-4 sm:px-6 border-t border-border bg-muted/20"
-        >
-          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-            {/* Left: Text */}
-            <div className="space-y-5 md:space-y-6 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider mx-auto md:mx-0">
-                Beta Feedback
-              </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground text-balance">
-                Help us shape the future of pAIse.
+        <section className="bg-brand-red-s80 px-4 py-16 text-brand-cream sm:px-6 md:py-24">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-12 lg:items-center">
+            <div className="lg:col-span-5">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-red-40">One calm flow</p>
+              <h2 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-[-0.035em] sm:text-5xl">
+                Capture now. Confirm once. Carry on.
               </h2>
-              <p className="text-base md:text-lg text-muted-foreground leading-relaxed text-balance">
-                We are constantly improving. Whether you've spotted a glitch or
-                have a brilliant idea for a new feature, we want to hear from
-                you directly. Use the form to send us your thoughts immediately.
+              <p className="mt-5 max-w-lg leading-7 text-brand-red-25">
+                AI creates a draft—not a surprise. You stay in control of the people, amount, category, and split before anything is saved.
               </p>
             </div>
+            <ol className="grid gap-4 sm:grid-cols-3 lg:col-span-7">
+              {[
+                ["01", "Capture", "Speak, scan, or enter the expense."],
+                ["02", "Review", "Check every extracted detail."],
+                ["03", "Share", "Choose the split and save."],
+              ].map(([number, title, body]) => (
+                <li key={number} className="border border-brand-red-s40 bg-brand-red-s60 p-5">
+                  <span className="font-mono text-xs font-bold text-brand-red-40">{number}</span>
+                  <h3 className="mt-8 font-display text-2xl font-semibold text-brand-lemon">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-brand-red-25">{body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
 
-            {/* Right: Form Component */}
-            <div className="relative md:p-1 md:rounded-[2.5rem] md:bg-gradient-to-tr md:from-primary/20 md:to-secondary/20 md:shadow-2xl w-full max-w-md md:max-w-full mx-auto">
-              <div className="p-0 md:p-6 md:rounded-[2.3rem] md:bg-card md:border md:border-border/50 md:backdrop-blur-xl">
-                <FeedbackForm />
-              </div>
+        <section id="faq" className="scroll-mt-20 bg-secondary px-4 py-16 text-secondary-foreground sm:px-6 md:py-24">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-red">Good to know</p>
+              <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Questions, clearly settled.</h2>
+              <p className="mt-4 max-w-sm leading-7 text-brand-body">The practical details behind friends, groups, voice, receipts, and AI limits.</p>
+            </div>
+            <div className="border-t border-brand-lemon-s20 lg:col-span-8">
+              {faqs.map((faq, index) => (
+                <details key={faq.q} className="group border-b border-brand-lemon-s20">
+                  <summary className="flex min-h-16 cursor-pointer list-none items-center gap-4 py-4 marker:content-none">
+                    <span className="font-mono text-[11px] font-bold text-brand-red">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="flex-1 font-semibold text-brand-ink">{faq.q}</span>
+                    <ChevronDown className="h-5 w-5 text-brand-red transition-transform duration-200 group-open:rotate-180" />
+                  </summary>
+                  <p className="pb-5 pl-10 pr-8 text-sm leading-6 text-brand-body">{faq.a}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* --- CTA Section --- */}
-        <section className="py-12 md:py-20 px-2 sm:px-6">
-          <div className="max-w-5xl mx-auto rounded-2xl md:rounded-[2.5rem] bg-gradient-to-br from-primary to-secondary p-[1px] md:p-1 shadow-xl md:shadow-2xl shadow-primary/20">
-            <div className="relative rounded-2xl md:rounded-[22px] bg-background/95 px-5 py-10 md:px-12 md:py-16 text-center text-foreground overflow-hidden dark:bg-slate-950">
-              {/* Abstract Shapes */}
-              <div className="absolute top-0 left-0 w-48 md:w-64 h-48 md:h-64 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute bottom-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-secondary/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
-
-              <div className="relative z-10">
-                <h2 className="text-3xl md:text-5xl font-extrabold mb-4 md:mb-6 tracking-tight text-balance">
-                  Ready to settle up?
-                </h2>
-                <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto text-balance">
-                  Join thousands of users who trust pAIse to manage their shared
-                  expenses effortlessly.
-                </p>
-                <Button
-                  size="lg"
-                  className="h-14 w-full sm:w-auto px-8 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-lg shadow-xl hover:scale-105 transition-all border-none touch-manipulation"
-                  asChild
-                >
-                  <Link href="/auth/register">Create Free Account</Link>
-                </Button>
-              </div>
+        <section id="feedback" className="scroll-mt-20 border-y border-border bg-background px-4 py-16 sm:px-6 md:py-24">
+          <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2 md:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Built in conversation</p>
+              <h2 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-[-0.035em] text-foreground sm:text-5xl">Help shape what pAIse becomes.</h2>
+              <p className="mt-5 text-base leading-7 text-muted-foreground">
+                Found something awkward? Have an idea that would make settling up easier? Send it straight to the team.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-2 shadow-card sm:p-5">
+              <FeedbackForm />
             </div>
           </div>
         </section>
 
-        {/* --- Contact Section --- */}
-        <section
-          id="contact"
-          className="py-12 md:py-24 px-4 sm:px-6 max-w-5xl mx-auto border-t border-border"
-        >
-          <div className="text-center mb-10 md:mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-3 md:mb-4 text-foreground text-balance">
-              Get in Touch
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto text-balance">
-              Want to contribute, collaborate, or just say hi? Here is how you
-              can reach us.
-            </p>
+        <section className="bg-brand-red px-4 py-16 text-center text-brand-cream sm:px-6 md:py-24">
+          <div className="mx-auto max-w-4xl">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-lemon">The next bill can be easier</p>
+            <h2 className="mt-5 font-display text-5xl font-semibold leading-none tracking-[-0.04em] sm:text-6xl">Ready to settle up?</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-brand-red-10">Create an account and keep shared expenses clear from the first rupee to the final payment.</p>
+            <Button asChild size="lg" className="mt-8 h-14 border-brand-lemon bg-brand-lemon px-8 text-brand-ink hover:bg-brand-cream">
+              <Link href="/auth/register">Create free account <ArrowRight className="ml-2 h-5 w-5" /></Link>
+            </Button>
           </div>
+        </section>
 
-          <div className="flex flex-col gap-3 md:grid md:grid-cols-3 md:gap-6">
-            {/* Email Card */}
-            <div className="flex flex-row items-center gap-4 p-4 md:flex-col md:items-center md:text-center bg-card border border-border rounded-2xl md:rounded-3xl shadow-sm hover:border-primary/50 transition-all group w-full">
-              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                <Mail className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <div className="flex flex-col items-start md:items-center text-left md:text-center min-w-0 flex-1 w-full gap-1">
-                <h3 className="font-bold text-sm md:text-lg text-foreground">
-                  Email Us
-                </h3>
-                <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full border border-border max-w-full w-full justify-center overflow-hidden">
-                  <span className="text-xs md:text-sm text-muted-foreground font-medium truncate">
-                    paiseapesp@gmail.com
-                  </span>
-                  <button
-                    onClick={handleCopyEmail}
-                    className="text-primary hover:scale-110 transition-transform shrink-0 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2"
-                    title="Copy"
-                    aria-label="Copy email address"
-                  >
-                    {copiedEmail ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
+        <section id="contact" className="scroll-mt-20 bg-background px-4 py-16 sm:px-6 md:py-24">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Come say hello</p>
+              <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.035em] text-foreground sm:text-5xl">Get in touch.</h2>
+              <p className="mt-4 leading-7 text-muted-foreground">Contribute, collaborate, or share what you are building with pAIse.</p>
+            </div>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+                <Mail className="h-5 w-5 text-primary" />
+                <h3 className="mt-5 font-display text-2xl font-semibold">Email</h3>
+                <div className="mt-3 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                  <span className="truncate">paiseapesp@gmail.com</span>
+                  <button type="button" onClick={handleCopyEmail} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-primary hover:bg-accent" aria-label="Copy email address">
+                    {copiedEmail ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
+              <Link href="https://github.com/atiujjwal/pAIse" target="_blank" rel="noreferrer" className="group rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary">
+                <Github className="h-5 w-5 text-primary" />
+                <h3 className="mt-5 font-display text-2xl font-semibold">GitHub</h3>
+                <span className="mt-3 flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary">Contribute <ExternalLink className="h-3.5 w-3.5" /></span>
+              </Link>
+              <Link href="https://www.linkedin.com/in/atiujjwal/" target="_blank" rel="noreferrer" className="group rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary">
+                <Linkedin className="h-5 w-5 text-primary" />
+                <h3 className="mt-5 font-display text-2xl font-semibold">LinkedIn</h3>
+                <span className="mt-3 flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary">Connect <ExternalLink className="h-3.5 w-3.5" /></span>
+              </Link>
             </div>
-
-            {/* GitHub Card */}
-            <Link
-              href="https://github.com/atiujjwal/pAIse"
-              target="_blank"
-              className="flex flex-row items-center gap-4 p-4 md:flex-col md:items-center md:text-center bg-card border border-border rounded-2xl md:rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1 touch-manipulation w-full"
-            >
-              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-muted text-muted-foreground flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                <Github className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <div className="flex flex-col items-start md:items-center text-left md:text-center flex-1 w-full gap-1">
-                <h3 className="font-bold text-sm md:text-lg text-foreground">GitHub</h3>
-                <div className="flex items-center justify-start md:justify-center gap-1 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors w-full min-h-[32px]">
-                  Contribute <ExternalLink className="h-3 w-3" />
-                </div>
-              </div>
-            </Link>
-
-            {/* LinkedIn Card */}
-            <Link
-              href="https://www.linkedin.com/in/atiujjwal/"
-              target="_blank"
-              className="flex flex-row items-center gap-4 p-4 md:flex-col md:items-center md:text-center bg-card border border-border rounded-2xl md:rounded-3xl shadow-sm hover:border-primary/50 transition-all group hover:-translate-y-1 touch-manipulation w-full"
-            >
-              <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                <Linkedin className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <div className="flex flex-col items-start md:items-center text-left md:text-center flex-1 w-full gap-1">
-                <h3 className="font-bold text-sm md:text-lg text-foreground">
-                  LinkedIn
-                </h3>
-                <div className="flex items-center justify-start md:justify-center gap-1 text-xs md:text-sm text-muted-foreground group-hover:text-primary transition-colors w-full min-h-[32px]">
-                  Connect <ExternalLink className="h-3 w-3" />
-                </div>
-              </div>
-            </Link>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border bg-card py-10 md:py-12 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto mb-10 flex flex-col items-center text-center">
-          <Link href="/" className="flex items-center gap-2 md:gap-3 group mb-4 touch-manipulation">
-            <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
-                <img
-                  src={pAIse_LOGO}
-                  alt="pAIse"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-            </div>
-            <span className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-              pAIse
-            </span>
-          </Link>
-          <p className="text-muted-foreground max-w-md leading-relaxed text-base md:text-lg text-balance px-2">
-            The smartest way to split bills and track shared expenses with
-            friends, roommates, and family.
-          </p>
-        </div>
-
-        <div className="max-w-6xl mx-auto pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-muted-foreground">
-          <p className="order-2 md:order-1">© 2025 pAIse. All rights reserved.</p>
-          <div className="order-1 md:order-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-            <button
-              onClick={() => setShowPrivacy(true)}
-              className="hover:text-primary transition-colors cursor-pointer touch-manipulation py-2 px-1"
-            >
-              Privacy Policy
-            </button>
-            <button
-              onClick={() => setShowSecurity(true)}
-              className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5 touch-manipulation py-2 px-1"
-            >
-              <ShieldCheck className="h-4 w-4" /> Security Features
-            </button>
+      <footer className="border-t border-brand-red-s40 bg-brand-red-s80 px-4 py-10 text-brand-cream sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <div>
+            <Link href="/" aria-label="pAIse home"><BrandLockup inverse /></Link>
+            <p className="mt-4 max-w-md text-sm leading-6 text-brand-red-25">Shared expenses, handled with clarity—and a little more warmth.</p>
+          </div>
+          <div className="flex flex-col gap-4 text-sm text-brand-red-25 sm:flex-row sm:items-center sm:gap-6">
+            <button type="button" onClick={() => setShowPrivacy(true)} className="min-h-11 text-left transition-colors hover:text-brand-lemon">Privacy Policy</button>
+            <button type="button" onClick={() => setShowSecurity(true)} className="flex min-h-11 items-center gap-2 transition-colors hover:text-brand-lemon"><ShieldCheck className="h-4 w-4" /> Security Features</button>
+            <span>© {new Date().getFullYear()} pAIse</span>
           </div>
         </div>
       </footer>
+
       <PrivacyPolicyModal open={showPrivacy} onOpenChange={setShowPrivacy} />
-      <SecurityFeaturesModal
-        open={showSecurity}
-        onOpenChange={setShowSecurity}
-      />
+      <SecurityFeaturesModal open={showSecurity} onOpenChange={setShowSecurity} />
     </div>
   );
 }

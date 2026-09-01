@@ -3,24 +3,23 @@
 import Link from "next/link";
 import NotificationBell from "@/src/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
-import { pAIse_LOGO } from "@/src/lib/mediaUrls";
+import { BrandLogo } from "@/src/components/common/BrandLogo";
 
 export function Header() {
   return (
-    <header className="relative flex h-16 items-center justify-between bg-background px-4 md:hidden transition-colors z-30">
-      {/* --- Modern Gradient Separator --- */}
-      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+    <header className="relative z-30 flex h-16 items-center justify-between bg-card px-4 transition-colors md:hidden">
+      <div className="absolute bottom-0 left-0 h-px w-full bg-border" />
 
       {/* Brand logo / title */}
       <div className="flex items-center gap-3">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5">
-            <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
-              <img src={pAIse_LOGO} alt="pAIse" className="h-full w-full object-contain" />
+          <div className="h-9 w-9 rounded-xl border border-border bg-secondary p-1 dark:bg-brand-red-s80">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg">
+              <BrandLogo />
             </div>
           </div>
-          <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
-            pAIse
+          <span className="font-display text-xl font-semibold tracking-tight text-foreground">
+            p<span className="text-primary">AI</span>se
           </span>
         </Link>
       </div>

@@ -151,8 +151,8 @@ export function ChatWidget() {
               setIsOpen(true);
             }
           }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ y: -2 }}
+          whileTap={{ y: 1 }}
         >
           <div className="relative group cursor-grab active:cursor-grabbing">
             {/* Tooltip Label */}
@@ -163,17 +163,17 @@ export function ChatWidget() {
 
             <Button
               className={cn(
-                "h-12 w-12 rounded-full p-0 flex items-center justify-center",
-                "bg-gradient-to-tr from-violet-600 to-indigo-600 text-white",
-                "ring-[3px] ring-white dark:ring-slate-900",
-                "shadow-[0_10px_40px_-10px_rgba(79,70,229,0.5)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]"
+                "h-12 w-12 rounded-xl p-0 flex items-center justify-center",
+                "bg-primary text-primary-foreground",
+                "ring-[3px] ring-secondary dark:ring-brand-red-s40",
+                "shadow-glow"
               )}
             >
               <div className="relative flex items-center justify-center">
                 <MessageCircle className="h-5 w-5 stroke-[2.5px]" />
                 <span className="absolute -top-2.5 -right-2.5 flex h-3.5 w-3.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white dark:border-slate-900 items-center justify-center">
+                  <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-red-500 dark:border-brand-red-s80">
                     <Sparkles className="h-1.5 w-1.5 text-white" />
                   </span>
                 </span>
@@ -185,10 +185,10 @@ export function ChatWidget() {
         /* --- OPENED WINDOW --- */
         <div
           ref={widgetRef}
-          className="pointer-events-auto absolute right-4 bottom-20 md:bottom-6 w-[calc(100vw-32px)] sm:w-[380px] h-[500px] sm:h-[550px] bg-card rounded-[2rem] shadow-2xl border border-border/60 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 origin-bottom-right"
+          className="pointer-events-auto absolute right-4 bottom-20 md:bottom-6 w-[calc(100vw-32px)] sm:w-[380px] h-[500px] sm:h-[550px] bg-card rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 origin-bottom-right"
         >
           {/* Header */}
-          <div className="h-16 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex items-center justify-between px-5 shadow-md z-10 shrink-0">
+          <div className="z-10 flex h-16 shrink-0 items-center justify-between bg-primary px-5 text-primary-foreground shadow-md">
             <div className="flex items-center gap-3 pointer-events-none">
               <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md shadow-inner">
                 <Bot className="h-5 w-5 text-white" />
@@ -229,7 +229,7 @@ export function ChatWidget() {
                   className={cn(
                     "max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm leading-relaxed",
                     msg.role === "USER"
-                      ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
+                      ? "bg-primary text-primary-foreground rounded-tr-sm"
                       : "bg-card text-foreground border border-border rounded-tl-sm"
                   )}
                 >
@@ -240,9 +240,9 @@ export function ChatWidget() {
             {isLoading && (
               <div className="flex justify-start animate-in fade-in">
                 <div className="bg-card px-4 py-3 rounded-2xl rounded-tl-sm border border-border shadow-sm flex gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.15s]" />
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.3s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.15s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse [animation-delay:0.3s]" />
                 </div>
               </div>
             )}
@@ -256,12 +256,12 @@ export function ChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder={user ? "Ask about expenses..." : "How can pAIse help?"}
-                className="pr-12 py-6 rounded-full bg-muted/50 border-transparent focus-visible:ring-indigo-500 shadow-inner text-sm transition-all"
+                className="rounded-xl border-border bg-muted/50 py-6 pr-12 text-sm shadow-inner transition-colors focus-visible:ring-primary"
               />
               <Button
                 onClick={handleSend}
                 size="icon"
-                className="absolute right-1.5 h-9 w-9 rounded-full shadow-md hover:scale-105 transition-transform bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="absolute right-1.5 h-9 min-h-9 w-9 rounded-lg p-0 shadow-md"
                 disabled={isLoading || !input.trim()}
               >
                 {isLoading ? (

@@ -16,7 +16,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-2xl bg-card text-card-foreground transition-all duration-200",
+          "rounded-xl bg-card text-card-foreground transition-[border-color,box-shadow,background-color] duration-200 ease-out",
           variant === "default" && "border border-border shadow-sm",
           variant === "flat" && "border border-border bg-muted/30",
           variant === "elevated" &&

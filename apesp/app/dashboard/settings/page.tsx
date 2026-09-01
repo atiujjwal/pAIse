@@ -212,7 +212,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-1">
           <div className="sticky top-6 space-y-6">
             {/* The "ID Card" */}
-            <div className="bg-gradient-to-br from-card to-muted/20 rounded-[2.5rem] border border-border shadow-lg p-8 text-center relative overflow-hidden">
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 text-center shadow-card">
               {/* Shine Effect */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
@@ -261,9 +261,9 @@ export default function SettingsPage() {
                     <QRCode value={inviteLink} size={140} />
                   </div>
                 ) : (
-                  <div className="h-[140px] w-[140px] flex flex-col items-center justify-center bg-slate-50 rounded-xl">
-                    <QrCode className="h-8 w-8 text-slate-300 mb-2" />
-                    <span className="text-xs text-slate-400 font-medium">
+                  <div className="flex h-[140px] w-[140px] flex-col items-center justify-center rounded-xl bg-secondary">
+                    <QrCode className="mb-2 h-8 w-8 text-brand-lemon-s40" />
+                    <span className="text-xs font-medium text-brand-body">
                       No Tag Generated
                     </span>
                   </div>
@@ -339,7 +339,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-2 space-y-8">
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 md:p-10 space-y-8"
+            className="space-y-8 rounded-2xl border border-border bg-card p-8 shadow-card md:p-10"
           >
             <div className="flex items-center justify-between border-b border-border pb-6">
               <div>
@@ -498,7 +498,7 @@ export default function SettingsPage() {
           </form>
 
           {/* Preferences & Actions */}
-          <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-8 md:p-10 space-y-6">
+          <div className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card md:p-10">
             <div>
               <h3 className="text-xl font-bold text-foreground">App Preferences & Session</h3>
               <p className="text-muted-foreground text-sm">Customize visual settings and manage your current session.</p>

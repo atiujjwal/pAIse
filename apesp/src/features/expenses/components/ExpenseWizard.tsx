@@ -61,7 +61,7 @@ export default function ExpenseWizard() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm">
+    <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-8 shadow-card md:p-10">
       <div className="mb-10 flex items-center justify-between border-b border-border pb-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground">New Expense</h2>

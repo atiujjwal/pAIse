@@ -45,7 +45,7 @@ export function Toaster() {
               ? "bg-red-500 text-white"
               : toast.type === "success"
               ? "bg-green-500 text-white"
-              : "bg-slate-800 text-white"
+              : "bg-brand-red-s80 text-brand-cream"
           }`}
         >
           <p className="text-sm font-medium">{toast.message}</p>

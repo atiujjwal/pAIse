@@ -12,12 +12,12 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="relative bg-card border border-border shadow-2xl shadow-primary/5 rounded-[2.5rem] p-8 md:p-10 overflow-hidden">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-card md:p-10">
       {/* Close Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-6 right-6 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full"
+        className="absolute right-5 top-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         asChild
       >
         <Link href="/" aria-label="Go back to home">
@@ -27,7 +27,7 @@ export default function LoginClient() {
 
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
             Welcome back
           </h1>
           <p className="text-muted-foreground">

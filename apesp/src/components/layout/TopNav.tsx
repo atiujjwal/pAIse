@@ -38,9 +38,8 @@ export function TopNav() {
   }, [user, accessToken]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-24 items-center justify-end bg-background/80 px-8 backdrop-blur-xl transition-all duration-300">
-      {/* --- Modern Gradient Separator --- */}
-      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+    <header className="sticky top-0 z-30 flex h-24 items-center justify-end bg-background/95 px-8 backdrop-blur-xl transition-colors duration-200">
+      <div className="absolute bottom-0 left-0 h-px w-full bg-border" />
 
       <div className="flex items-center gap-3">
         {/* Theme Switcher */}
@@ -71,7 +70,7 @@ export function TopNav() {
           </div>
 
           {/* Avatar Container with Gradient Ring */}
-          <div className="relative h-11 w-11 rounded-full bg-gradient-to-br from-primary to-secondary p-0.5 shadow-sm transition-transform group-hover:scale-105">
+          <div className="relative h-11 w-11 rounded-xl border border-primary/20 bg-primary-soft p-0.5 shadow-sm transition-colors group-hover:border-primary/40">
             <div
               className={cn(
                 "relative flex h-full w-full items-center justify-center rounded-full bg-background overflow-hidden",

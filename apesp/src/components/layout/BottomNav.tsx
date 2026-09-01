@@ -61,7 +61,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center justify-center py-1 px-2 rounded-2xl transition-all w-16 h-12 active:scale-95 touch-manipulation",
+                "relative flex h-12 w-16 flex-col items-center justify-center rounded-xl px-2 py-1 transition-colors touch-manipulation",
                 isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
               )}
               style={{ minWidth: "44px", minHeight: "44px" }}
@@ -90,7 +90,7 @@ export function BottomNav() {
                 <motion.div
                   layoutId="bottom-nav-active-pill"
                   className="absolute -top-px w-6 h-1 rounded-full bg-primary"
-                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
                 />
               )}
             </Link>

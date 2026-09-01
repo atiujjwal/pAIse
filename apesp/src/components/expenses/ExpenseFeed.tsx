@@ -122,7 +122,7 @@ export function ExpenseFeed({ expenses, isLoading, isError }: ExpenseFeedProps) 
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-24 text-center px-4"
       >
-        <div className="h-24 w-24 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-[2.5rem] flex items-center justify-center mb-6 shadow-sm border border-border/50 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-border bg-secondary shadow-sm">
           <Receipt className="h-10 w-10 text-muted-foreground/60" />
         </div>
         <h3 className="text-2xl font-bold text-foreground tracking-tight">
@@ -230,7 +230,7 @@ export function ExpenseFeed({ expenses, isLoading, isError }: ExpenseFeedProps) 
                   >
                     <Link
                       href={`/dashboard/expenses/${expense.id}`}
-                      className="flex items-center justify-between p-4 md:p-5 rounded-[2rem] border border-border/40 bg-card/40 hover:bg-card hover:border-primary/20 hover:shadow-xl hover:shadow-primary/[0.02] backdrop-blur-md transition-all duration-300 relative overflow-hidden"
+                      className="relative flex items-center justify-between overflow-hidden rounded-xl border border-border bg-card/70 p-4 shadow-card transition-colors duration-200 hover:border-primary/30 hover:bg-card md:p-5"
                     >
                       {/* Left side: Avatar + Description/Metadata */}
                       <div className="flex items-center gap-4 overflow-hidden">

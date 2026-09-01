@@ -307,7 +307,7 @@ export default function DashboardPage() {
           </Button>
           <Button
             asChild
-            className="h-11 w-full sm:w-auto justify-center rounded-xl bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all border-none"
+            className="h-11 w-full justify-center sm:w-auto"
           >
             <Link href="/dashboard/expenses/new">
               <Plus className="mr-2 h-5 w-5" />

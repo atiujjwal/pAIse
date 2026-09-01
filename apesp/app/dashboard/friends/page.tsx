@@ -323,7 +323,7 @@ export default function FriendsPage() {
                       <Link
                         key={friend.id}
                         href={`/dashboard/friends/${friend.id}`}
-                        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 md:p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1"
+                        className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-card transition-colors duration-200 hover:border-primary/30 md:p-6"
                       >
                         {/* Top: Info */}
                         <div className="flex items-center gap-4 min-w-0">

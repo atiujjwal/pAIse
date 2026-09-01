@@ -105,12 +105,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative bg-card border border-border shadow-2xl shadow-primary/5 rounded-[2.5rem] p-8 md:p-10 overflow-hidden">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-card md:p-10">
       {/* Close Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-6 right-6 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full"
+        className="absolute right-5 top-5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         asChild
       >
         <Link href="/" aria-label="Go back to home">
@@ -120,7 +120,7 @@ export default function RegisterPage() {
 
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
             Create an account
           </h1>
           <p className="text-muted-foreground">
@@ -210,7 +210,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={isSendingOtp || isRegistering}
-              className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.01] transition-all duration-200"
+              className="h-12 w-full"
             >
               {isSendingOtp ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -234,7 +234,7 @@ export default function RegisterPage() {
 
       {/* --- EMAIL VERIFICATION DIALOG --- */}
       <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-8">
+        <DialogContent className="rounded-2xl p-8 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold">
               Verify your Email

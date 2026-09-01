@@ -44,7 +44,7 @@ const getNotificationConfig = (type: string) => {
     case "REMINDER":
       return {
         icon: Clock,
-        colorClass: "text-purple-500 bg-purple-500/10",
+        colorClass: "text-primary bg-primary-soft",
       };
     default:
       return {

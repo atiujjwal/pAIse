@@ -54,8 +54,8 @@ export function DashboardCharts({
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Skeleton className="h-[350px] lg:col-span-2 rounded-[2.5rem]" />
-        <Skeleton className="h-[350px] rounded-[2.5rem]" />
+        <Skeleton className="h-[350px] rounded-2xl lg:col-span-2" />
+        <Skeleton className="h-[350px] rounded-2xl" />
       </div>
     );
   }
@@ -66,7 +66,7 @@ export function DashboardCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4">
       {/* SPENDING TRENDS (Bar Chart) */}
-      <div className="lg:col-span-2 rounded-[2.5rem] border border-border bg-card p-5 sm:p-8 shadow-sm flex flex-col">
+      <div className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-card sm:p-8 lg:col-span-2">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-secondary/10 rounded-xl text-secondary">
@@ -128,7 +128,7 @@ export function DashboardCharts({
       </div>
 
       {/* CATEGORY BREAKDOWN (Pie Chart) */}
-      <div className="rounded-[2.5rem] border border-border bg-card p-5 sm:p-8 shadow-sm flex flex-col">
+      <div className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-card sm:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
             <PieChartIcon className="h-5 w-5" />

@@ -126,7 +126,7 @@ export function SecurityFeaturesModal({
                     </span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Code2 className="h-4 w-4 text-violet-500" />
+                    <Code2 className="h-4 w-4 text-primary" />
                     <span>
                       <strong className="text-foreground">
                         App Logic Layer:

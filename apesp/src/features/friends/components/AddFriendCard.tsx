@@ -175,7 +175,7 @@ export function AddFriendCard() {
                   {/* Modern Solid Download Button */}
                   <Button
                     onClick={downloadQRCode}
-                    className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-md shadow-primary/20 hover:shadow-lg transition-all hover:scale-[1.02]"
+                    className="h-10 w-full text-xs"
                   >
                     <Download className="h-4 w-4 mr-2" /> Download QR
                   </Button>

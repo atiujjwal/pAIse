@@ -5,7 +5,7 @@ import { ForgotPasswordForm } from "@/src/features/auth/components/ForgotPasswor
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="relative bg-card border border-border shadow-2xl shadow-primary/5 rounded-[2.5rem] p-8 md:p-10 overflow-hidden">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-card md:p-10">
       <Button
         variant="ghost"
         size="sm"
@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
 
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-[350px] mx-auto pt-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground">
             Reset Password
           </h1>
           <p className="text-muted-foreground text-sm">

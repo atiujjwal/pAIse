@@ -59,8 +59,8 @@ export default function ExpenseDetailsPage() {
     return (
       <div className="max-w-2xl mx-auto space-y-6 pt-6">
         <Skeleton className="h-10 w-24 mb-4 rounded-lg" />
-        <Skeleton className="h-64 w-full rounded-[2.5rem]" />
-        <Skeleton className="h-40 w-full rounded-[2.5rem]" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
       </div>
     );
   }
@@ -153,7 +153,7 @@ export default function ExpenseDetailsPage() {
       </div>
 
       {/* --- Main Card --- */}
-      <div className="bg-card rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
         {/* Header Banner */}
         <div className="bg-muted/30 p-8 text-center border-b border-border relative">
           {/* Context Badge (Top Right) */}
@@ -340,7 +340,7 @@ export default function ExpenseDetailsPage() {
 
       {/* Receipt Section */}
       {expense.receipt_url && (
-        <div className="rounded-[2.5rem] border border-border bg-card p-8 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
           <h3 className="font-bold text-lg text-foreground mb-6 flex items-center gap-2">
             <div className="p-2 bg-muted rounded-lg">
               <Receipt className="h-5 w-5 text-muted-foreground" />

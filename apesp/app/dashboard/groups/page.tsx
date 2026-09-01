@@ -107,7 +107,7 @@ export default function GroupsPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="rounded-[2.5rem] border border-border bg-card p-6 space-y-4"
+                className="space-y-4 rounded-2xl border border-border bg-card p-6"
               >
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -131,7 +131,7 @@ export default function GroupsPage() {
                 <Link
                   key={group.id}
                   href={`/dashboard/groups/${group.id}`}
-                  className="group relative flex flex-col justify-between rounded-2xl md:rounded-[2.5rem] border border-border bg-card p-3 md:p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20"
+                  className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-3 shadow-card transition-colors duration-200 hover:border-primary/30 md:p-6"
                 >
                   <div>
                     {/* Header: Avatar & Member Count */}
@@ -141,7 +141,7 @@ export default function GroupsPage() {
                           src={group.avatar || undefined}
                           className="object-cover"
                         />
-                        <AvatarFallback className="rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/10 to-indigo-500/10 text-primary font-bold text-sm md:text-xl">
+                        <AvatarFallback className="rounded-xl bg-primary-soft text-primary font-bold text-sm md:text-xl">
                           {group.name[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -204,7 +204,7 @@ export default function GroupsPage() {
           </div>
         ) : (
           /* EMPTY STATE */
-          <div className="flex flex-col items-center justify-center py-24 text-center rounded-[2.5rem] border-2 border-dashed border-border bg-muted/10">
+          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/10 py-24 text-center">
             <div className="h-20 w-20 rounded-[2rem] bg-card shadow-sm flex items-center justify-center mb-6 border border-border">
               <Layers className="h-10 w-10 text-muted-foreground/40" />
             </div>
